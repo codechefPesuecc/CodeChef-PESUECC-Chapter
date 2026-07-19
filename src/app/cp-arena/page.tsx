@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getDailyChallenge } from "@/lib/challenges";
 import ProblemStatement from "@/components/cp-arena/ProblemStatement";
 import ArenaWorkspace from "@/components/cp-arena/ArenaWorkspace";
+import ArenaRules from "@/components/cp-arena/ArenaRules";
 
 export const metadata: Metadata = {
   title: "CP Arena",
@@ -104,6 +105,15 @@ export default function CpArenaPage() {
             </span>
           )}
         </div>
+
+        {meta.author && (
+          <p className="mt-3 text-sm text-charcoal/60">
+            Set by{" "}
+            <span className="font-semibold text-brown">{meta.author}</span>
+          </p>
+        )}
+
+        <ArenaRules />
 
         <ArenaWorkspace
           problem={<ProblemStatement body={body} />}

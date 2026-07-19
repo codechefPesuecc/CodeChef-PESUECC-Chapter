@@ -40,6 +40,15 @@
 :root {
   --site-canvas: var(--color-cream);
   --site-backdrop: url("/lightmode.png");
+
+  /* Code editor / console surface — light IDE in light mode. */
+  --ide-bar: #efe9e0;
+  --ide-border: #e3dacd;
+  --ide-body: #ffffff;
+  --ide-ink-strong: #3e2f24;
+  --ide-ink: #6f5f4e;
+  --ide-ink-dim: #9c8b77;
+  --ide-code: #3e2f24;
 }
 
 .dark {
@@ -51,6 +60,15 @@
   --color-hairline: #3a2c20; /* borders & hairline dividers */
   --site-canvas: #16110c; /* deep warm near-black page canvas */
   --site-backdrop: url("/darkmode.png");
+
+  /* Code editor / console surface — warm terminal-dark in dark mode. */
+  --ide-bar: #1e1610;
+  --ide-border: #3a2c20;
+  --ide-body: #16110c;
+  --ide-ink-strong: #f0e9dd;
+  --ide-ink: rgba(240, 233, 221, 0.62);
+  --ide-ink-dim: rgba(240, 233, 221, 0.4);
+  --ide-code: #cbb89a;
 }
 
 html {

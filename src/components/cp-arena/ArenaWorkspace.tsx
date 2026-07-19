@@ -12,6 +12,7 @@ import {
   type Solver,
 } from "./mockData";
 import { BOUNTY_LADDER, ordinal, pointsForRank } from "@/lib/points";
+import { useIntegrityMonitor } from "./useIntegrityMonitor";
 
 const FILE_EXT: Record<LanguageId, string> = {
   cpp: "cpp",
@@ -60,6 +61,7 @@ export default function ArenaWorkspace({
   }, []);
 
   const solved = mySolveSeconds != null;
+  const integrity = useIntegrityMonitor(!solved);
 
   // Placeholder verdict: the real judge (Piston sandbox via /api/submit) isn't
   // wired yet, so a solution counts as accepted once it meaningfully diverges
@@ -126,7 +128,21 @@ export default function ArenaWorkspace({
         {/* Problem statement */}
         <section className="overflow-hidden rounded-2xl border border-hairline bg-panel shadow-sm">
           <PanelBar label="Problem" />
-          <div className="max-h-[560px] overflow-y-auto px-6 py-6 lg:max-h-[720px]">
+          <div
+            className="max-h-[560px] overflow-y-auto px-6 py-6 lg:max-h-[720px]"
+            onCopyCapture={(e) => {
+              e.preventDefault();
+              integrity.record("copy");
+            }}
+            onCutCapture={(e) => {
+              e.preventDefault();
+              integrity.record("cut");
+            }}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              integrity.record("context-menu");
+            }}
+          >
             {problem}
           </div>
         </section>
@@ -135,13 +151,13 @@ export default function ArenaWorkspace({
         <section className="space-y-4 lg:sticky lg:top-28">
           <div className="overflow-hidden rounded-2xl border border-hairline shadow-sm">
             {/* IDE title bar */}
-            <div className="flex items-center gap-3 border-b border-[#3a2c20] bg-[#1e1610] px-4 py-2.5">
+            <div className="flex items-center gap-3 border-b border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 py-2.5">
               <span className="flex gap-1.5" aria-hidden>
                 <span className="h-2.5 w-2.5 rounded-full bg-[#e06c5b]" />
                 <span className="h-2.5 w-2.5 rounded-full bg-[#e0b24b]" />
                 <span className="h-2.5 w-2.5 rounded-full bg-[#5bbf7a]" />
               </span>
-              <span className="font-mono text-xs text-cream/60">
+              <span className="font-mono text-xs text-[var(--ide-ink)]">
                 main.{FILE_EXT[language]}
               </span>
               <div className="ml-auto flex items-center gap-3">
@@ -152,29 +168,55 @@ export default function ArenaWorkspace({
                   id="language"
                   value={language}
                   onChange={(e) => changeLanguage(e.target.value as LanguageId)}
-                  className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs font-medium text-cream/90 outline-none transition-colors focus:border-bronze"
+                  className="rounded-md border border-[var(--ide-border)] bg-[var(--ide-body)] px-2 py-1 text-xs font-medium text-[var(--ide-ink-strong)] outline-none transition-colors focus:border-bronze"
                 >
                   {LANGUAGES.map((l) => (
-                    <option key={l.id} value={l.id} className="text-charcoal">
+                    <option
+                      key={l.id}
+                      value={l.id}
+                      style={{
+                        backgroundColor: "var(--ide-body)",
+                        color: "var(--ide-ink-strong)",
+                      }}
+                    >
                       {l.label}
                     </option>
                   ))}
                 </select>
-                <span className="inline-flex items-center gap-1.5 font-mono text-xs text-cream/70">
+                <span
+                  title="Indicative timer — your official solve time is recorded server-side on an accepted submission."
+                  className="inline-flex items-center gap-1.5 font-mono text-xs text-[var(--ide-ink)]"
+                >
                   <ClockIcon />
                   {formatClock(elapsed)}
+                </span>
+                <span
+                  title="Copy, paste and right-click are disabled · tab switches are recorded for review"
+                  className={`inline-flex items-center gap-1.5 font-mono text-xs ${
+                    integrity.total > 0 ? "text-amber-400" : "text-[var(--ide-ink-dim)]"
+                  }`}
+                >
+                  <ShieldIcon />
+                  <span className="hidden sm:inline">Proctored</span>
+                  {integrity.total > 0 && <span>· {integrity.total}</span>}
                 </span>
               </div>
             </div>
 
-            <CodeEditor value={code} onChange={setCode} language={language} />
+            <CodeEditor
+              value={code}
+              onChange={setCode}
+              language={language}
+              lockClipboard
+              onBlocked={integrity.record}
+            />
 
             {/* Action bar */}
-            <div className="flex items-center gap-3 border-t border-[#3a2c20] bg-[#1e1610] px-4 py-3">
+            <div className="flex items-center gap-3 border-t border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 py-3">
               <button
                 type="button"
                 onClick={resetCode}
-                className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium text-cream/55 transition-colors hover:text-cream"
+                className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium text-[var(--ide-ink)] transition-colors hover:text-[var(--ide-ink-strong)]"
               >
                 <ResetIcon />
                 Reset
@@ -215,6 +257,16 @@ export default function ArenaWorkspace({
             </div>
           </div>
 
+          {integrity.notice && (
+            <div
+              role="status"
+              className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-700 dark:text-amber-400"
+            >
+              <ShieldIcon />
+              {integrity.notice}
+            </div>
+          )}
+
           <Console
             running={running}
             judgement={judgement}
@@ -254,13 +306,13 @@ function Console({
 }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-hairline shadow-sm">
-      <div className="flex items-center justify-between border-b border-[#3a2c20] bg-[#1e1610] px-4 py-2.5">
-        <span className="font-mono text-[11px] uppercase tracking-wider text-cream/45">
+      <div className="flex items-center justify-between border-b border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 py-2.5">
+        <span className="font-mono text-[11px] uppercase tracking-wider text-[var(--ide-ink-dim)]">
           Console
         </span>
         <VerdictBadge running={running} judgement={judgement} />
       </div>
-      <div className="min-h-[150px] bg-[#16110c] px-4 py-4 font-mono text-xs leading-relaxed text-[#cbb89a]">
+      <div className="min-h-[150px] bg-[var(--ide-body)] px-4 py-4 font-mono text-xs leading-relaxed text-[var(--ide-code)]">
         {running ? (
           <p className="flex items-center gap-2 text-bronze">
             <span className="h-2 w-2 animate-pulse rounded-full bg-bronze" />
@@ -268,21 +320,21 @@ function Console({
           </p>
         ) : judgement?.status === "AC" && judgement.mode === "submit" ? (
           <div className="space-y-2">
-            <p className="text-sm font-semibold text-emerald-400">
+            <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
               Accepted — all test cases passed.
             </p>
-            <p className="text-[#cbb89a]">
+            <p className="text-[var(--ide-code)]">
               You finished{" "}
-              <span className="font-semibold text-cream">
+              <span className="font-semibold text-[var(--ide-ink-strong)]">
                 {myRank ? ordinal(myRank) : ""}
               </span>{" "}
               today in{" "}
-              <span className="font-semibold text-cream">{solveClock}</span> ·{" "}
-              <span className="font-semibold text-emerald-400">
+              <span className="font-semibold text-[var(--ide-ink-strong)]">{solveClock}</span> ·{" "}
+              <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                 +{myPoints} pts
               </span>
             </p>
-            <p className="text-[11px] text-cream/40">
+            <p className="text-[11px] text-[var(--ide-ink-dim)]">
               Verdict simulated on the client — the Piston sandbox judge is wired
               in a later pass.
             </p>
@@ -290,7 +342,7 @@ function Console({
         ) : judgement ? (
           <div className="space-y-3">
             {judgement.status === "WA" && (
-              <p className="text-sm font-semibold text-red-400">
+              <p className="text-sm font-semibold text-red-600 dark:text-red-400">
                 Wrong Answer on sample case.
               </p>
             )}
@@ -302,14 +354,14 @@ function Console({
               tone={judgement.status === "AC" ? "ok" : "bad"}
             />
             {judgement.mode === "run" && (
-              <p className="text-[11px] text-cream/40">
+              <p className="text-[11px] text-[var(--ide-ink-dim)]">
                 Sample run simulated on the client. Use Submit to lock in your
                 solve time.
               </p>
             )}
           </div>
         ) : (
-          <p className="text-cream/40">
+          <p className="text-[var(--ide-ink-dim)]">
             Write your solution, then{" "}
             <span className="text-bronze">Run</span> it against the sample or{" "}
             <span className="text-bronze">Submit</span> to the judge. Faster
@@ -332,13 +384,13 @@ function IoBlock({
 }) {
   const color =
     tone === "ok"
-      ? "text-emerald-400"
+      ? "text-emerald-600 dark:text-emerald-400"
       : tone === "bad"
-        ? "text-red-400"
-        : "text-[#e8dfd2]";
+        ? "text-red-600 dark:text-red-400"
+        : "text-[var(--ide-code)]";
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider text-cream/35">
+      <div className="text-[10px] uppercase tracking-wider text-[var(--ide-ink-dim)]">
         {label}
       </div>
       <pre className={`mt-1 whitespace-pre-wrap ${color}`}>
@@ -364,8 +416,8 @@ function VerdictBadge({
   }
   if (!judgement) return null;
   const map = {
-    AC: "bg-emerald-500/15 text-emerald-400",
-    WA: "bg-red-500/15 text-red-400",
+    AC: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+    WA: "bg-red-500/15 text-red-600 dark:text-red-400",
   } as const;
   const label = judgement.status === "AC" ? "Accepted" : "Wrong Answer";
   return (
@@ -569,6 +621,14 @@ function ResetIcon() {
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
       <path d="M3 3v5h5" />
+    </svg>
+  );
+}
+
+function ShieldIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
     </svg>
   );
 }
