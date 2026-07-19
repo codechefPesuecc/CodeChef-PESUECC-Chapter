@@ -23,7 +23,8 @@ export type IntegrityEvent =
   | "copy"
   | "cut"
   | "tab-switch"
-  | "context-menu";
+  | "context-menu"
+  | "screenshot";
 
 const MESSAGES: Record<IntegrityEvent, string> = {
   paste: "Pasting is disabled in the arena.",
@@ -31,6 +32,7 @@ const MESSAGES: Record<IntegrityEvent, string> = {
   cut: "Cutting is disabled in the arena.",
   "tab-switch": "You left the tab — this is recorded for review.",
   "context-menu": "Right-click is disabled in the arena.",
+  screenshot: "Screen capture / leaving the window is recorded.",
 };
 
 export interface IntegrityCounts {
@@ -39,6 +41,7 @@ export interface IntegrityCounts {
   cut: number;
   tabSwitch: number;
   contextMenu: number;
+  screenshot: number;
 }
 
 const EMPTY: IntegrityCounts = {
@@ -47,6 +50,7 @@ const EMPTY: IntegrityCounts = {
   cut: 0,
   tabSwitch: 0,
   contextMenu: 0,
+  screenshot: 0,
 };
 
 const KEY: Record<IntegrityEvent, keyof IntegrityCounts> = {
@@ -55,6 +59,7 @@ const KEY: Record<IntegrityEvent, keyof IntegrityCounts> = {
   cut: "cut",
   "tab-switch": "tabSwitch",
   "context-menu": "contextMenu",
+  screenshot: "screenshot",
 };
 
 export function useIntegrityMonitor(active: boolean) {
@@ -73,16 +78,40 @@ export function useIntegrityMonitor(active: boolean) {
     return () => clearTimeout(id);
   }, [notice]);
 
-  // Flag leaving the tab/window while a solve is still in progress.
+  // Flag leaving the tab/window and likely screen captures during a live solve.
   useEffect(() => {
     if (!active) return;
+
+    // Switching to another tab in the same window.
     const onVisibility = () => {
-      if (document.visibilityState === "hidden") {
-        record("tab-switch");
+      if (document.visibilityState === "hidden") record("tab-switch");
+    };
+
+    // The window losing focus while the tab is still visible is the reliable
+    // signal for the OS snip overlay (Win+Shift+S) and app switching — the
+    // snip tool steals focus, which is exactly why the problem also blurs.
+    const onBlur = () => {
+      if (document.visibilityState === "visible") record("screenshot");
+    };
+
+    // PrintScreen only reliably surfaces on keyup in Chromium browsers.
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (
+        e.key === "PrintScreen" ||
+        (e.shiftKey && e.metaKey && (e.key === "s" || e.key === "S"))
+      ) {
+        record("screenshot");
       }
     };
+
     document.addEventListener("visibilitychange", onVisibility);
-    return () => document.removeEventListener("visibilitychange", onVisibility);
+    window.addEventListener("blur", onBlur);
+    window.addEventListener("keyup", onKeyUp);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("blur", onBlur);
+      window.removeEventListener("keyup", onKeyUp);
+    };
   }, [active, record]);
 
   const total =
@@ -90,7 +119,8 @@ export function useIntegrityMonitor(active: boolean) {
     counts.copy +
     counts.cut +
     counts.tabSwitch +
-    counts.contextMenu;
+    counts.contextMenu +
+    counts.screenshot;
 
   return { counts, notice, total, flagged: total > FLAG_LIMIT, record };
 }

@@ -22,22 +22,45 @@ const FILE_EXT: Record<LanguageId, string> = {
 
 type Judgement = {
   mode: "run" | "submit";
-  status: "AC" | "WA";
+  status: "AC" | "WA" | "RAN"; // RAN = ran on custom input (no verdict)
+  input: string;
 } | null;
 
+interface Submission {
+  id: number;
+  language: string;
+  status: "AC" | "WA";
+  clock: string;
+  detail: string;
+}
+
 export default function ArenaWorkspace({
+  slug,
   problem,
   sampleInput,
   sampleOutput,
 }: {
+  slug: string;
   problem: ReactNode;
   sampleInput: string;
   sampleOutput: string;
 }) {
+  const codeKey = (lang: LanguageId) => `cp-arena:code:${slug}:${lang}`;
+  const loadCode = (lang: LanguageId) => {
+    if (typeof window === "undefined") return STARTER_CODE[lang];
+    try {
+      return localStorage.getItem(codeKey(lang)) ?? STARTER_CODE[lang];
+    } catch {
+      return STARTER_CODE[lang];
+    }
+  };
+
   const [language, setLanguage] = useState<LanguageId>("cpp");
-  const [code, setCode] = useState<string>(STARTER_CODE.cpp);
+  const [code, setCode] = useState<string>(() => loadCode("cpp"));
+  const [customInput, setCustomInput] = useState(sampleInput);
   const [running, setRunning] = useState(false);
   const [judgement, setJudgement] = useState<Judgement>(null);
+  const [history, setHistory] = useState<Submission[]>([]);
   const [elapsed, setElapsed] = useState(0);
   const [mySolveSeconds, setMySolveSeconds] = useState<number | null>(null);
   const [myLanguage, setMyLanguage] = useState<LanguageId>("cpp");
@@ -82,6 +105,16 @@ export default function ArenaWorkspace({
     };
   }, []);
 
+  // Autosave the draft per problem + language so a refresh doesn't lose work.
+  useEffect(() => {
+    const id = setTimeout(() => {
+      try {
+        localStorage.setItem(`cp-arena:code:${slug}:${language}`, code);
+      } catch {}
+    }, 400);
+    return () => clearTimeout(id);
+  }, [code, language, slug]);
+
   // Placeholder verdict: the real judge (Piston sandbox via /api/submit) isn't
   // wired yet, so a solution counts as accepted once it meaningfully diverges
   // from the starter template. Swap this for the sandbox response later.
@@ -89,22 +122,37 @@ export default function ArenaWorkspace({
     code.trim() !== STARTER_CODE[language].trim() && code.trim().length > 24;
 
   const changeLanguage = (next: LanguageId) => {
-    setCode((current) =>
-      current.trim() === STARTER_CODE[language].trim()
-        ? STARTER_CODE[next]
-        : current,
-    );
+    // Persist the current draft before swapping so switching never loses work.
+    try {
+      localStorage.setItem(`cp-arena:code:${slug}:${language}`, code);
+    } catch {}
+    setCode(loadCode(next));
     setLanguage(next);
   };
 
-  const resetCode = () => setCode(STARTER_CODE[language]);
+  const resetCode = () => {
+    setCode(STARTER_CODE[language]);
+    try {
+      localStorage.removeItem(codeKey(language));
+    } catch {}
+  };
 
-  const runSample = () => {
+  const run = () => {
     if (running) return;
     setRunning(true);
     setJudgement(null);
+    const custom =
+      customInput.trim() !== "" && customInput.trim() !== sampleInput.trim();
     timeoutRef.current = setTimeout(() => {
-      setJudgement({ mode: "run", status: looksAttempted() ? "AC" : "WA" });
+      if (custom) {
+        setJudgement({ mode: "run", status: "RAN", input: customInput });
+      } else {
+        setJudgement({
+          mode: "run",
+          status: looksAttempted() ? "AC" : "WA",
+          input: sampleInput,
+        });
+      }
       setRunning(false);
     }, 700);
   };
@@ -113,15 +161,49 @@ export default function ArenaWorkspace({
     if (running || solved) return;
     setRunning(true);
     setJudgement(null);
+    const solveSecs = elapsed;
+    const flagsNow = integrity.total;
     timeoutRef.current = setTimeout(() => {
       if (looksAttempted()) {
         frozenRef.current = true;
-        setMySolveSeconds(elapsed);
+        setMySolveSeconds(solveSecs);
         setMyLanguage(language);
-        setMyFlags(integrity.total);
-        setJudgement({ mode: "submit", status: "AC" });
+        setMyFlags(flagsNow);
+        setJudgement({ mode: "submit", status: "AC", input: sampleInput });
+
+        let detail: string;
+        if (flagsNow > FLAG_LIMIT) {
+          detail = `Flagged ${flagsNow}× · +${BASE_POINTS} pts`;
+        } else {
+          const times = [
+            ...INITIAL_STANDINGS.map((s) => s.timeSeconds),
+            solveSecs,
+          ].sort((a, b) => a - b);
+          const rank = times.indexOf(solveSecs) + 1;
+          detail = `${ordinal(rank)} · +${pointsForRank(rank)} pts`;
+        }
+        setHistory((h) => [
+          {
+            id: h.length + 1,
+            language: languageLabel(language),
+            status: "AC",
+            clock: formatClock(solveSecs),
+            detail,
+          },
+          ...h,
+        ]);
       } else {
-        setJudgement({ mode: "submit", status: "WA" });
+        setJudgement({ mode: "submit", status: "WA", input: sampleInput });
+        setHistory((h) => [
+          {
+            id: h.length + 1,
+            language: languageLabel(language),
+            status: "WA",
+            clock: formatClock(solveSecs),
+            detail: "Wrong Answer on sample",
+          },
+          ...h,
+        ]);
       }
       setRunning(false);
     }, 1100);
@@ -185,7 +267,7 @@ export default function ArenaWorkspace({
         </section>
 
         {/* Editor + console */}
-        <section className="space-y-4 lg:sticky lg:top-28">
+        <section className="space-y-4">
           <div className="overflow-hidden rounded-2xl border border-hairline shadow-sm">
             {/* IDE title bar */}
             <div className="flex items-center gap-3 border-b border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 py-2.5">
@@ -264,10 +346,17 @@ export default function ArenaWorkspace({
                 <ResetIcon />
                 Reset
               </button>
+              <span
+                title="Your code is auto-saved in this browser."
+                className="hidden items-center gap-1.5 font-mono text-[11px] text-[var(--ide-ink-dim)] sm:inline-flex"
+              >
+                <CheckIcon />
+                Auto-saved
+              </span>
               <div className="ml-auto flex items-center gap-2.5">
                 <button
                   type="button"
-                  onClick={runSample}
+                  onClick={run}
                   disabled={running}
                   className="inline-flex items-center gap-2 rounded-lg border border-bronze/60 px-4 py-2 text-sm font-semibold text-bronze transition-colors hover:bg-bronze/10 disabled:cursor-not-allowed disabled:opacity-50"
                 >
@@ -300,6 +389,16 @@ export default function ArenaWorkspace({
             </div>
           </div>
 
+          <CustomInputPanel
+            value={customInput}
+            onChange={setCustomInput}
+            onResetToSample={() => setCustomInput(sampleInput)}
+            isCustom={
+              customInput.trim() !== "" &&
+              customInput.trim() !== sampleInput.trim()
+            }
+          />
+
           {integrity.total > 0 && (
             <div
               role="status"
@@ -325,7 +424,6 @@ export default function ArenaWorkspace({
           <Console
             running={running}
             judgement={judgement}
-            sampleInput={sampleInput}
             sampleOutput={sampleOutput}
             myRank={myRank}
             myPoints={myPoints}
@@ -333,6 +431,8 @@ export default function ArenaWorkspace({
             flagCount={myFlags}
             solveClock={mySolveSeconds != null ? formatClock(mySolveSeconds) : ""}
           />
+
+          <SubmissionsPanel history={history} />
         </section>
       </div>
 
@@ -347,7 +447,6 @@ export default function ArenaWorkspace({
 function Console({
   running,
   judgement,
-  sampleInput,
   sampleOutput,
   myRank,
   myPoints,
@@ -357,7 +456,6 @@ function Console({
 }: {
   running: boolean;
   judgement: Judgement;
-  sampleInput: string;
   sampleOutput: string;
   myRank: number | null;
   myPoints: number | null;
@@ -431,6 +529,17 @@ function Console({
               </p>
             </div>
           )
+        ) : judgement?.status === "RAN" ? (
+          <div className="space-y-3">
+            <p className="text-sm font-semibold text-[var(--ide-ink-strong)]">
+              Compiled &amp; ran on your custom input.
+            </p>
+            <IoBlock label="Input" value={judgement.input} />
+            <p className="text-[11px] text-[var(--ide-ink-dim)]">
+              Program output appears here once the Piston judge is wired — there
+              is no expected answer to check custom input against.
+            </p>
+          </div>
         ) : judgement ? (
           <div className="space-y-3">
             {judgement.status === "WA" && (
@@ -438,7 +547,7 @@ function Console({
                 Wrong Answer on sample case.
               </p>
             )}
-            <IoBlock label="Input" value={sampleInput} />
+            <IoBlock label="Input" value={judgement.input} />
             <IoBlock label="Expected" value={sampleOutput} />
             <IoBlock
               label="Your output"
@@ -510,14 +619,127 @@ function VerdictBadge({
   const map = {
     AC: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
     WA: "bg-red-500/15 text-red-600 dark:text-red-400",
+    RAN: "bg-bronze/15 text-bronze",
   } as const;
-  const label = judgement.status === "AC" ? "Accepted" : "Wrong Answer";
+  const label =
+    judgement.status === "AC"
+      ? "Accepted"
+      : judgement.status === "WA"
+        ? "Wrong Answer"
+        : "Ran";
   return (
     <span
       className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${map[judgement.status]}`}
     >
       {label}
     </span>
+  );
+}
+
+/* --- Custom input --- */
+
+function CustomInputPanel({
+  value,
+  onChange,
+  onResetToSample,
+  isCustom,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onResetToSample: () => void;
+  isCustom: boolean;
+}) {
+  return (
+    <details className="group overflow-hidden rounded-2xl border border-hairline bg-panel shadow-sm">
+      <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 [&::-webkit-details-marker]:hidden">
+        <span className="text-bronze">
+          <TerminalIcon />
+        </span>
+        <span className="text-sm font-semibold text-chocolate">
+          Custom input
+        </span>
+        {isCustom ? (
+          <span className="rounded-full bg-bronze/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-bronze">
+            custom
+          </span>
+        ) : (
+          <span className="text-xs text-charcoal/45">using sample</span>
+        )}
+        <ChevronIcon className="ml-auto text-charcoal/40 transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="border-t border-hairline p-3">
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          spellCheck={false}
+          rows={4}
+          placeholder="Enter stdin to Run against…"
+          className="w-full resize-y rounded-lg border border-[var(--ide-border)] bg-[var(--ide-body)] px-3 py-2 font-mono text-xs text-[var(--ide-ink-strong)] outline-none focus:border-bronze"
+        />
+        <div className="mt-2 flex items-center justify-between gap-3">
+          <p className="text-[11px] text-charcoal/50">
+            Run uses this input. Submit always judges the hidden tests.
+          </p>
+          <button
+            type="button"
+            onClick={onResetToSample}
+            className="shrink-0 text-[11px] font-medium text-bronze hover:underline"
+          >
+            Reset to sample
+          </button>
+        </div>
+      </div>
+    </details>
+  );
+}
+
+/* --- Submission history --- */
+
+function SubmissionsPanel({ history }: { history: Submission[] }) {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-hairline bg-panel shadow-sm">
+      <div className="flex items-center justify-between border-b border-hairline px-4 py-3">
+        <h3 className="font-display text-sm font-bold text-chocolate">
+          Your submissions
+        </h3>
+        <span className="font-mono text-[11px] text-charcoal/45">
+          {history.length} this session
+        </span>
+      </div>
+      {history.length === 0 ? (
+        <p className="px-4 py-5 text-xs text-charcoal/50">
+          No submissions yet — hit Submit to send your solution to the judge.
+        </p>
+      ) : (
+        <ul className="divide-y divide-hairline">
+          {history.map((s) => (
+            <li
+              key={s.id}
+              className="flex items-center gap-3 px-4 py-2.5 text-sm"
+            >
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                  s.status === "AC"
+                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                    : "bg-red-500/15 text-red-600 dark:text-red-400"
+                }`}
+              >
+                {s.status}
+              </span>
+              <span className="font-mono text-xs text-charcoal/60">
+                {s.language}
+              </span>
+              <span className="font-mono text-xs text-charcoal/45">
+                {s.clock}
+              </span>
+              <span className="ml-auto text-right text-xs font-medium text-charcoal/70">
+                {s.detail}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -816,6 +1038,23 @@ function ShieldIcon() {
   return (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    </svg>
+  );
+}
+
+function TerminalIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m4 17 6-6-6-6" />
+      <path d="M12 19h8" />
+    </svg>
+  );
+}
+
+function ChevronIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m6 9 6 6 6-6" />
     </svg>
   );
 }

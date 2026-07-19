@@ -54,7 +54,7 @@ export default function CpArenaPage() {
     );
   }
 
-  const { meta, body, sampleInput, sampleOutput } = challenge;
+  const { slug, meta, body, sampleInput, sampleOutput } = challenge;
   const difficultyStyle =
     DIFFICULTY_STYLES[meta.difficulty] ?? "bg-bronze/15 text-bronze";
 
@@ -116,6 +116,7 @@ export default function CpArenaPage() {
         <ArenaRules />
 
         <ArenaWorkspace
+          slug={slug}
           problem={<ProblemStatement body={body} />}
           sampleInput={sampleInput}
           sampleOutput={sampleOutput}
