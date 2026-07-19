@@ -23,6 +23,10 @@
   --font-mono: var(--font-jetbrains-mono);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background-color: var(--color-cream);
   color: var(--color-charcoal);
