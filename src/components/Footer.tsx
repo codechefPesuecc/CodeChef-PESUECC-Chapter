@@ -6,6 +6,7 @@ const explore = [
   { href: "/cp-arena", label: "CP Arena" },
   { href: "/initiatives", label: "Initiatives" },
   { href: "/team", label: "Team" },
+  { href: "/newsroom", label: "Newsroom" },
 ];
 
 const initiatives = [

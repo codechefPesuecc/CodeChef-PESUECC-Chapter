@@ -10,6 +10,7 @@ const links = [
   { href: "/cp-arena", label: "CP Arena" },
   { href: "/initiatives", label: "Initiatives" },
   { href: "/team", label: "Team" },
+  { href: "/newsroom", label: "Newsroom" },
 ];
 
 export default function Navbar() {

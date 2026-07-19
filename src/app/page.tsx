@@ -30,20 +30,64 @@ const pillars = [
   },
 ];
 
+const benefits = [
+  {
+    icon: <MentorIcon />,
+    title: "Structured Mentorship",
+    body: "Weekly guidance from seniors and problem setters who've been exactly where you're headed.",
+  },
+  {
+    icon: <TrophyIcon />,
+    title: "Monthly Cash Bounties",
+    body: "Top solvers on the CP Arena leaderboard earn real cash rewards every single month.",
+  },
+  {
+    icon: <RocketIcon />,
+    title: "Real Production Projects",
+    body: "Build and ship platforms used by hundreds of students — not throwaway tutorials.",
+  },
+  {
+    icon: <GlobeIcon />,
+    title: "Inter-College Network",
+    body: "Compete and connect with programmers across campuses through our open events.",
+  },
+];
+
+// Sample testimonials — replace the quotes and names with real member voices.
+const testimonials = [
+  {
+    quote:
+      "The daily Problem of the Day turned practice into a habit, and the leaderboard keeps it competitive. I landed my first internship this year.",
+    name: "Rahul K.",
+    role: "3rd-year CSE",
+    initials: "RK",
+  },
+  {
+    quote:
+      "I came for the bounties and stayed for the mentorship. I went from fearing DP to setting problems myself.",
+    name: "Sneha M.",
+    role: "2nd-year ECE",
+    initials: "SM",
+  },
+  {
+    quote:
+      "Building Eclipse with the core team taught me more about shipping real software than any course did.",
+    name: "Arjun P.",
+    role: "Core Developer",
+    initials: "AP",
+  },
+];
+
 export default function Home() {
   return (
     <main className="flex-1">
-      {/* Constant branded backdrop — fixed behind the whole homepage */}
-      <div aria-hidden className="fixed inset-0 -z-10">
-        <Image
-          src="/homepage.png"
-          alt=""
-          fill
-          priority
-          unoptimized
-          className="object-cover"
-        />
-      </div>
+      {/* Constant branded backdrop — raw, unoptimized PNG loaded straight via
+          CSS (no next/image, no optimization pipeline, original bytes served). */}
+      <div
+        aria-hidden
+        className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/homepage.png')" }}
+      />
 
       {/* Hero */}
       <section className="relative -mt-24 overflow-hidden pt-24">
@@ -170,6 +214,83 @@ export default function Home() {
         </div>
       </section>
 
+      {/* What you get */}
+      <section className="mx-auto max-w-6xl px-6 pb-12 sm:pb-16">
+        <Reveal className="max-w-2xl">
+          <span className="font-mono text-xs font-semibold uppercase tracking-wider text-bronze">
+            Why join us
+          </span>
+          <h2 className="mt-3 text-balance font-display text-3xl font-bold tracking-tight text-chocolate sm:text-4xl">
+            What you get as a member
+          </h2>
+          <p className="mt-3 text-pretty text-charcoal/70">
+            More than a club — a system built to make you a sharper engineer.
+          </p>
+        </Reveal>
+
+        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {benefits.map((benefit, i) => (
+            <Reveal key={benefit.title} delay={i * 0.08} className="h-full">
+              <div className="h-full rounded-2xl border border-hairline bg-panel p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-bronze/40 hover:shadow-lg">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-bronze/10 text-bronze">
+                  {benefit.icon}
+                </div>
+                <h3 className="mt-5 font-display text-lg font-bold text-chocolate">
+                  {benefit.title}
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-charcoal/70">
+                  {benefit.body}
+                </p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* Member voices */}
+      <section className="mx-auto max-w-6xl px-6 py-20 sm:py-24">
+        <Reveal className="max-w-2xl">
+          <span className="font-mono text-xs font-semibold uppercase tracking-wider text-bronze">
+            Member voices
+          </span>
+          <h2 className="mt-3 text-balance font-display text-3xl font-bold tracking-tight text-chocolate sm:text-4xl">
+            What our members say
+          </h2>
+          <p className="mt-3 text-pretty text-charcoal/70">
+            Real growth, in their words.
+          </p>
+        </Reveal>
+
+        <div className="mt-10 grid gap-6 md:grid-cols-3">
+          {testimonials.map((testimonial, i) => (
+            <Reveal key={testimonial.name} delay={i * 0.1} className="h-full">
+              <figure className="flex h-full flex-col rounded-2xl border border-hairline bg-panel p-8 shadow-sm">
+                <span
+                  aria-hidden
+                  className="font-display text-5xl leading-none text-bronze/30"
+                >
+                  &ldquo;
+                </span>
+                <blockquote className="mt-2 flex-1 text-pretty leading-7 text-charcoal/80">
+                  {testimonial.quote}
+                </blockquote>
+                <figcaption className="mt-6 flex items-center gap-3 border-t border-hairline pt-5">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-bronze/15 font-display text-sm font-bold text-bronze">
+                    {testimonial.initials}
+                  </span>
+                  <div>
+                    <div className="text-sm font-semibold text-chocolate">
+                      {testimonial.name}
+                    </div>
+                    <div className="text-xs text-charcoal/60">{testimonial.role}</div>
+                  </div>
+                </figcaption>
+              </figure>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
       {/* Closing CTA */}
       <section className="mx-auto max-w-6xl px-6 pb-24">
         <Reveal>
@@ -269,6 +390,87 @@ function UsersIcon() {
       <circle cx="9" cy="7" r="4" />
       <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
+
+/* --- Benefit icons --- */
+
+function MentorIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21.42 10.42 12 15 2.58 10.42 12 5.83l9.42 4.59Z" />
+      <path d="M22 10.5V15" />
+      <path d="M6 12.5V17c0 1.66 2.69 3 6 3s6-1.34 6-3v-4.5" />
+    </svg>
+  );
+}
+
+function TrophyIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M8 21h8" />
+      <path d="M12 17v4" />
+      <path d="M7 4h10v5a5 5 0 0 1-10 0z" />
+      <path d="M17 5h2a2 2 0 0 1 2 2 3 3 0 0 1-3 3" />
+      <path d="M7 5H5a2 2 0 0 0-2 2 3 3 0 0 0 3 3" />
+    </svg>
+  );
+}
+
+function RocketIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
+      <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
+      <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
+      <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
+    </svg>
+  );
+}
+
+function GlobeIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="M2 12h20" />
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
     </svg>
   );
 }
