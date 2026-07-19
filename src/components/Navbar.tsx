@@ -78,7 +78,7 @@ export default function Navbar() {
             href="/cp-arena"
             className="rounded-full bg-chocolate px-5 py-2.5 text-sm font-semibold text-cream shadow-[0_4px_20px_-2px_rgba(166,124,82,0.55)] ring-1 ring-bronze/50 transition-shadow hover:shadow-[0_6px_28px_0_rgba(166,124,82,0.75)]"
           >
-            Enter Arena
+            Login
           </Link>
 
           <button
