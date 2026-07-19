@@ -39,9 +39,22 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${spaceGrotesk.variable} ${inter.variable} ${jetBrainsMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col bg-cream font-sans text-charcoal">
+      <head>
+        {/*
+         * Apply the persisted theme before first paint so there is no flash of
+         * the wrong mode on load. Runs synchronously during HTML parsing and
+         * sets `.dark` on <html>; the Navbar toggle keeps it in sync afterwards.
+         */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{if(localStorage.getItem("theme")==="dark")document.documentElement.classList.add("dark")}catch(e){}})()`,
+          }}
+        />
+      </head>
+      <body className="flex min-h-full flex-col font-sans">
         <MotionProvider>
           <SmoothScroll />
           <ScrollProgress />

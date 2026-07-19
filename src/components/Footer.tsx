@@ -35,11 +35,11 @@ export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="relative mt-auto overflow-hidden bg-chocolate text-cream/80">
+    <footer className="relative mt-auto overflow-hidden bg-chocolate text-cream/80 dark:bg-[#0f0b07]">
       {/* Depth: vertical gradient + soft bronze glow at the top edge */}
       <div
         aria-hidden
-        className="absolute inset-0 bg-gradient-to-b from-chocolate to-[#2a1f18]"
+        className="absolute inset-0 bg-gradient-to-b from-chocolate to-[#2a1f18] dark:from-[#0f0b07] dark:to-[#181109]"
       />
       <div
         aria-hidden

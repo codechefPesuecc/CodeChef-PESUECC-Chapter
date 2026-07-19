@@ -81,14 +81,6 @@ const testimonials = [
 export default function Home() {
   return (
     <main className="flex-1">
-      {/* Constant branded backdrop — raw, unoptimized PNG loaded straight via
-          CSS (no next/image, no optimization pipeline, original bytes served). */}
-      <div
-        aria-hidden
-        className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/homepage.png')" }}
-      />
-
       {/* Hero */}
       <section className="relative -mt-24 overflow-hidden pt-24">
         {/* Soft bronze glow for depth */}
@@ -124,7 +116,7 @@ export default function Home() {
                 </Link>
                 <Link
                   href="/team"
-                  className="inline-flex items-center gap-2 rounded-lg border border-brown px-5 py-3 text-sm font-semibold text-brown transition-colors hover:bg-brown hover:text-white"
+                  className="inline-flex items-center gap-2 rounded-lg border border-brown px-5 py-3 text-sm font-semibold text-brown transition-colors hover:bg-brown hover:text-white dark:hover:text-[#16110c]"
                 >
                   Meet the Team
                 </Link>
@@ -143,9 +135,9 @@ export default function Home() {
                   />
                   <div
                     aria-hidden
-                    className="absolute inset-0 bg-gradient-to-t from-chocolate/60 via-transparent to-transparent"
+                    className="absolute inset-0 bg-gradient-to-t from-chocolate/60 via-transparent to-transparent dark:from-[#0d0906]/70"
                   />
-                  <div className="absolute bottom-3 left-3 inline-flex items-center gap-2 rounded-full bg-chocolate/70 px-3 py-1 backdrop-blur">
+                  <div className="absolute bottom-3 left-3 inline-flex items-center gap-2 rounded-full bg-chocolate/70 px-3 py-1 backdrop-blur dark:bg-[#0d0906]/70">
                     <span className="h-1.5 w-1.5 rounded-full bg-bronze" />
                     <span className="font-mono text-xs text-cream">The Dev Team</span>
                   </div>
@@ -294,7 +286,7 @@ export default function Home() {
       {/* Closing CTA */}
       <section className="mx-auto max-w-6xl px-6 pb-24">
         <Reveal>
-          <div className="relative overflow-hidden rounded-3xl bg-chocolate px-8 py-16 text-center shadow-xl sm:px-16">
+          <div className="relative overflow-hidden rounded-3xl bg-chocolate px-8 py-16 text-center shadow-xl sm:px-16 dark:bg-[#1e1610] dark:ring-1 dark:ring-hairline">
             <div
               aria-hidden
               className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-bronze/25 blur-3xl"

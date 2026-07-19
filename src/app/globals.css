@@ -1,6 +1,13 @@
 @import "tailwindcss";
 
 /*
+ * Enable class-based dark mode: the `dark:` variant matches when a `.dark`
+ * class is present on <html> (toggled by the Navbar theme switch), instead of
+ * Tailwind v4's default `prefers-color-scheme` media query.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
  * CodeChef PESUECC Chapter — brand system.
  * Palette and typography per DESIGN.md. Static color tokens live in `@theme`
  * so they emit `--color-*` custom properties AND generate utilities
@@ -23,17 +30,39 @@
   --font-mono: var(--font-jetbrains-mono);
 }
 
+/*
+ * Site canvas + backdrop swap by theme. Because every brand utility resolves to
+ * `var(--color-*)`, redefining those variables under `.dark` re-themes the whole
+ * site at once. `--color-cream` intentionally stays light in both themes: it is
+ * the "ink on dark surfaces" role (text-cream in the footer / CTA), while the
+ * page canvas is driven separately by `--site-canvas`.
+ */
+:root {
+  --site-canvas: var(--color-cream);
+  --site-backdrop: url("/lightmode.png");
+}
+
+.dark {
+  --color-brown: #b58a5f; /* lighter warm taupe for text/borders on dark */
+  --color-chocolate: #f7f0e6; /* headings become the lightest ink */
+  --color-bronze: #bd8a4a; /* brighter copper accent, matches darkmode.png */
+  --color-charcoal: #e8dfd2; /* body typography, light on dark */
+  --color-panel: #221a12; /* elevated card surface */
+  --color-hairline: #3a2c20; /* borders & hairline dividers */
+  --site-canvas: #16110c; /* deep warm near-black page canvas */
+  --site-backdrop: url("/darkmode.png");
+}
+
 html {
   scroll-behavior: smooth;
 }
 
 body {
-  background-color: var(--color-cream);
-  background-image: radial-gradient(
-    55% 40% at 50% -5%,
-    rgba(166, 124, 82, 0.08),
-    transparent 70%
-  );
+  background-color: var(--site-canvas);
+  background-image: var(--site-backdrop);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   background-attachment: fixed;
   color: var(--color-charcoal);
 }
