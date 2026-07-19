@@ -4,9 +4,9 @@ import CountUp from "@/components/CountUp";
 import Reveal from "@/components/Reveal";
 
 const metrics = [
-  { prefix: "", value: 500, suffix: "+", label: "Active Developers" },
+  { prefix: "", value: 50, suffix: "+", label: "Active Developers" },
   { prefix: "", value: 3, suffix: "+", label: "Production Platforms Built" },
-  { prefix: "$", value: 1000, suffix: "+", label: "Monthly Rewards Distributed" },
+  { prefix: "Rs ", value: 1500, suffix: "+", label: "Monthly CP Arena Rewards" },
 ];
 
 const pillars = [
@@ -33,28 +33,24 @@ const pillars = [
 export default function Home() {
   return (
     <main className="flex-1">
+      {/* Constant branded backdrop — fixed behind the whole homepage */}
+      <div aria-hidden className="fixed inset-0 -z-10">
+        <Image
+          src="/homepage.png"
+          alt=""
+          fill
+          priority
+          unoptimized
+          className="object-cover"
+        />
+      </div>
+
       {/* Hero */}
       <section className="relative -mt-24 overflow-hidden pt-24">
-        {/* Branded background image, full quality */}
-        <div aria-hidden className="absolute inset-0 z-0">
-          <Image
-            src="/homepage.png"
-            alt=""
-            fill
-            priority
-            unoptimized
-            className="object-cover object-top"
-          />
-        </div>
         {/* Soft bronze glow for depth */}
         <div
           aria-hidden
           className="absolute -left-24 top-10 z-0 h-96 w-96 rounded-full bg-bronze/20 blur-3xl"
-        />
-        {/* Fade into the cream canvas */}
-        <div
-          aria-hidden
-          className="absolute inset-0 z-0 bg-gradient-to-b from-transparent via-transparent to-cream"
         />
 
         <div className="relative z-10 mx-auto max-w-6xl px-6 pt-8 pb-32 sm:pt-14 sm:pb-40">
