@@ -11,6 +11,13 @@ import { useCallback, useEffect, useState } from "react";
  * the submission for server-side review. Real enforcement stays server-side.
  */
 
+/**
+ * Accumulating MORE than this many flags removes a solver from the day's top 10
+ * — an accepted solve then earns only the 100-point base instead of the speed
+ * bounty.
+ */
+export const FLAG_LIMIT = 5;
+
 export type IntegrityEvent =
   | "paste"
   | "copy"
@@ -85,5 +92,5 @@ export function useIntegrityMonitor(active: boolean) {
     counts.tabSwitch +
     counts.contextMenu;
 
-  return { counts, notice, total, record };
+  return { counts, notice, total, flagged: total > FLAG_LIMIT, record };
 }

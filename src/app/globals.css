@@ -200,6 +200,13 @@ button:focus-visible,
   border: none;
   padding: 0;
 }
+/* Screenshot deterrent: don't render the problem when printing / print-to-PDF. */
+@media print {
+  .arena-no-print {
+    display: none !important;
+  }
+}
+
 .arena-prose table {
   width: 100%;
   border-collapse: collapse;

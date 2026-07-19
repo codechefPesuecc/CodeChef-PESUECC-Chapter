@@ -9,6 +9,8 @@ const RULES: string[] = [
   "The on-screen timer is only indicative — your official solve time is recorded on the server the moment your submission is Accepted.",
   "Only your first Accepted submission counts toward the leaderboard.",
   "Copy, paste and right-click are disabled inside the arena, and switching tabs during a live solve is recorded for review.",
+  "Accumulating more than 5 integrity flags (blocked paste/copy attempts, tab switches) removes you from that day's top 10 — an accepted solve then earns only the 100-point base.",
+  "The problem statement can't be selected or copied, it's watermarked with your identity, and it blurs when you leave the tab — leaked problems are traceable back to you.",
   "Write your own code. Plagiarism, sharing solutions, or automating submissions leads to disqualification and forfeiting the bounty.",
   "Don't probe or exploit the judge, and don't attempt to extract the hidden test cases.",
 ];

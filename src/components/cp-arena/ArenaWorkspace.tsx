@@ -11,8 +11,8 @@ import {
   type LanguageId,
   type Solver,
 } from "./mockData";
-import { BOUNTY_LADDER, ordinal, pointsForRank } from "@/lib/points";
-import { useIntegrityMonitor } from "./useIntegrityMonitor";
+import { BASE_POINTS, BOUNTY_LADDER, ordinal, pointsForRank } from "@/lib/points";
+import { FLAG_LIMIT, useIntegrityMonitor } from "./useIntegrityMonitor";
 
 const FILE_EXT: Record<LanguageId, string> = {
   cpp: "cpp",
@@ -41,6 +41,8 @@ export default function ArenaWorkspace({
   const [elapsed, setElapsed] = useState(0);
   const [mySolveSeconds, setMySolveSeconds] = useState<number | null>(null);
   const [myLanguage, setMyLanguage] = useState<LanguageId>("cpp");
+  const [myFlags, setMyFlags] = useState(0);
+  const [pageFocused, setPageFocused] = useState(true);
 
   const startRef = useRef<number | null>(null);
   const frozenRef = useRef(false);
@@ -62,6 +64,23 @@ export default function ArenaWorkspace({
 
   const solved = mySolveSeconds != null;
   const integrity = useIntegrityMonitor(!solved);
+
+  // Blur the problem when the window/tab loses focus — a screenshot deterrent
+  // (e.g. the OS snip overlay steals focus, so it captures a blurred panel).
+  useEffect(() => {
+    const focus = () => setPageFocused(true);
+    const blur = () => setPageFocused(false);
+    const visibility = () =>
+      setPageFocused(document.visibilityState === "visible");
+    window.addEventListener("focus", focus);
+    window.addEventListener("blur", blur);
+    document.addEventListener("visibilitychange", visibility);
+    return () => {
+      window.removeEventListener("focus", focus);
+      window.removeEventListener("blur", blur);
+      document.removeEventListener("visibilitychange", visibility);
+    };
+  }, []);
 
   // Placeholder verdict: the real judge (Piston sandbox via /api/submit) isn't
   // wired yet, so a solution counts as accepted once it meaningfully diverges
@@ -99,6 +118,7 @@ export default function ArenaWorkspace({
         frozenRef.current = true;
         setMySolveSeconds(elapsed);
         setMyLanguage(language);
+        setMyFlags(integrity.total);
         setJudgement({ mode: "submit", status: "AC" });
       } else {
         setJudgement({ mode: "submit", status: "WA" });
@@ -106,6 +126,11 @@ export default function ArenaWorkspace({
       setRunning(false);
     }, 1100);
   };
+
+  // Too many integrity flags removes you from the day's top 10: an accepted
+  // solve then only earns the 100-point base and is listed as flagged.
+  const flaggedSolve = solved && myFlags > FLAG_LIMIT;
+  const eligibleYou = solved && !flaggedSolve;
 
   // Derive the live board: faster solve durations rank higher (the speed bounty).
   const you: Solver = {
@@ -116,11 +141,16 @@ export default function ArenaWorkspace({
     timeSeconds: mySolveSeconds ?? 0,
     isYou: true,
   };
-  const ranked = [...INITIAL_STANDINGS, ...(solved ? [you] : [])].sort(
+  const ranked = [...INITIAL_STANDINGS, ...(eligibleYou ? [you] : [])].sort(
     (a, b) => a.timeSeconds - b.timeSeconds,
   );
-  const myRank = solved ? ranked.findIndex((s) => s.isYou) + 1 : null;
-  const myPoints = myRank ? pointsForRank(myRank) : null;
+  const myRank = eligibleYou ? ranked.findIndex((s) => s.isYou) + 1 : null;
+  const myPoints = flaggedSolve
+    ? BASE_POINTS
+    : myRank
+      ? pointsForRank(myRank)
+      : null;
+  const flaggedYou: Solver | null = flaggedSolve ? you : null;
 
   return (
     <div className="mt-8 space-y-6">
@@ -128,22 +158,29 @@ export default function ArenaWorkspace({
         {/* Problem statement */}
         <section className="overflow-hidden rounded-2xl border border-hairline bg-panel shadow-sm">
           <PanelBar label="Problem" />
-          <div
-            className="max-h-[560px] overflow-y-auto px-6 py-6 lg:max-h-[720px]"
-            onCopyCapture={(e) => {
-              e.preventDefault();
-              integrity.record("copy");
-            }}
-            onCutCapture={(e) => {
-              e.preventDefault();
-              integrity.record("cut");
-            }}
-            onContextMenu={(e) => {
-              e.preventDefault();
-              integrity.record("context-menu");
-            }}
-          >
-            {problem}
+          <div className="relative">
+            <div
+              // `data-lenis-prevent` lets this panel scroll natively instead of
+              // Lenis hijacking the wheel for the whole page.
+              data-lenis-prevent
+              className="arena-no-print max-h-[560px] select-none overflow-y-auto overscroll-contain px-6 py-6 lg:max-h-[720px]"
+              onCopyCapture={(e) => {
+                e.preventDefault();
+                integrity.record("copy");
+              }}
+              onCutCapture={(e) => {
+                e.preventDefault();
+                integrity.record("cut");
+              }}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                integrity.record("context-menu");
+              }}
+            >
+              {problem}
+            </div>
+            <Watermark tag="@you · PESUECC Arena" />
+            {!pageFocused && <ScreenGuard />}
           </div>
         </section>
 
@@ -191,13 +228,19 @@ export default function ArenaWorkspace({
                   {formatClock(elapsed)}
                 </span>
                 <span
-                  title="Copy, paste and right-click are disabled · tab switches are recorded for review"
+                  title={`Copy, paste and right-click are disabled · tab switches are recorded · more than ${FLAG_LIMIT} flags removes you from the top 10`}
                   className={`inline-flex items-center gap-1.5 font-mono text-xs ${
-                    integrity.total > 0 ? "text-amber-400" : "text-[var(--ide-ink-dim)]"
+                    integrity.flagged
+                      ? "text-red-400"
+                      : integrity.total > 0
+                        ? "text-amber-400"
+                        : "text-[var(--ide-ink-dim)]"
                   }`}
                 >
                   <ShieldIcon />
-                  <span className="hidden sm:inline">Proctored</span>
+                  <span className="hidden sm:inline">
+                    {integrity.flagged ? "Flagged" : "Proctored"}
+                  </span>
                   {integrity.total > 0 && <span>· {integrity.total}</span>}
                 </span>
               </div>
@@ -257,13 +300,25 @@ export default function ArenaWorkspace({
             </div>
           </div>
 
-          {integrity.notice && (
+          {integrity.total > 0 && (
             <div
               role="status"
-              className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-700 dark:text-amber-400"
+              className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium ${
+                integrity.flagged
+                  ? "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400"
+                  : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+              }`}
             >
               <ShieldIcon />
-              {integrity.notice}
+              <span>
+                {integrity.notice ??
+                  (integrity.flagged
+                    ? "Removed from today's top 10 — an accepted solve now earns only the 100-point base."
+                    : "Stay under 5 flags to keep your top-10 bounty eligibility.")}
+              </span>
+              <span className="ml-auto shrink-0 font-mono">
+                {integrity.total}/{FLAG_LIMIT} flags
+              </span>
             </div>
           )}
 
@@ -274,13 +329,15 @@ export default function ArenaWorkspace({
             sampleOutput={sampleOutput}
             myRank={myRank}
             myPoints={myPoints}
+            flagged={flaggedSolve}
+            flagCount={myFlags}
             solveClock={mySolveSeconds != null ? formatClock(mySolveSeconds) : ""}
           />
         </section>
       </div>
 
       <SpeedBounty />
-      <Standings ranked={ranked} />
+      <Standings ranked={ranked} flaggedYou={flaggedYou} />
     </div>
   );
 }
@@ -294,6 +351,8 @@ function Console({
   sampleOutput,
   myRank,
   myPoints,
+  flagged,
+  flagCount,
   solveClock,
 }: {
   running: boolean;
@@ -302,6 +361,8 @@ function Console({
   sampleOutput: string;
   myRank: number | null;
   myPoints: number | null;
+  flagged: boolean;
+  flagCount: number;
   solveClock: string;
 }) {
   return (
@@ -319,26 +380,57 @@ function Console({
             Judging against sample &amp; hidden cases…
           </p>
         ) : judgement?.status === "AC" && judgement.mode === "submit" ? (
-          <div className="space-y-2">
-            <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-              Accepted — all test cases passed.
-            </p>
-            <p className="text-[var(--ide-code)]">
-              You finished{" "}
-              <span className="font-semibold text-[var(--ide-ink-strong)]">
-                {myRank ? ordinal(myRank) : ""}
-              </span>{" "}
-              today in{" "}
-              <span className="font-semibold text-[var(--ide-ink-strong)]">{solveClock}</span> ·{" "}
-              <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                +{myPoints} pts
-              </span>
-            </p>
-            <p className="text-[11px] text-[var(--ide-ink-dim)]">
-              Verdict simulated on the client — the Piston sandbox judge is wired
-              in a later pass.
-            </p>
-          </div>
+          flagged ? (
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                Accepted — all test cases passed.
+              </p>
+              <p className="flex items-center gap-1.5 text-sm font-semibold text-red-600 dark:text-red-400">
+                <ShieldIcon />
+                Flagged {flagCount} times — removed from today&apos;s top 10.
+              </p>
+              <p className="text-[var(--ide-code)]">
+                You solved it in{" "}
+                <span className="font-semibold text-[var(--ide-ink-strong)]">
+                  {solveClock}
+                </span>
+                , but with more than {FLAG_LIMIT} integrity flags this solve earns
+                only the base{" "}
+                <span className="font-semibold text-[var(--ide-ink-strong)]">
+                  +{myPoints} pts
+                </span>
+                .
+              </p>
+              <p className="text-[11px] text-[var(--ide-ink-dim)]">
+                Verdict simulated on the client — the Piston sandbox judge is
+                wired in a later pass.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                Accepted — all test cases passed.
+              </p>
+              <p className="text-[var(--ide-code)]">
+                You finished{" "}
+                <span className="font-semibold text-[var(--ide-ink-strong)]">
+                  {myRank ? ordinal(myRank) : ""}
+                </span>{" "}
+                today in{" "}
+                <span className="font-semibold text-[var(--ide-ink-strong)]">
+                  {solveClock}
+                </span>{" "}
+                ·{" "}
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                  +{myPoints} pts
+                </span>
+              </p>
+              <p className="text-[11px] text-[var(--ide-ink-dim)]">
+                Verdict simulated on the client — the Piston sandbox judge is
+                wired in a later pass.
+              </p>
+            </div>
+          )
         ) : judgement ? (
           <div className="space-y-3">
             {judgement.status === "WA" && (
@@ -470,7 +562,14 @@ function SpeedBounty() {
 
 /* --- Live standings --- */
 
-function Standings({ ranked }: { ranked: Solver[] }) {
+function Standings({
+  ranked,
+  flaggedYou,
+}: {
+  ranked: Solver[];
+  flaggedYou: Solver | null;
+}) {
+  const solvedCount = ranked.length + (flaggedYou ? 1 : 0);
   return (
     <section className="overflow-hidden rounded-2xl border border-hairline bg-panel shadow-sm">
       <div className="flex items-center justify-between border-b border-hairline px-6 py-4">
@@ -479,7 +578,7 @@ function Standings({ ranked }: { ranked: Solver[] }) {
         </h2>
         <span className="inline-flex items-center gap-1.5 text-xs font-medium text-charcoal/60">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-          {ranked.length} solved today
+          {solvedCount} solved today
         </span>
       </div>
       <div className="overflow-x-auto">
@@ -543,6 +642,40 @@ function Standings({ ranked }: { ranked: Solver[] }) {
                 </tr>
               );
             })}
+            {flaggedYou && (
+              <tr className="border-t border-hairline bg-red-500/10">
+                <td className="px-6 py-3">
+                  <span className="font-mono text-sm text-red-500">—</span>
+                </td>
+                <td className="px-3 py-3">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500/80 text-[11px] font-bold text-white">
+                      YOU
+                    </span>
+                    <div className="leading-tight">
+                      <div className="flex items-center gap-2 font-semibold text-chocolate">
+                        {flaggedYou.name}
+                        <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-600 dark:text-red-400">
+                          Flagged
+                        </span>
+                      </div>
+                      <div className="font-mono text-[11px] text-charcoal/50">
+                        @{flaggedYou.handle}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-3 py-3 text-charcoal/70">
+                  {flaggedYou.language}
+                </td>
+                <td className="px-3 py-3 font-mono text-charcoal/70">
+                  {formatClock(flaggedYou.timeSeconds)}
+                </td>
+                <td className="px-6 py-3 text-right font-display font-bold text-brown">
+                  {BASE_POINTS}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -566,6 +699,60 @@ function RankBadge({ rank }: { rank: number }) {
     );
   }
   return <span className="font-mono text-sm text-charcoal/50">{rank}</span>;
+}
+
+/* --- Screenshot deterrents --- */
+
+// Faint, tiled, diagonal identity watermark. Purely a deterrent: it can't stop
+// an OS screenshot, but it makes a leaked capture traceable to the solver.
+// `tag` should become the authenticated handle/SRN once identity lands.
+function Watermark({ tag }: { tag: string }) {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 z-10 select-none overflow-hidden opacity-[0.07]"
+    >
+      <div className="absolute left-1/2 top-1/2 flex h-[170%] w-[170%] -translate-x-1/2 -translate-y-1/2 -rotate-[24deg] flex-wrap content-center justify-center gap-x-12 gap-y-10">
+        {Array.from({ length: 90 }).map((_, i) => (
+          <span
+            key={i}
+            className="whitespace-nowrap font-mono text-xs font-semibold uppercase tracking-wider text-chocolate"
+          >
+            {tag}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Shown over the problem while the window/tab is not focused.
+function ScreenGuard() {
+  return (
+    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-panel/70 text-center backdrop-blur-md">
+      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-bronze/15 text-bronze">
+        <EyeOffIcon />
+      </span>
+      <p className="font-display text-sm font-semibold text-chocolate">
+        Problem hidden
+      </p>
+      <p className="max-w-xs px-6 text-xs text-charcoal/60">
+        Return to this tab to keep solving. Leaving the arena during a live solve
+        is recorded.
+      </p>
+    </div>
+  );
+}
+
+function EyeOffIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+      <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+      <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+      <path d="m2 2 20 20" />
+    </svg>
+  );
 }
 
 /* --- Small UI bits --- */
