@@ -1,0 +1,23 @@
+# The only containerised service is the Piston code-execution sandbox.
+# The Next.js app and its SQLite database run natively on Node (npm run dev).
+#
+#   docker compose up -d               # start the judge
+#   ./scripts/install-runtimes.sh      # one-time: install language runtimes
+#   npm run dev                        # run the app on the host
+#   curl localhost:3000/api/health     # verify app <-> db <-> piston
+services:
+  piston:
+    image: ghcr.io/engineer-man/piston
+    # Piston needs privileged mode for its sandbox isolation (nsjail).
+    privileged: true
+    # Published on localhost so the Node app and the install script can reach it.
+    ports:
+      - "127.0.0.1:2000:2000"
+    volumes:
+      - piston-packages:/piston/packages
+    tmpfs:
+      - /tmp:exec
+    restart: unless-stopped
+
+volumes:
+  piston-packages:

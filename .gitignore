@@ -20,6 +20,13 @@
 # production
 /build
 
+# local database (SQLite / libSQL)
+/data/*
+!/data/.gitkeep
+*.db
+*.db-*
+*.sqlite
+
 # misc
 .DS_Store
 *.pem

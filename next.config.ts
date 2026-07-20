@@ -6,6 +6,8 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: import.meta.dirname,
   },
+  // Keep the native libSQL client out of the bundler; load it at runtime.
+  serverExternalPackages: ["@libsql/client", "libsql"],
 };
 
 export default nextConfig;
