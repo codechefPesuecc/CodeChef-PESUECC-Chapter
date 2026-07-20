@@ -30,7 +30,14 @@ export async function pistonRuntimes(): Promise<PistonRuntime[]> {
 }
 
 export interface PistonExecuteResult {
-  run: { stdout: string; stderr: string; code: number | null; signal: string | null };
+  run: {
+    stdout: string;
+    stderr: string;
+    code: number | null;
+    signal: string | null;
+    wall_time?: number;
+    cpu_time?: number;
+  };
   compile?: { stdout: string; stderr: string; code: number | null };
 }
 
@@ -53,6 +60,9 @@ export async function pistonExecute(params: {
       run_timeout: params.runTimeoutMs ?? 3000,
     }),
   });
-  if (!res.ok) throw new Error(`piston execute ${res.status}`);
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(`piston execute ${res.status}: ${detail}`);
+  }
   return (await res.json()) as PistonExecuteResult;
 }

@@ -92,3 +92,25 @@ export function getAllChallenges(): Challenge[] {
 export function getDailyChallenge(): Challenge | null {
   return getAllChallenges()[0] ?? null;
 }
+
+/** A single published challenge by slug (server-side lookup for the judge). */
+export function getChallengeBySlug(slug: string): Challenge | null {
+  return getAllChallenges().find((c) => c.slug === slug) ?? null;
+}
+
+/**
+ * Parses a frontmatter time limit like "1s", "2 s", or "500ms" into
+ * milliseconds. Falls back to `fallback` when absent or unparseable.
+ */
+export function parseTimeLimitMs(
+  timeLimit: string | undefined,
+  fallback = 2000,
+): number {
+  if (!timeLimit) return fallback;
+  const match = timeLimit.trim().match(/^([\d.]+)\s*(ms|s)?$/i);
+  if (!match) return fallback;
+  const value = parseFloat(match[1]);
+  if (!Number.isFinite(value)) return fallback;
+  const unit = (match[2] ?? "s").toLowerCase();
+  return Math.round(unit === "ms" ? value : value * 1000);
+}

@@ -10,6 +10,11 @@ services:
     image: ghcr.io/engineer-man/piston
     # Piston needs privileged mode for its sandbox isolation (nsjail).
     privileged: true
+    environment:
+      # Raise the per-run cap (default 3000ms) so per-problem time limits up to
+      # 10s are honoured. The submit/run routes pass each problem's own limit.
+      - PISTON_RUN_TIMEOUT=10000
+      - PISTON_COMPILE_TIMEOUT=20000
     # Published on localhost so the Node app and the install script can reach it.
     ports:
       - "127.0.0.1:2000:2000"

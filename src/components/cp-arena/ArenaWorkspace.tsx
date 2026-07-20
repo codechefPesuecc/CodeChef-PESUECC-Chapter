@@ -22,8 +22,12 @@ const FILE_EXT: Record<LanguageId, string> = {
 
 type Judgement = {
   mode: "run" | "submit";
-  status: "AC" | "WA" | "RAN"; // RAN = ran on custom input (no verdict)
+  // RAN = ran on custom input; CE = compile error; TLE = time limit; ERR = infra
+  status: "AC" | "WA" | "RAN" | "CE" | "TLE" | "ERR";
   input: string;
+  output?: string; // real stdout from Piston
+  stderr?: string;
+  message?: string; // error / info text
 } | null;
 
 interface Submission {
@@ -137,24 +141,70 @@ export default function ArenaWorkspace({
     } catch {}
   };
 
-  const run = () => {
+  const run = async () => {
     if (running) return;
     setRunning(true);
     setJudgement(null);
     const custom =
       customInput.trim() !== "" && customInput.trim() !== sampleInput.trim();
-    timeoutRef.current = setTimeout(() => {
-      if (custom) {
-        setJudgement({ mode: "run", status: "RAN", input: customInput });
-      } else {
+    const stdin = custom ? customInput : sampleInput;
+    try {
+      const res = await fetch("/api/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ language, code, stdin, slug }),
+      });
+      const data = await res.json();
+      if (!data.ok) {
         setJudgement({
           mode: "run",
-          status: looksAttempted() ? "AC" : "WA",
-          input: sampleInput,
+          status: "ERR",
+          input: stdin,
+          message: data.error ?? "Run failed.",
+        });
+      } else if (data.compileFailed) {
+        setJudgement({
+          mode: "run",
+          status: "CE",
+          input: stdin,
+          stderr: data.compileStderr,
+        });
+      } else if (data.timedOut) {
+        setJudgement({
+          mode: "run",
+          status: "TLE",
+          input: stdin,
+          output: data.stdout,
+          message: `Exceeded the ${(data.timeLimitMs / 1000).toFixed(1)}s time limit.`,
+        });
+      } else if (custom) {
+        setJudgement({
+          mode: "run",
+          status: "RAN",
+          input: stdin,
+          output: data.stdout,
+          stderr: data.stderr,
+        });
+      } else {
+        const pass = (data.stdout ?? "").trim() === sampleOutput.trim();
+        setJudgement({
+          mode: "run",
+          status: pass ? "AC" : "WA",
+          input: stdin,
+          output: data.stdout,
+          stderr: data.stderr,
         });
       }
+    } catch {
+      setJudgement({
+        mode: "run",
+        status: "ERR",
+        input: stdin,
+        message: "Could not reach the judge.",
+      });
+    } finally {
       setRunning(false);
-    }, 700);
+    }
   };
 
   const submit = () => {
@@ -529,16 +579,37 @@ function Console({
               </p>
             </div>
           )
+        ) : judgement?.status === "ERR" ? (
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-red-600 dark:text-red-400">
+              Couldn&apos;t run your code.
+            </p>
+            <p className="text-[var(--ide-code)]">{judgement.message}</p>
+          </div>
+        ) : judgement?.status === "CE" ? (
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-red-600 dark:text-red-400">
+              Compilation error.
+            </p>
+            <IoBlock label="Compiler" value={judgement.stderr || "—"} tone="bad" />
+          </div>
+        ) : judgement?.status === "TLE" ? (
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">
+              Time Limit Exceeded.
+            </p>
+            <p className="text-[var(--ide-code)]">{judgement.message}</p>
+          </div>
         ) : judgement?.status === "RAN" ? (
           <div className="space-y-3">
             <p className="text-sm font-semibold text-[var(--ide-ink-strong)]">
-              Compiled &amp; ran on your custom input.
+              Ran on your custom input.
             </p>
             <IoBlock label="Input" value={judgement.input} />
-            <p className="text-[11px] text-[var(--ide-ink-dim)]">
-              Program output appears here once the Piston judge is wired — there
-              is no expected answer to check custom input against.
-            </p>
+            <IoBlock label="Output" value={judgement.output || "(no output)"} />
+            {judgement.stderr ? (
+              <IoBlock label="Stderr" value={judgement.stderr} tone="bad" />
+            ) : null}
           </div>
         ) : judgement ? (
           <div className="space-y-3">
@@ -551,15 +622,12 @@ function Console({
             <IoBlock label="Expected" value={sampleOutput} />
             <IoBlock
               label="Your output"
-              value={judgement.status === "AC" ? sampleOutput : "—"}
+              value={judgement.output ?? "—"}
               tone={judgement.status === "AC" ? "ok" : "bad"}
             />
-            {judgement.mode === "run" && (
-              <p className="text-[11px] text-[var(--ide-ink-dim)]">
-                Sample run simulated on the client. Use Submit to lock in your
-                solve time.
-              </p>
-            )}
+            {judgement.stderr ? (
+              <IoBlock label="Stderr" value={judgement.stderr} tone="bad" />
+            ) : null}
           </div>
         ) : (
           <p className="text-[var(--ide-ink-dim)]">
@@ -616,22 +684,28 @@ function VerdictBadge({
     );
   }
   if (!judgement) return null;
+  const red = "bg-red-500/15 text-red-600 dark:text-red-400";
   const map = {
     AC: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
-    WA: "bg-red-500/15 text-red-600 dark:text-red-400",
+    WA: red,
     RAN: "bg-bronze/15 text-bronze",
+    CE: red,
+    TLE: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+    ERR: red,
   } as const;
-  const label =
-    judgement.status === "AC"
-      ? "Accepted"
-      : judgement.status === "WA"
-        ? "Wrong Answer"
-        : "Ran";
+  const labels = {
+    AC: "Accepted",
+    WA: "Wrong Answer",
+    RAN: "Ran",
+    CE: "Compile Error",
+    TLE: "Time Limit Exceeded",
+    ERR: "Error",
+  } as const;
   return (
     <span
       className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${map[judgement.status]}`}
     >
-      {label}
+      {labels[judgement.status]}
     </span>
   );
 }
