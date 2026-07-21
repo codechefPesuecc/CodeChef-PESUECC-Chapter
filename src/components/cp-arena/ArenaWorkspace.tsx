@@ -1,18 +1,25 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import CodeEditor from "./CodeEditor";
 import {
-  INITIAL_STANDINGS,
   LANGUAGES,
   STARTER_CODE,
   formatClock,
   languageLabel,
   type LanguageId,
-  type Solver,
 } from "./mockData";
-import { BASE_POINTS, BOUNTY_LADDER, ordinal, pointsForRank } from "@/lib/points";
+import { BASE_POINTS, BOUNTY_LADDER, ordinal } from "@/lib/points";
 import { FLAG_LIMIT, useIntegrityMonitor } from "./useIntegrityMonitor";
+import { useUser } from "@/components/auth/useUser";
+import LeaderboardTable, { type LeaderRow } from "./LeaderboardTable";
+import Link from "next/link";
 
 const FILE_EXT: Record<LanguageId, string> = {
   cpp: "cpp",
@@ -70,6 +77,7 @@ export default function ArenaWorkspace({
     }
   };
 
+  const user = useUser();
   const [language, setLanguage] = useState<LanguageId>("cpp");
   const [code, setCode] = useState<string>(() => loadCode("cpp"));
   const [customInput, setCustomInput] = useState(sampleInput);
@@ -78,8 +86,11 @@ export default function ArenaWorkspace({
   const [history, setHistory] = useState<Submission[]>([]);
   const [elapsed, setElapsed] = useState(0);
   const [mySolveSeconds, setMySolveSeconds] = useState<number | null>(null);
-  const [myLanguage, setMyLanguage] = useState<LanguageId>("cpp");
   const [myFlags, setMyFlags] = useState(0);
+  const [myRank, setMyRank] = useState<number | null>(null);
+  const [myPoints, setMyPoints] = useState<number | null>(null);
+  const [myFlaggedSolve, setMyFlaggedSolve] = useState(false);
+  const [board, setBoard] = useState<LeaderRow[] | null>(null);
   const [pageFocused, setPageFocused] = useState(true);
   const [busyLabel, setBusyLabel] = useState("Running…");
 
@@ -99,6 +110,21 @@ export default function ArenaWorkspace({
 
   const solved = mySolveSeconds != null;
   const integrity = useIntegrityMonitor(!solved);
+
+  // Live today leaderboard from the DB (refetched after an accepted submit).
+  const fetchBoardRows = useCallback(async (): Promise<LeaderRow[]> => {
+    try {
+      const res = await fetch("/api/leaderboard?scope=today");
+      const data = await res.json();
+      return (data.rows ?? []) as LeaderRow[];
+    } catch {
+      return [];
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchBoardRows().then((rows) => setBoard(rows));
+  }, [fetchBoardRows]);
 
   // Blur the problem when the window/tab loses focus — a screenshot deterrent
   // (e.g. the OS snip overlay steals focus, so it captures a blurred panel).
@@ -217,7 +243,7 @@ export default function ArenaWorkspace({
     ]);
 
   const submit = async () => {
-    if (running || solved) return;
+    if (running || solved || !user) return;
     setRunning(true);
     setBusyLabel("Judging against the hidden tests…");
     setJudgement(null);
@@ -227,9 +253,24 @@ export default function ArenaWorkspace({
       const res = await fetch("/api/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, language, code }),
+        body: JSON.stringify({
+          slug,
+          language,
+          code,
+          elapsedSeconds: solveSecs,
+          flags: flagsNow,
+          flagsBreakdown: integrity.counts,
+        }),
       });
       const data = await res.json();
+      if (res.status === 401 || data.needsAuth) {
+        setJudgement({
+          mode: "submit",
+          status: "ERR",
+          message: "Your session expired — please log in again to submit.",
+        });
+        return;
+      }
       if (!data.ok) {
         setJudgement({
           mode: "submit",
@@ -243,21 +284,25 @@ export default function ArenaWorkspace({
       if (verdict === "AC") {
         frozenRef.current = true;
         setMySolveSeconds(solveSecs);
-        setMyLanguage(language);
         setMyFlags(flagsNow);
         setJudgement({ mode: "submit", status: "AC", total: data.total });
 
-        let detail: string;
-        if (flagsNow > FLAG_LIMIT) {
-          detail = `Flagged ${flagsNow}× · +${BASE_POINTS} pts`;
-        } else {
-          const times = [
-            ...INITIAL_STANDINGS.map((s) => s.timeSeconds),
-            solveSecs,
-          ].sort((a, b) => a - b);
-          const rank = times.indexOf(solveSecs) + 1;
-          detail = `${ordinal(rank)} · +${pointsForRank(rank)} pts`;
-        }
+        // The server now owns the standings — read our real rank/points back.
+        const rows = await fetchBoardRows();
+        setBoard(rows);
+        const me = rows.find((r) => r.username === user.username);
+        const rank = me?.rank ?? null;
+        const points = me?.points ?? (flagsNow > FLAG_LIMIT ? BASE_POINTS : null);
+        const flagged = me?.flagged ?? flagsNow > FLAG_LIMIT;
+        setMyRank(rank);
+        setMyPoints(points);
+        setMyFlaggedSolve(flagged);
+
+        const detail = flagged
+          ? `Flagged · +${points ?? BASE_POINTS} pts`
+          : rank
+            ? `${ordinal(rank)} · +${points} pts`
+            : `+${points ?? 0} pts`;
         addHistory("AC", formatClock(solveSecs), detail);
       } else {
         setJudgement({
@@ -284,31 +329,6 @@ export default function ArenaWorkspace({
       setRunning(false);
     }
   };
-
-  // Too many integrity flags removes you from the day's top 10: an accepted
-  // solve then only earns the 100-point base and is listed as flagged.
-  const flaggedSolve = solved && myFlags > FLAG_LIMIT;
-  const eligibleYou = solved && !flaggedSolve;
-
-  // Derive the live board: faster solve durations rank higher (the speed bounty).
-  const you: Solver = {
-    name: "You",
-    handle: "you",
-    initials: "YOU",
-    language: languageLabel(myLanguage),
-    timeSeconds: mySolveSeconds ?? 0,
-    isYou: true,
-  };
-  const ranked = [...INITIAL_STANDINGS, ...(eligibleYou ? [you] : [])].sort(
-    (a, b) => a.timeSeconds - b.timeSeconds,
-  );
-  const myRank = eligibleYou ? ranked.findIndex((s) => s.isYou) + 1 : null;
-  const myPoints = flaggedSolve
-    ? BASE_POINTS
-    : myRank
-      ? pointsForRank(myRank)
-      : null;
-  const flaggedYou: Solver | null = flaggedSolve ? you : null;
 
   return (
     <div className="mt-8 space-y-6">
@@ -337,7 +357,7 @@ export default function ArenaWorkspace({
             >
               {problem}
             </div>
-            <Watermark tag="@you · PESUECC Arena" />
+            <Watermark tag={`@${user?.username ?? "guest"} · PESUECC Arena`} />
             {!pageFocused && <ScreenGuard />}
           </div>
         </section>
@@ -439,28 +459,38 @@ export default function ArenaWorkspace({
                   <PlayIcon />
                   Run
                 </button>
-                <button
-                  type="button"
-                  onClick={submit}
-                  disabled={running || solved}
-                  className={`inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold text-white shadow-sm transition-all disabled:cursor-not-allowed ${
-                    solved
-                      ? "bg-emerald-600 disabled:opacity-100"
-                      : "bg-bronze hover:bg-bronze/90 disabled:opacity-60"
-                  }`}
-                >
-                  {solved ? (
-                    <>
-                      <CheckIcon />
-                      Solved
-                    </>
-                  ) : (
-                    <>
-                      <BoltIcon />
-                      Submit
-                    </>
-                  )}
-                </button>
+                {user === null ? (
+                  <Link
+                    href="/login"
+                    className="inline-flex items-center gap-2 rounded-lg bg-bronze px-5 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-bronze/90"
+                  >
+                    <BoltIcon />
+                    Log in to submit
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={submit}
+                    disabled={running || solved || user === undefined}
+                    className={`inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold text-white shadow-sm transition-all disabled:cursor-not-allowed ${
+                      solved
+                        ? "bg-emerald-600 disabled:opacity-100"
+                        : "bg-bronze hover:bg-bronze/90 disabled:opacity-60"
+                    }`}
+                  >
+                    {solved ? (
+                      <>
+                        <CheckIcon />
+                        Solved
+                      </>
+                    ) : (
+                      <>
+                        <BoltIcon />
+                        Submit
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -504,7 +534,7 @@ export default function ArenaWorkspace({
             sampleOutput={sampleOutput}
             myRank={myRank}
             myPoints={myPoints}
-            flagged={flaggedSolve}
+            flagged={myFlaggedSolve}
             flagCount={myFlags}
             solveClock={mySolveSeconds != null ? formatClock(mySolveSeconds) : ""}
           />
@@ -514,7 +544,27 @@ export default function ArenaWorkspace({
       </div>
 
       <SpeedBounty />
-      <Standings ranked={ranked} flaggedYou={flaggedYou} />
+
+      <section className="overflow-hidden rounded-2xl border border-hairline bg-panel shadow-sm">
+        <div className="flex items-center justify-between border-b border-hairline px-6 py-4">
+          <h2 className="font-display text-lg font-bold text-chocolate">
+            Live Standings
+          </h2>
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-charcoal/60">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+            {board?.length ?? 0} solved today
+          </span>
+        </div>
+        {board === null ? (
+          <p className="px-6 py-8 text-center text-sm text-charcoal/50">Loading…</p>
+        ) : (
+          <LeaderboardTable
+            rows={board}
+            scope="today"
+            currentUsername={user?.username}
+          />
+        )}
+      </section>
     </div>
   );
 }
@@ -977,147 +1027,6 @@ function SpeedBounty() {
       </div>
     </section>
   );
-}
-
-/* --- Live standings --- */
-
-function Standings({
-  ranked,
-  flaggedYou,
-}: {
-  ranked: Solver[];
-  flaggedYou: Solver | null;
-}) {
-  const solvedCount = ranked.length + (flaggedYou ? 1 : 0);
-  return (
-    <section className="overflow-hidden rounded-2xl border border-hairline bg-panel shadow-sm">
-      <div className="flex items-center justify-between border-b border-hairline px-6 py-4">
-        <h2 className="font-display text-lg font-bold text-chocolate">
-          Live Standings
-        </h2>
-        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-charcoal/60">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-          {solvedCount} solved today
-        </span>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[560px] text-sm">
-          <thead>
-            <tr className="text-left font-mono text-[11px] uppercase tracking-wider text-charcoal/45">
-              <th className="px-6 py-3 font-medium">#</th>
-              <th className="px-3 py-3 font-medium">Solver</th>
-              <th className="px-3 py-3 font-medium">Lang</th>
-              <th className="px-3 py-3 font-medium">Time</th>
-              <th className="px-6 py-3 text-right font-medium">Points</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ranked.map((solver, i) => {
-              const rank = i + 1;
-              return (
-                <tr
-                  key={solver.handle}
-                  className={`border-t border-hairline ${
-                    solver.isYou
-                      ? "bg-bronze/10"
-                      : i % 2 === 1
-                        ? "bg-cream/40 dark:bg-white/[0.02]"
-                        : ""
-                  }`}
-                >
-                  <td className="px-6 py-3">
-                    <RankBadge rank={rank} />
-                  </td>
-                  <td className="px-3 py-3">
-                    <div className="flex items-center gap-3">
-                      <span
-                        className={`flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-bold ${
-                          solver.isYou
-                            ? "bg-bronze text-white"
-                            : "bg-bronze/15 text-bronze"
-                        }`}
-                      >
-                        {solver.isYou ? "YOU" : solver.initials}
-                      </span>
-                      <div className="leading-tight">
-                        <div className="font-semibold text-chocolate">
-                          {solver.name}
-                        </div>
-                        <div className="font-mono text-[11px] text-charcoal/50">
-                          @{solver.handle}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-3 py-3 text-charcoal/70">
-                    {solver.language}
-                  </td>
-                  <td className="px-3 py-3 font-mono text-charcoal/70">
-                    {formatClock(solver.timeSeconds)}
-                  </td>
-                  <td className="px-6 py-3 text-right font-display font-bold text-brown">
-                    {pointsForRank(rank)}
-                  </td>
-                </tr>
-              );
-            })}
-            {flaggedYou && (
-              <tr className="border-t border-hairline bg-red-500/10">
-                <td className="px-6 py-3">
-                  <span className="font-mono text-sm text-red-500">—</span>
-                </td>
-                <td className="px-3 py-3">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500/80 text-[11px] font-bold text-white">
-                      YOU
-                    </span>
-                    <div className="leading-tight">
-                      <div className="flex items-center gap-2 font-semibold text-chocolate">
-                        {flaggedYou.name}
-                        <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-600 dark:text-red-400">
-                          Flagged
-                        </span>
-                      </div>
-                      <div className="font-mono text-[11px] text-charcoal/50">
-                        @{flaggedYou.handle}
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-3 py-3 text-charcoal/70">
-                  {flaggedYou.language}
-                </td>
-                <td className="px-3 py-3 font-mono text-charcoal/70">
-                  {formatClock(flaggedYou.timeSeconds)}
-                </td>
-                <td className="px-6 py-3 text-right font-display font-bold text-brown">
-                  {BASE_POINTS}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  );
-}
-
-function RankBadge({ rank }: { rank: number }) {
-  const styles: Record<number, string> = {
-    1: "bg-[#d9a441]/20 text-[#b7842a]",
-    2: "bg-[#b9b4ad]/25 text-[#7d7a76]",
-    3: "bg-[#c08457]/20 text-[#a5623a]",
-  };
-  if (rank <= 3) {
-    return (
-      <span
-        className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${styles[rank]}`}
-      >
-        {rank}
-      </span>
-    );
-  }
-  return <span className="font-mono text-sm text-charcoal/50">{rank}</span>;
 }
 
 /* --- Screenshot deterrents --- */
