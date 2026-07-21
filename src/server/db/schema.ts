@@ -38,6 +38,17 @@ export const emailVerifications = sqliteTable("email_verifications", {
   createdAt: integer("created_at").notNull(),
 });
 
+// Password reset tokens (hashed). One active row per user; single-use link.
+export const passwordResets = sqliteTable("password_resets", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  tokenHash: text("token_hash").notNull(),
+  expiresAt: integer("expires_at").notNull(),
+  createdAt: integer("created_at").notNull(),
+});
+
 export const submissions = sqliteTable("submissions", {
   id: text("id").primaryKey(),
   challengeSlug: text("challenge_slug").notNull(),
@@ -63,3 +74,4 @@ export type NewUser = typeof users.$inferInsert;
 export type Submission = typeof submissions.$inferSelect;
 export type NewSubmission = typeof submissions.$inferInsert;
 export type EmailVerification = typeof emailVerifications.$inferSelect;
+export type PasswordReset = typeof passwordResets.$inferSelect;
