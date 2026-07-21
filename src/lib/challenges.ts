@@ -122,14 +122,34 @@ export function getAllChallenges(): Challenge[] {
     .sort((a, b) => b.date.localeCompare(a.date));
 }
 
-/** The Problem of the Day — the most recently dated published challenge. */
-export function getDailyChallenge(): Challenge | null {
-  return getAllChallenges()[0] ?? null;
+/** Today's date as YYYY-MM-DD (server local time). */
+function todayStr(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-/** A single published challenge by slug (server-side lookup for the judge). */
+/** A challenge is live once its date has arrived — future-dated problems (and
+ * their hidden tests) are never served, so committing tomorrow's problem early
+ * doesn't leak it through the app. */
+export function isReleased(c: Challenge): boolean {
+  return c.date <= todayStr();
+}
+
+/** Released challenges, newest first (for the archive). */
+export function getReleasedChallenges(): Challenge[] {
+  return getAllChallenges().filter(isReleased);
+}
+
+/** The Problem of the Day — the most recent released challenge. */
+export function getDailyChallenge(): Challenge | null {
+  return getReleasedChallenges()[0] ?? null;
+}
+
+/** A single released challenge by slug (unreleased slugs resolve to null, so
+ * they can't be run or submitted to). */
 export function getChallengeBySlug(slug: string): Challenge | null {
-  return getAllChallenges().find((c) => c.slug === slug) ?? null;
+  const c = getAllChallenges().find((x) => x.slug === slug);
+  return c && isReleased(c) ? c : null;
 }
 
 /** Strips hidden fields — only these ever reach the client. */

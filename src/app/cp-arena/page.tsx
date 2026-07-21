@@ -4,12 +4,17 @@ import { getDailyChallenge } from "@/lib/challenges";
 import ProblemStatement from "@/components/cp-arena/ProblemStatement";
 import ArenaWorkspace from "@/components/cp-arena/ArenaWorkspace";
 import ArenaRules from "@/components/cp-arena/ArenaRules";
+import NextProblemCountdown from "@/components/cp-arena/NextProblemCountdown";
 
 export const metadata: Metadata = {
   title: "Arena",
   description:
     "The daily competitive programming arena of the CodeChef PESUECC Chapter — solve the Problem of the Day, submit in the browser, and climb the live speed-bounty leaderboard.",
 };
+
+// Resolve the Problem of the Day per request — a statically prerendered page
+// would freeze the daily rotation (and the release gate) at build time.
+export const dynamic = "force-dynamic";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -68,6 +73,15 @@ export default function CpArenaPage() {
           </span>
           <span className="text-charcoal/40">·</span>
           <span className="text-charcoal/60">{formatDate(challenge.date)}</span>
+          <span className="text-charcoal/40">·</span>
+          <NextProblemCountdown />
+          <span className="grow" />
+          <Link
+            href="/cp-arena/archive"
+            className="text-charcoal/50 underline decoration-charcoal/20 underline-offset-2 transition-colors hover:text-bronze"
+          >
+            Archive
+          </Link>
         </div>
 
         <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
