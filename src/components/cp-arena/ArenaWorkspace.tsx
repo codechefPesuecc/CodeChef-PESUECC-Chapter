@@ -26,20 +26,25 @@ const FILE_EXT: Record<LanguageId, string> = {
   zig: "zig",
 };
 
+type Verdict = "AC" | "WA" | "TLE" | "RE" | "CE";
+
 type Judgement = {
   mode: "run" | "submit";
-  // RAN = ran on custom input; CE = compile error; TLE = time limit; ERR = infra
-  status: "AC" | "WA" | "RAN" | "CE" | "TLE" | "ERR";
-  input: string;
-  output?: string; // real stdout from Piston
-  stderr?: string;
+  // RAN = ran on custom input; CE = compile error; TLE/RE = runtime; ERR = infra
+  status: Verdict | "RAN" | "ERR";
+  input?: string;
+  output?: string; // real stdout from Piston (run mode)
+  stderr?: string; // compiler output (CE) or program stderr (RE)
   message?: string; // error / info text
+  passed?: number; // submit: tests passed before failure
+  total?: number; // submit: total tests
+  failedOn?: number; // submit: 1-based failing test index
 } | null;
 
 interface Submission {
   id: number;
   language: string;
-  status: "AC" | "WA";
+  status: Verdict;
   clock: string;
   detail: string;
 }
@@ -76,10 +81,10 @@ export default function ArenaWorkspace({
   const [myLanguage, setMyLanguage] = useState<LanguageId>("cpp");
   const [myFlags, setMyFlags] = useState(0);
   const [pageFocused, setPageFocused] = useState(true);
+  const [busyLabel, setBusyLabel] = useState("Running…");
 
   const startRef = useRef<number | null>(null);
   const frozenRef = useRef(false);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Live "your time" clock. Freezes the moment an accepted solution lands.
   useEffect(() => {
@@ -89,10 +94,7 @@ export default function ArenaWorkspace({
         setElapsed(Math.floor((Date.now() - startRef.current) / 1000));
       }
     }, 1000);
-    return () => {
-      clearInterval(id);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
+    return () => clearInterval(id);
   }, []);
 
   const solved = mySolveSeconds != null;
@@ -125,12 +127,6 @@ export default function ArenaWorkspace({
     return () => clearTimeout(id);
   }, [code, language, slug]);
 
-  // Placeholder verdict: the real judge (Piston sandbox via /api/submit) isn't
-  // wired yet, so a solution counts as accepted once it meaningfully diverges
-  // from the starter template. Swap this for the sandbox response later.
-  const looksAttempted = () =>
-    code.trim() !== STARTER_CODE[language].trim() && code.trim().length > 24;
-
   const changeLanguage = (next: LanguageId) => {
     // Persist the current draft before swapping so switching never loses work.
     try {
@@ -150,6 +146,7 @@ export default function ArenaWorkspace({
   const run = async () => {
     if (running) return;
     setRunning(true);
+    setBusyLabel("Running your code…");
     setJudgement(null);
     const custom =
       customInput.trim() !== "" && customInput.trim() !== sampleInput.trim();
@@ -213,19 +210,42 @@ export default function ArenaWorkspace({
     }
   };
 
-  const submit = () => {
+  const addHistory = (status: Verdict, clock: string, detail: string) =>
+    setHistory((h) => [
+      { id: h.length + 1, language: languageLabel(language), status, clock, detail },
+      ...h,
+    ]);
+
+  const submit = async () => {
     if (running || solved) return;
     setRunning(true);
+    setBusyLabel("Judging against the hidden tests…");
     setJudgement(null);
     const solveSecs = elapsed;
     const flagsNow = integrity.total;
-    timeoutRef.current = setTimeout(() => {
-      if (looksAttempted()) {
+    try {
+      const res = await fetch("/api/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, language, code }),
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        setJudgement({
+          mode: "submit",
+          status: "ERR",
+          message: data.error ?? "Judge error.",
+        });
+        return;
+      }
+
+      const verdict = data.verdict as Verdict;
+      if (verdict === "AC") {
         frozenRef.current = true;
         setMySolveSeconds(solveSecs);
         setMyLanguage(language);
         setMyFlags(flagsNow);
-        setJudgement({ mode: "submit", status: "AC", input: sampleInput });
+        setJudgement({ mode: "submit", status: "AC", total: data.total });
 
         let detail: string;
         if (flagsNow > FLAG_LIMIT) {
@@ -238,31 +258,31 @@ export default function ArenaWorkspace({
           const rank = times.indexOf(solveSecs) + 1;
           detail = `${ordinal(rank)} · +${pointsForRank(rank)} pts`;
         }
-        setHistory((h) => [
-          {
-            id: h.length + 1,
-            language: languageLabel(language),
-            status: "AC",
-            clock: formatClock(solveSecs),
-            detail,
-          },
-          ...h,
-        ]);
+        addHistory("AC", formatClock(solveSecs), detail);
       } else {
-        setJudgement({ mode: "submit", status: "WA", input: sampleInput });
-        setHistory((h) => [
-          {
-            id: h.length + 1,
-            language: languageLabel(language),
-            status: "WA",
-            clock: formatClock(solveSecs),
-            detail: "Wrong Answer on sample",
-          },
-          ...h,
-        ]);
+        setJudgement({
+          mode: "submit",
+          status: verdict,
+          stderr: data.detail,
+          passed: data.passed,
+          total: data.total,
+          failedOn: data.failedOn,
+        });
+        const detail =
+          verdict === "CE"
+            ? "Compilation error"
+            : `on test ${data.failedOn ?? "?"}/${data.total ?? "?"}`;
+        addHistory(verdict, formatClock(solveSecs), detail);
       }
+    } catch {
+      setJudgement({
+        mode: "submit",
+        status: "ERR",
+        message: "Could not reach the judge.",
+      });
+    } finally {
       setRunning(false);
-    }, 1100);
+    }
   };
 
   // Too many integrity flags removes you from the day's top 10: an accepted
@@ -479,6 +499,7 @@ export default function ArenaWorkspace({
 
           <Console
             running={running}
+            busyLabel={busyLabel}
             judgement={judgement}
             sampleOutput={sampleOutput}
             myRank={myRank}
@@ -502,6 +523,7 @@ export default function ArenaWorkspace({
 
 function Console({
   running,
+  busyLabel,
   judgement,
   sampleOutput,
   myRank,
@@ -511,6 +533,7 @@ function Console({
   solveClock,
 }: {
   running: boolean;
+  busyLabel: string;
   judgement: Judgement;
   sampleOutput: string;
   myRank: number | null;
@@ -531,119 +554,211 @@ function Console({
         {running ? (
           <p className="flex items-center gap-2 text-bronze">
             <span className="h-2 w-2 animate-pulse rounded-full bg-bronze" />
-            Judging against sample &amp; hidden cases…
+            {busyLabel}
           </p>
-        ) : judgement?.status === "AC" && judgement.mode === "submit" ? (
-          flagged ? (
-            <div className="space-y-2">
-              <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                Accepted — all test cases passed.
-              </p>
-              <p className="flex items-center gap-1.5 text-sm font-semibold text-red-600 dark:text-red-400">
-                <ShieldIcon />
-                Flagged {flagCount} times — removed from today&apos;s top 10.
-              </p>
-              <p className="text-[var(--ide-code)]">
-                You solved it in{" "}
-                <span className="font-semibold text-[var(--ide-ink-strong)]">
-                  {solveClock}
-                </span>
-                , but with more than {FLAG_LIMIT} integrity flags this solve earns
-                only the base{" "}
-                <span className="font-semibold text-[var(--ide-ink-strong)]">
-                  +{myPoints} pts
-                </span>
-                .
-              </p>
-              <p className="text-[11px] text-[var(--ide-ink-dim)]">
-                Verdict simulated on the client — the Piston sandbox judge is
-                wired in a later pass.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                Accepted — all test cases passed.
-              </p>
-              <p className="text-[var(--ide-code)]">
-                You finished{" "}
-                <span className="font-semibold text-[var(--ide-ink-strong)]">
-                  {myRank ? ordinal(myRank) : ""}
-                </span>{" "}
-                today in{" "}
-                <span className="font-semibold text-[var(--ide-ink-strong)]">
-                  {solveClock}
-                </span>{" "}
-                ·{" "}
-                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                  +{myPoints} pts
-                </span>
-              </p>
-              <p className="text-[11px] text-[var(--ide-ink-dim)]">
-                Verdict simulated on the client — the Piston sandbox judge is
-                wired in a later pass.
-              </p>
-            </div>
-          )
-        ) : judgement?.status === "ERR" ? (
-          <div className="space-y-2">
-            <p className="text-sm font-semibold text-red-600 dark:text-red-400">
-              Couldn&apos;t run your code.
-            </p>
-            <p className="text-[var(--ide-code)]">{judgement.message}</p>
-          </div>
-        ) : judgement?.status === "CE" ? (
-          <div className="space-y-2">
-            <p className="text-sm font-semibold text-red-600 dark:text-red-400">
-              Compilation error.
-            </p>
-            <IoBlock label="Compiler" value={judgement.stderr || "—"} tone="bad" />
-          </div>
-        ) : judgement?.status === "TLE" ? (
-          <div className="space-y-2">
-            <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">
-              Time Limit Exceeded.
-            </p>
-            <p className="text-[var(--ide-code)]">{judgement.message}</p>
-          </div>
-        ) : judgement?.status === "RAN" ? (
-          <div className="space-y-3">
-            <p className="text-sm font-semibold text-[var(--ide-ink-strong)]">
-              Ran on your custom input.
-            </p>
-            <IoBlock label="Input" value={judgement.input} />
-            <IoBlock label="Output" value={judgement.output || "(no output)"} />
-            {judgement.stderr ? (
-              <IoBlock label="Stderr" value={judgement.stderr} tone="bad" />
-            ) : null}
-          </div>
-        ) : judgement ? (
-          <div className="space-y-3">
-            {judgement.status === "WA" && (
-              <p className="text-sm font-semibold text-red-600 dark:text-red-400">
-                Wrong Answer on sample case.
-              </p>
-            )}
-            <IoBlock label="Input" value={judgement.input} />
-            <IoBlock label="Expected" value={sampleOutput} />
-            <IoBlock
-              label="Your output"
-              value={judgement.output ?? "—"}
-              tone={judgement.status === "AC" ? "ok" : "bad"}
-            />
-            {judgement.stderr ? (
-              <IoBlock label="Stderr" value={judgement.stderr} tone="bad" />
-            ) : null}
-          </div>
-        ) : (
+        ) : !judgement ? (
           <p className="text-[var(--ide-ink-dim)]">
             Write your solution, then{" "}
             <span className="text-bronze">Run</span> it against the sample or{" "}
-            <span className="text-bronze">Submit</span> to the judge. Faster
-            accepted solves earn more of the daily bounty.
+            <span className="text-bronze">Submit</span> to the judge&apos;s hidden
+            tests. Faster accepted solves earn more of the daily bounty.
+          </p>
+        ) : judgement.mode === "submit" ? (
+          <SubmitResult
+            judgement={judgement}
+            myRank={myRank}
+            myPoints={myPoints}
+            flagged={flagged}
+            flagCount={flagCount}
+            solveClock={solveClock}
+          />
+        ) : (
+          <RunResult judgement={judgement} sampleOutput={sampleOutput} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SubmitResult({
+  judgement,
+  myRank,
+  myPoints,
+  flagged,
+  flagCount,
+  solveClock,
+}: {
+  judgement: NonNullable<Judgement>;
+  myRank: number | null;
+  myPoints: number | null;
+  flagged: boolean;
+  flagCount: number;
+  solveClock: string;
+}) {
+  if (judgement.status === "AC") {
+    return (
+      <div className="space-y-2">
+        <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+          Accepted — all {judgement.total ?? ""} tests passed.
+        </p>
+        {flagged ? (
+          <>
+            <p className="flex items-center gap-1.5 text-sm font-semibold text-red-600 dark:text-red-400">
+              <ShieldIcon />
+              Flagged {flagCount} times — removed from today&apos;s top 10.
+            </p>
+            <p className="text-[var(--ide-code)]">
+              You solved it in{" "}
+              <span className="font-semibold text-[var(--ide-ink-strong)]">
+                {solveClock}
+              </span>
+              , but with more than {FLAG_LIMIT} integrity flags this solve earns
+              only the base{" "}
+              <span className="font-semibold text-[var(--ide-ink-strong)]">
+                +{myPoints} pts
+              </span>
+              .
+            </p>
+          </>
+        ) : (
+          <p className="text-[var(--ide-code)]">
+            You finished{" "}
+            <span className="font-semibold text-[var(--ide-ink-strong)]">
+              {myRank ? ordinal(myRank) : ""}
+            </span>{" "}
+            today in{" "}
+            <span className="font-semibold text-[var(--ide-ink-strong)]">
+              {solveClock}
+            </span>{" "}
+            ·{" "}
+            <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+              +{myPoints} pts
+            </span>
           </p>
         )}
       </div>
+    );
+  }
+
+  if (judgement.status === "ERR") {
+    return (
+      <div className="space-y-2">
+        <p className="text-sm font-semibold text-red-600 dark:text-red-400">
+          Couldn&apos;t judge your submission.
+        </p>
+        <p className="text-[var(--ide-code)]">{judgement.message}</p>
+      </div>
+    );
+  }
+
+  if (judgement.status === "CE") {
+    return (
+      <div className="space-y-2">
+        <p className="text-sm font-semibold text-red-600 dark:text-red-400">
+          Compilation error.
+        </p>
+        <IoBlock label="Compiler" value={judgement.stderr || "—"} tone="bad" />
+      </div>
+    );
+  }
+
+  // WA / TLE / RE — never reveal the hidden test data, only which one failed.
+  const heading =
+    judgement.status === "WA"
+      ? "Wrong Answer"
+      : judgement.status === "TLE"
+        ? "Time Limit Exceeded"
+        : "Runtime Error";
+  const tone =
+    judgement.status === "TLE"
+      ? "text-amber-600 dark:text-amber-400"
+      : "text-red-600 dark:text-red-400";
+  return (
+    <div className="space-y-2">
+      <p className={`text-sm font-semibold ${tone}`}>{heading}</p>
+      <p className="text-[var(--ide-code)]">
+        Failed on test{" "}
+        <span className="font-semibold text-[var(--ide-ink-strong)]">
+          {judgement.failedOn ?? "?"}
+        </span>{" "}
+        of {judgement.total ?? "?"} · {judgement.passed ?? 0} passed.
+      </p>
+      {judgement.status === "RE" && judgement.stderr ? (
+        <IoBlock label="Stderr" value={judgement.stderr} tone="bad" />
+      ) : null}
+    </div>
+  );
+}
+
+function RunResult({
+  judgement,
+  sampleOutput,
+}: {
+  judgement: NonNullable<Judgement>;
+  sampleOutput: string;
+}) {
+  if (judgement.status === "ERR") {
+    return (
+      <div className="space-y-2">
+        <p className="text-sm font-semibold text-red-600 dark:text-red-400">
+          Couldn&apos;t run your code.
+        </p>
+        <p className="text-[var(--ide-code)]">{judgement.message}</p>
+      </div>
+    );
+  }
+  if (judgement.status === "CE") {
+    return (
+      <div className="space-y-2">
+        <p className="text-sm font-semibold text-red-600 dark:text-red-400">
+          Compilation error.
+        </p>
+        <IoBlock label="Compiler" value={judgement.stderr || "—"} tone="bad" />
+      </div>
+    );
+  }
+  if (judgement.status === "TLE") {
+    return (
+      <div className="space-y-2">
+        <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">
+          Time Limit Exceeded.
+        </p>
+        <p className="text-[var(--ide-code)]">{judgement.message}</p>
+      </div>
+    );
+  }
+  if (judgement.status === "RAN") {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm font-semibold text-[var(--ide-ink-strong)]">
+          Ran on your custom input.
+        </p>
+        <IoBlock label="Input" value={judgement.input ?? ""} />
+        <IoBlock label="Output" value={judgement.output || "(no output)"} />
+        {judgement.stderr ? (
+          <IoBlock label="Stderr" value={judgement.stderr} tone="bad" />
+        ) : null}
+      </div>
+    );
+  }
+  // AC / WA against the visible sample case.
+  return (
+    <div className="space-y-3">
+      {judgement.status === "WA" && (
+        <p className="text-sm font-semibold text-red-600 dark:text-red-400">
+          Wrong Answer on sample case.
+        </p>
+      )}
+      <IoBlock label="Input" value={judgement.input ?? ""} />
+      <IoBlock label="Expected" value={sampleOutput} />
+      <IoBlock
+        label="Your output"
+        value={judgement.output ?? "—"}
+        tone={judgement.status === "AC" ? "ok" : "bad"}
+      />
+      {judgement.stderr ? (
+        <IoBlock label="Stderr" value={judgement.stderr} tone="bad" />
+      ) : null}
     </div>
   );
 }
@@ -697,6 +812,7 @@ function VerdictBadge({
     RAN: "bg-bronze/15 text-bronze",
     CE: red,
     TLE: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+    RE: red,
     ERR: red,
   } as const;
   const labels = {
@@ -705,6 +821,7 @@ function VerdictBadge({
     RAN: "Ran",
     CE: "Compile Error",
     TLE: "Time Limit Exceeded",
+    RE: "Runtime Error",
     ERR: "Error",
   } as const;
   return (

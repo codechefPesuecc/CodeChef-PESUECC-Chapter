@@ -27,6 +27,10 @@
 *.db-*
 *.sqlite
 
+# hidden judge test cases — never commit answers solvers could read
+/tests/*
+!/tests/README.md
+
 # misc
 .DS_Store
 *.pem
