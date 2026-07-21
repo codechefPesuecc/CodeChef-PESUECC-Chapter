@@ -110,8 +110,8 @@ export default function Navbar() {
           {user ? (
             <div className="flex items-center gap-2">
               <Link
-                href="/cp-arena"
-                title={`@${user.username}`}
+                href="/profile"
+                title={`@${user.username} · your profile`}
                 className="hidden max-w-[10rem] truncate rounded-full bg-bronze/10 px-3.5 py-2 text-sm font-semibold text-bronze sm:block"
               >
                 @{user.username}
