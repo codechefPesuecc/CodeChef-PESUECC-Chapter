@@ -20,6 +20,7 @@
 # production
 /build
 
+# macOS
 # local database (SQLite / libSQL)
 /data/*
 !/data/.gitkeep
@@ -29,6 +30,14 @@
 
 # misc
 .DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+
+# misc
 *.pem
 
 # debug
@@ -57,3 +66,4 @@ AGENTS.md
 .cursorrules
 .aider*
 .windsurf/
+.gemini/

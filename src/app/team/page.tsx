@@ -1,5 +1,20 @@
-// Placeholder route — Team Registry (/team).
-// See DESIGN.md (Page 4) and README.md. Implementation to follow.
+import type { Metadata } from "next";
+import { getAllTeamData } from "./lib";
+import TeamPageClient from "./TeamPageClient";
+
+export const metadata: Metadata = {
+  title: "Team",
+  description:
+    "Meet the people behind the CodeChef PESUECC Chapter — coordinators, core team, and members across every year.",
+};
+
+/**
+ * `/team` — Server Component entry point.
+ *
+ * Reads the filesystem at request time to discover years and member data,
+ * then hands everything to the interactive client shell.
+ */
 export default function TeamPage() {
-  return <main>Team</main>;
+  const data = getAllTeamData();
+  return <TeamPageClient data={data} />;
 }
