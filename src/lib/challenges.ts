@@ -1,71 +1,109 @@
 import fs from "node:fs";
 import path from "node:path";
-import matter from "gray-matter";
 
 /**
- * Reads the GitOps challenge records in `/challenges` (see README — problem
- * setters push `YYYY-MM-DD-slug.md` files with YAML frontmatter). This runs on
- * the server at build time; the parsed Problem of the Day is passed to the
- * client Arena as plain serializable props.
+ * Reads the GitOps problem records in `/challenges` — one JSON file per problem
+ * containing the statement, samples, AND the hidden tests (see the flow: student
+ * authors a JSON, a maintainer opens a PR, an admin merges). This runs on the
+ * server; the hidden `tests` and `checker` are never handed to the client — only
+ * the public content (`toPublicContent`) and, for the judge, the full record.
  */
 
-export interface ChallengeMeta {
+export interface TestCase {
+  input: string;
+  output: string;
+}
+
+export interface Sample extends TestCase {
+  explanation?: string;
+}
+
+export interface Checker {
+  type: "exact" | "token" | "float";
+  epsilon?: number;
+}
+
+/** Fields safe to render to solvers. */
+export interface ChallengeContent {
+  slug: string;
   title: string;
   difficulty: string;
-  points: number;
   tags: string[];
   date: string; // YYYY-MM-DD
   timeLimit?: string;
   memoryLimit?: string;
   author?: string;
+  statement: string;
+  inputFormat?: string;
+  outputFormat?: string;
+  constraints?: string;
+  samples: Sample[];
 }
 
-export interface Challenge {
-  slug: string;
-  meta: ChallengeMeta;
-  /** Raw markdown body (frontmatter stripped). */
-  body: string;
-  /** Sample case pulled from the body, used by the client-side runner. */
-  sampleInput: string;
-  sampleOutput: string;
+export interface Challenge extends ChallengeContent {
+  checker: Checker;
+  /** Hidden tests — server-side only, never serialized to the client. */
+  tests: TestCase[];
 }
 
 const CHALLENGES_DIR = path.join(process.cwd(), "challenges");
 
-function extractFenced(body: string, heading: string): string {
-  const re = new RegExp(
-    `#{1,6}\\s+${heading}[^\\n]*\\n+\`\`\`[^\\n]*\\n([\\s\\S]*?)\`\`\``,
-    "i",
-  );
-  const match = body.match(re);
-  return match ? match[1].replace(/\s+$/, "") : "";
+function str(value: unknown, fallback = ""): string {
+  return typeof value === "string" ? value : value == null ? fallback : String(value);
+}
+
+function optStr(value: unknown): string | undefined {
+  return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
 function readChallengeFile(fileName: string): Challenge | null {
-  const slug = fileName.replace(/\.md$/, "");
   const raw = fs.readFileSync(path.join(CHALLENGES_DIR, fileName), "utf8");
-  const { data, content } = matter(raw);
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (!data || typeof data !== "object" || !data.title || !data.date || !data.statement) {
+    return null;
+  }
 
-  if (!data.title || !data.date) return null;
+  const samples: Sample[] = Array.isArray(data.samples)
+    ? data.samples.map((s: unknown) => {
+        const o = (s ?? {}) as Record<string, unknown>;
+        return { input: str(o.input), output: str(o.output), explanation: optStr(o.explanation) };
+      })
+    : [];
 
-  const meta: ChallengeMeta = {
-    title: String(data.title),
-    difficulty: String(data.difficulty ?? "Unrated"),
-    points: Number(data.points ?? 100),
-    tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
-    date: String(data.date),
-    timeLimit: data.timeLimit ? String(data.timeLimit) : undefined,
-    memoryLimit: data.memoryLimit ? String(data.memoryLimit) : undefined,
-    author: data.author ? String(data.author) : undefined,
+  const tests: TestCase[] = Array.isArray(data.tests)
+    ? data.tests.map((t: unknown) => {
+        const o = (t ?? {}) as Record<string, unknown>;
+        return { input: str(o.input), output: str(o.output) };
+      })
+    : [];
+
+  const checkerType = data.checker?.type;
+  const checker: Checker = {
+    type: checkerType === "exact" || checkerType === "float" ? checkerType : "token",
+    epsilon: typeof data.checker?.epsilon === "number" ? data.checker.epsilon : undefined,
   };
 
   return {
-    slug,
-    meta,
-    // Drop the leading H1 — the title is rendered in the Arena header instead.
-    body: content.trim().replace(/^#\s+.*(?:\r?\n)+/, ""),
-    sampleInput: extractFenced(content, "Sample Input"),
-    sampleOutput: extractFenced(content, "Sample Output"),
+    slug: str(data.slug, fileName.replace(/\.json$/, "")),
+    title: str(data.title),
+    difficulty: str(data.difficulty, "Unrated"),
+    tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
+    date: str(data.date),
+    timeLimit: optStr(data.timeLimit),
+    memoryLimit: optStr(data.memoryLimit),
+    author: optStr(data.author),
+    statement: str(data.statement),
+    inputFormat: optStr(data.inputFormat),
+    outputFormat: optStr(data.outputFormat),
+    constraints: optStr(data.constraints),
+    samples,
+    checker,
+    tests,
   };
 }
 
@@ -77,18 +115,14 @@ export function getAllChallenges(): Challenge[] {
   } catch {
     return [];
   }
-
   return files
-    .filter((f) => f.endsWith(".md"))
+    .filter((f) => f.endsWith(".json"))
     .map(readChallengeFile)
     .filter((c): c is Challenge => c !== null)
-    .sort((a, b) => b.meta.date.localeCompare(a.meta.date));
+    .sort((a, b) => b.date.localeCompare(a.date));
 }
 
-/**
- * The Problem of the Day — the most recently dated published challenge.
- * Returns `null` when no challenge files exist yet.
- */
+/** The Problem of the Day — the most recently dated published challenge. */
 export function getDailyChallenge(): Challenge | null {
   return getAllChallenges()[0] ?? null;
 }
@@ -98,14 +132,30 @@ export function getChallengeBySlug(slug: string): Challenge | null {
   return getAllChallenges().find((c) => c.slug === slug) ?? null;
 }
 
+/** Strips hidden fields — only these ever reach the client. */
+export function toPublicContent(c: Challenge): ChallengeContent {
+  return {
+    slug: c.slug,
+    title: c.title,
+    difficulty: c.difficulty,
+    tags: c.tags,
+    date: c.date,
+    timeLimit: c.timeLimit,
+    memoryLimit: c.memoryLimit,
+    author: c.author,
+    statement: c.statement,
+    inputFormat: c.inputFormat,
+    outputFormat: c.outputFormat,
+    constraints: c.constraints,
+    samples: c.samples,
+  };
+}
+
 /**
  * Parses a frontmatter time limit like "1s", "2 s", or "500ms" into
  * milliseconds. Falls back to `fallback` when absent or unparseable.
  */
-export function parseTimeLimitMs(
-  timeLimit: string | undefined,
-  fallback = 2000,
-): number {
+export function parseTimeLimitMs(timeLimit: string | undefined, fallback = 2000): number {
   if (!timeLimit) return fallback;
   const match = timeLimit.trim().match(/^([\d.]+)\s*(ms|s)?$/i);
   if (!match) return fallback;

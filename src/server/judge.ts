@@ -1,6 +1,8 @@
-import fs from "node:fs";
-import path from "node:path";
-import { getChallengeBySlug, parseTimeLimitMs } from "@/lib/challenges";
+import {
+  getChallengeBySlug,
+  parseTimeLimitMs,
+  type Checker,
+} from "@/lib/challenges";
 import { PISTON_LANGUAGE, pistonExecute, pistonRuntimes } from "@/lib/piston";
 
 /**
@@ -37,42 +39,33 @@ const FILE_NAME: Record<string, string> = {
 
 const MAX_RUN_MS = 10000;
 
-interface TestCase {
-  name: string;
-  input: string;
-  expected: string;
-}
+/** Compares program output to the expected output per the problem's checker. */
+function outputMatches(got: string, expected: string, checker: Checker): boolean {
+  const g = got.replace(/\r\n/g, "\n");
+  const e = expected.replace(/\r\n/g, "\n");
 
-function loadTests(slug: string): TestCase[] {
-  const dir = path.join(process.cwd(), "tests", slug);
-  let files: string[];
-  try {
-    files = fs.readdirSync(dir);
-  } catch {
-    return [];
+  if (checker.type === "exact") {
+    return g.replace(/\n+$/, "") === e.replace(/\n+$/, "");
   }
-  return files
-    .filter((f) => f.endsWith(".in"))
-    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
-    .map((inFile) => {
-      const base = inFile.replace(/\.in$/, "");
-      const outFile = path.join(dir, `${base}.out`);
-      return {
-        name: base,
-        input: fs.readFileSync(path.join(dir, inFile), "utf8"),
-        expected: fs.existsSync(outFile)
-          ? fs.readFileSync(outFile, "utf8")
-          : "",
-      };
-    });
-}
 
-/** Trailing-whitespace-insensitive output comparison. */
-function normalize(s: string): string {
-  return s
-    .replace(/\r\n/g, "\n")
-    .replace(/[ \t]+$/gm, "")
-    .replace(/\n+$/, "");
+  const gt = g.trim().split(/\s+/).filter(Boolean);
+  const et = e.trim().split(/\s+/).filter(Boolean);
+  if (gt.length !== et.length) return false;
+
+  if (checker.type === "float") {
+    const eps = checker.epsilon ?? 1e-6;
+    return gt.every((tok, i) => {
+      const a = Number(tok);
+      const b = Number(et[i]);
+      if (Number.isFinite(a) && Number.isFinite(b)) {
+        return Math.abs(a - b) <= eps * Math.max(1, Math.abs(b));
+      }
+      return tok === et[i];
+    });
+  }
+
+  // token (default): whitespace-insensitive exact token match
+  return gt.every((tok, i) => tok === et[i]);
 }
 
 export async function judge(params: {
@@ -87,7 +80,8 @@ export async function judge(params: {
     return { verdict: "ERR", passed: 0, total: 0, message: `Unsupported language: ${language}.` };
   }
 
-  const tests = loadTests(slug);
+  const challenge = getChallengeBySlug(slug);
+  const tests = challenge?.tests ?? [];
   if (tests.length === 0) {
     return { verdict: "NO_TESTS", passed: 0, total: 0, message: "No hidden tests for this problem yet." };
   }
@@ -106,9 +100,9 @@ export async function judge(params: {
     return { verdict: "ERR", passed: 0, total: tests.length, message: "Judge (Piston) is unreachable." };
   }
 
-  const challenge = getChallengeBySlug(slug);
+  const checker = challenge?.checker ?? { type: "token" as const };
   const timeLimitMs = Math.min(
-    Math.max(parseTimeLimitMs(challenge?.meta.timeLimit, 2000), 500),
+    Math.max(parseTimeLimitMs(challenge?.timeLimit, 2000), 500),
     MAX_RUN_MS,
   );
   const fileName = FILE_NAME[language] ?? "main.txt";
@@ -138,7 +132,7 @@ export async function judge(params: {
     if (result.run.code !== 0) {
       return { verdict: "RE", passed, total: tests.length, failedOn: i + 1, detail: result.run.stderr };
     }
-    if (normalize(result.run.stdout) !== normalize(test.expected)) {
+    if (!outputMatches(result.run.stdout, test.output, checker)) {
       return { verdict: "WA", passed, total: tests.length, failedOn: i + 1 };
     }
     passed++;

@@ -54,9 +54,9 @@ export default function CpArenaPage() {
     );
   }
 
-  const { slug, meta, body, sampleInput, sampleOutput } = challenge;
   const difficultyStyle =
-    DIFFICULTY_STYLES[meta.difficulty] ?? "bg-bronze/15 text-bronze";
+    DIFFICULTY_STYLES[challenge.difficulty] ?? "bg-bronze/15 text-bronze";
+  const sample = challenge.samples[0];
 
   return (
     <main className="flex-1">
@@ -67,22 +67,22 @@ export default function CpArenaPage() {
             Problem of the Day
           </span>
           <span className="text-charcoal/40">·</span>
-          <span className="text-charcoal/60">{formatDate(meta.date)}</span>
+          <span className="text-charcoal/60">{formatDate(challenge.date)}</span>
         </div>
 
         <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
           <h1 className="text-balance font-display text-3xl font-bold tracking-tight text-chocolate sm:text-4xl">
-            {meta.title}
+            {challenge.title}
           </h1>
           <span
             className={`rounded-full px-3 py-1 text-xs font-semibold ${difficultyStyle}`}
           >
-            {meta.difficulty}
+            {challenge.difficulty}
           </span>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          {meta.tags.map((tag) => (
+          {challenge.tags.map((tag) => (
             <span
               key={tag}
               className="rounded-full border border-hairline bg-panel px-3 py-1 text-xs font-medium text-charcoal/70"
@@ -90,36 +90,32 @@ export default function CpArenaPage() {
               {tag}
             </span>
           ))}
-          <span className="ml-1 inline-flex items-center gap-1.5 text-xs text-charcoal/60">
-            <span className="font-semibold text-brown">{meta.points} pts</span>
-            base reward
-          </span>
-          {meta.timeLimit && (
-            <span className="text-xs text-charcoal/50">
-              · {meta.timeLimit} limit
+          {challenge.timeLimit && (
+            <span className="ml-1 text-xs text-charcoal/50">
+              {challenge.timeLimit} limit
             </span>
           )}
-          {meta.memoryLimit && (
+          {challenge.memoryLimit && (
             <span className="text-xs text-charcoal/50">
-              · {meta.memoryLimit}
+              · {challenge.memoryLimit}
             </span>
           )}
         </div>
 
-        {meta.author && (
+        {challenge.author && (
           <p className="mt-3 text-sm text-charcoal/60">
             Set by{" "}
-            <span className="font-semibold text-brown">{meta.author}</span>
+            <span className="font-semibold text-brown">{challenge.author}</span>
           </p>
         )}
 
         <ArenaRules />
 
         <ArenaWorkspace
-          slug={slug}
-          problem={<ProblemStatement body={body} />}
-          sampleInput={sampleInput}
-          sampleOutput={sampleOutput}
+          slug={challenge.slug}
+          problem={<ProblemStatement challenge={challenge} />}
+          sampleInput={sample?.input ?? ""}
+          sampleOutput={sample?.output ?? ""}
         />
       </section>
     </main>

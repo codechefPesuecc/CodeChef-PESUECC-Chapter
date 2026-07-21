@@ -183,6 +183,17 @@ button:focus-visible,
   padding: 0.1em 0.4em;
   border-radius: 6px;
 }
+.arena-prose .arena-io-label {
+  margin-top: 0.75rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-brown);
+}
+.arena-prose .arena-io-label + pre {
+  margin-top: 0.3rem;
+}
 .arena-prose pre {
   margin: 1rem 0;
   padding: 0.9rem 1.1rem;

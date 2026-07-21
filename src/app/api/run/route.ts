@@ -53,7 +53,7 @@ export async function POST(req: Request) {
   if (typeof slug === "string") {
     const challenge = getChallengeBySlug(slug);
     if (challenge) {
-      runTimeoutMs = parseTimeLimitMs(challenge.meta.timeLimit, DEFAULT_RUN_MS);
+      runTimeoutMs = parseTimeLimitMs(challenge.timeLimit, DEFAULT_RUN_MS);
     }
   }
   runTimeoutMs = Math.min(Math.max(runTimeoutMs, 500), MAX_RUN_MS);
