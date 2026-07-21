@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql } from "drizzle-orm";
 import { db } from "@/server/db";
-import { pistonRuntimes } from "@/lib/piston";
+import { pistonQueueStats, pistonRuntimes } from "@/lib/piston";
 
 // Always run at request time — this checks live dependencies.
 export const dynamic = "force-dynamic";
@@ -30,7 +30,7 @@ export async function GET() {
 
   const ok = checks.db && checks.piston;
   return NextResponse.json(
-    { ok, ...checks, at: new Date().toISOString() },
+    { ok, ...checks, judgeQueue: pistonQueueStats(), at: new Date().toISOString() },
     { status: ok ? 200 : 503 },
   );
 }
