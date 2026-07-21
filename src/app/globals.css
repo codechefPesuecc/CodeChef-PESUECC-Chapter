@@ -40,6 +40,15 @@
 :root {
   --site-canvas: var(--color-cream);
   --site-backdrop: url("/lightmode.png");
+
+  /* Code editor / console surface — light IDE in light mode. */
+  --ide-bar: #efe9e0;
+  --ide-border: #e3dacd;
+  --ide-body: #ffffff;
+  --ide-ink-strong: #3e2f24;
+  --ide-ink: #6f5f4e;
+  --ide-ink-dim: #9c8b77;
+  --ide-code: #3e2f24;
 }
 
 .dark {
@@ -51,6 +60,15 @@
   --color-hairline: #3a2c20; /* borders & hairline dividers */
   --site-canvas: #16110c; /* deep warm near-black page canvas */
   --site-backdrop: url("/darkmode.png");
+
+  /* Code editor / console surface — warm terminal-dark in dark mode. */
+  --ide-bar: #1e1610;
+  --ide-border: #3a2c20;
+  --ide-body: #16110c;
+  --ide-ink-strong: #f0e9dd;
+  --ide-ink: rgba(240, 233, 221, 0.62);
+  --ide-ink-dim: rgba(240, 233, 221, 0.4);
+  --ide-code: #cbb89a;
 }
 
 html {
@@ -96,4 +114,124 @@ button:focus-visible,
   html {
     scroll-behavior: auto;
   }
+}
+
+/*
+ * CP Arena — problem statement prose. Rendered from challenge markdown by
+ * ProblemStatement. Colours use brand tokens so the copy re-themes in dark mode;
+ * fenced code blocks stay a warm terminal-dark in both themes.
+ */
+.arena-prose {
+  color: color-mix(in oklab, var(--color-charcoal) 90%, transparent);
+  font-size: 0.95rem;
+}
+.arena-prose > :first-child {
+  margin-top: 0;
+}
+.arena-prose h2 {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  color: var(--color-chocolate);
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+  margin: 1.75rem 0 0.6rem;
+}
+.arena-prose h3 {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 600;
+  color: var(--color-chocolate);
+  font-size: 0.95rem;
+  margin: 1.25rem 0 0.5rem;
+}
+.arena-prose p {
+  line-height: 1.7;
+  margin: 0.75rem 0;
+}
+.arena-prose strong {
+  color: var(--color-chocolate);
+  font-weight: 600;
+}
+.arena-prose a {
+  color: var(--color-bronze);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.arena-prose ul,
+.arena-prose ol {
+  margin: 0.75rem 0;
+  padding-left: 1.35rem;
+}
+.arena-prose ul {
+  list-style: disc;
+}
+.arena-prose ol {
+  list-style: decimal;
+}
+.arena-prose li {
+  margin: 0.35rem 0;
+  line-height: 1.6;
+}
+.arena-prose li::marker {
+  color: var(--color-bronze);
+}
+.arena-prose :not(pre) > code {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.85em;
+  color: var(--color-brown);
+  background: color-mix(in oklab, var(--color-bronze) 14%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-bronze) 22%, transparent);
+  padding: 0.1em 0.4em;
+  border-radius: 6px;
+}
+.arena-prose .arena-io-label {
+  margin-top: 0.75rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-brown);
+}
+.arena-prose .arena-io-label + pre {
+  margin-top: 0.3rem;
+}
+.arena-prose pre {
+  margin: 1rem 0;
+  padding: 0.9rem 1.1rem;
+  border-radius: 12px;
+  background: #16110c;
+  border: 1px solid #3a2c20;
+  overflow-x: auto;
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+.arena-prose pre code {
+  font-family: var(--font-mono), monospace;
+  color: #e8dfd2;
+  background: none;
+  border: none;
+  padding: 0;
+}
+/* Screenshot deterrent: don't render the problem when printing / print-to-PDF. */
+@media print {
+  .arena-no-print {
+    display: none !important;
+  }
+}
+
+.arena-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+}
+.arena-prose th,
+.arena-prose td {
+  border: 1px solid var(--color-hairline);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+.arena-prose th {
+  color: var(--color-chocolate);
+  font-weight: 600;
+  background: color-mix(in oklab, var(--color-bronze) 8%, transparent);
 }
