@@ -61,11 +61,14 @@ export default function ArenaWorkspace({
   problem,
   sampleInput,
   sampleOutput,
+  practice = false,
 }: {
   slug: string;
   problem: ReactNode;
   sampleInput: string;
   sampleOutput: string;
+  /** Past-problem practice mode: no proctoring, no ranked board or points. */
+  practice?: boolean;
 }) {
   const codeKey = (lang: LanguageId) => `cp-arena:code:${slug}:${lang}`;
   const loadCode = (lang: LanguageId) => {
@@ -109,7 +112,8 @@ export default function ArenaWorkspace({
   }, []);
 
   const solved = mySolveSeconds != null;
-  const integrity = useIntegrityMonitor(!solved);
+  // No proctoring on practice (past) problems — they aren't ranked.
+  const integrity = useIntegrityMonitor(!solved && !practice);
 
   // Live today leaderboard from the DB (refetched after an accepted submit).
   const fetchBoardRows = useCallback(async (): Promise<LeaderRow[]> => {
@@ -123,8 +127,9 @@ export default function ArenaWorkspace({
   }, []);
 
   useEffect(() => {
+    if (practice) return; // practice pages don't show the ranked today board
     fetchBoardRows().then((rows) => setBoard(rows));
-  }, [fetchBoardRows]);
+  }, [fetchBoardRows, practice]);
 
   // Blur the problem when the window/tab loses focus — a screenshot deterrent
   // (e.g. the OS snip overlay steals focus, so it captures a blurred panel).
@@ -287,23 +292,28 @@ export default function ArenaWorkspace({
         setMyFlags(flagsNow);
         setJudgement({ mode: "submit", status: "AC", total: data.total });
 
-        // The server now owns the standings — read our real rank/points back.
-        const rows = await fetchBoardRows();
-        setBoard(rows);
-        const me = rows.find((r) => r.username === user.username);
-        const rank = me?.rank ?? null;
-        const points = me?.points ?? (flagsNow > FLAG_LIMIT ? BASE_POINTS : null);
-        const flagged = me?.flagged ?? flagsNow > FLAG_LIMIT;
-        setMyRank(rank);
-        setMyPoints(points);
-        setMyFlaggedSolve(flagged);
+        if (practice || data.practice) {
+          // Past problem: judged for feedback, but no rank/points/board.
+          addHistory("AC", formatClock(solveSecs), "Practice");
+        } else {
+          // The server now owns the standings — read our real rank/points back.
+          const rows = await fetchBoardRows();
+          setBoard(rows);
+          const me = rows.find((r) => r.username === user.username);
+          const rank = me?.rank ?? null;
+          const points = me?.points ?? (flagsNow > FLAG_LIMIT ? BASE_POINTS : null);
+          const flagged = me?.flagged ?? flagsNow > FLAG_LIMIT;
+          setMyRank(rank);
+          setMyPoints(points);
+          setMyFlaggedSolve(flagged);
 
-        const detail = flagged
-          ? `Flagged · +${points ?? BASE_POINTS} pts`
-          : rank
-            ? `${ordinal(rank)} · +${points} pts`
-            : `+${points ?? 0} pts`;
-        addHistory("AC", formatClock(solveSecs), detail);
+          const detail = flagged
+            ? `Flagged · +${points ?? BASE_POINTS} pts`
+            : rank
+              ? `${ordinal(rank)} · +${points} pts`
+              : `+${points ?? 0} pts`;
+          addHistory("AC", formatClock(solveSecs), detail);
+        }
       } else {
         setJudgement({
           mode: "submit",
@@ -341,24 +351,40 @@ export default function ArenaWorkspace({
               // `data-lenis-prevent` lets this panel scroll natively instead of
               // Lenis hijacking the wheel for the whole page.
               data-lenis-prevent
-              className="arena-no-print max-h-[560px] select-none overflow-y-auto overscroll-contain px-6 py-6 lg:max-h-[720px]"
-              onCopyCapture={(e) => {
-                e.preventDefault();
-                integrity.record("copy");
-              }}
-              onCutCapture={(e) => {
-                e.preventDefault();
-                integrity.record("cut");
-              }}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                integrity.record("context-menu");
-              }}
+              className={`arena-no-print max-h-[560px] overflow-y-auto overscroll-contain px-6 py-6 lg:max-h-[720px] ${
+                practice ? "" : "select-none"
+              }`}
+              onCopyCapture={
+                practice
+                  ? undefined
+                  : (e) => {
+                      e.preventDefault();
+                      integrity.record("copy");
+                    }
+              }
+              onCutCapture={
+                practice
+                  ? undefined
+                  : (e) => {
+                      e.preventDefault();
+                      integrity.record("cut");
+                    }
+              }
+              onContextMenu={
+                practice
+                  ? undefined
+                  : (e) => {
+                      e.preventDefault();
+                      integrity.record("context-menu");
+                    }
+              }
             >
               {problem}
             </div>
-            <Watermark tag={`@${user?.username ?? "guest"} · PESUECC Arena`} />
-            {!pageFocused && <ScreenGuard />}
+            {!practice && (
+              <Watermark tag={`@${user?.username ?? "guest"} · PESUECC Arena`} />
+            )}
+            {!practice && !pageFocused && <ScreenGuard />}
           </div>
         </section>
 
@@ -405,22 +431,29 @@ export default function ArenaWorkspace({
                   <ClockIcon />
                   {formatClock(elapsed)}
                 </span>
-                <span
-                  title={`Copy, paste and right-click are disabled · tab switches are recorded · more than ${FLAG_LIMIT} flags removes you from the top 10`}
-                  className={`inline-flex items-center gap-1.5 font-mono text-xs ${
-                    integrity.flagged
-                      ? "text-red-400"
-                      : integrity.total > 0
-                        ? "text-amber-400"
-                        : "text-[var(--ide-ink-dim)]"
-                  }`}
-                >
-                  <ShieldIcon />
-                  <span className="hidden sm:inline">
-                    {integrity.flagged ? "Flagged" : "Proctored"}
+                {practice ? (
+                  <span className="inline-flex items-center gap-1.5 font-mono text-xs text-[var(--ide-ink-dim)]">
+                    <TerminalIcon />
+                    <span className="hidden sm:inline">Practice</span>
                   </span>
-                  {integrity.total > 0 && <span>· {integrity.total}</span>}
-                </span>
+                ) : (
+                  <span
+                    title={`Copy, paste and right-click are disabled · tab switches are recorded · more than ${FLAG_LIMIT} flags removes you from the top 10`}
+                    className={`inline-flex items-center gap-1.5 font-mono text-xs ${
+                      integrity.flagged
+                        ? "text-red-400"
+                        : integrity.total > 0
+                          ? "text-amber-400"
+                          : "text-[var(--ide-ink-dim)]"
+                    }`}
+                  >
+                    <ShieldIcon />
+                    <span className="hidden sm:inline">
+                      {integrity.flagged ? "Flagged" : "Proctored"}
+                    </span>
+                    {integrity.total > 0 && <span>· {integrity.total}</span>}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -536,6 +569,7 @@ export default function ArenaWorkspace({
             myPoints={myPoints}
             flagged={myFlaggedSolve}
             flagCount={myFlags}
+            practice={practice}
             solveClock={mySolveSeconds != null ? formatClock(mySolveSeconds) : ""}
           />
 
@@ -543,28 +577,47 @@ export default function ArenaWorkspace({
         </section>
       </div>
 
-      <SpeedBounty />
+      {practice ? (
+        <section className="rounded-2xl border border-hairline bg-panel p-6 text-center shadow-sm">
+          <p className="text-sm text-charcoal/70">
+            This is a past problem, open for practice. Submissions are judged
+            against the hidden tests but don&apos;t affect the leaderboard.
+          </p>
+          <Link
+            href="/cp-arena"
+            className="mt-3 inline-block text-sm font-semibold text-bronze hover:underline"
+          >
+            Go to today&apos;s Problem of the Day →
+          </Link>
+        </section>
+      ) : (
+        <>
+          <SpeedBounty />
 
-      <section className="overflow-hidden rounded-2xl border border-hairline bg-panel shadow-sm">
-        <div className="flex items-center justify-between border-b border-hairline px-6 py-4">
-          <h2 className="font-display text-lg font-bold text-chocolate">
-            Live Standings
-          </h2>
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-charcoal/60">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-            {board?.length ?? 0} solved today
-          </span>
-        </div>
-        {board === null ? (
-          <p className="px-6 py-8 text-center text-sm text-charcoal/50">Loading…</p>
-        ) : (
-          <LeaderboardTable
-            rows={board}
-            scope="today"
-            currentUsername={user?.username}
-          />
-        )}
-      </section>
+          <section className="overflow-hidden rounded-2xl border border-hairline bg-panel shadow-sm">
+            <div className="flex items-center justify-between border-b border-hairline px-6 py-4">
+              <h2 className="font-display text-lg font-bold text-chocolate">
+                Live Standings
+              </h2>
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-charcoal/60">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+                {board?.length ?? 0} solved today
+              </span>
+            </div>
+            {board === null ? (
+              <p className="px-6 py-8 text-center text-sm text-charcoal/50">
+                Loading…
+              </p>
+            ) : (
+              <LeaderboardTable
+                rows={board}
+                scope="today"
+                currentUsername={user?.username}
+              />
+            )}
+          </section>
+        </>
+      )}
     </div>
   );
 }
@@ -580,6 +633,7 @@ function Console({
   myPoints,
   flagged,
   flagCount,
+  practice,
   solveClock,
 }: {
   running: boolean;
@@ -590,6 +644,7 @@ function Console({
   myPoints: number | null;
   flagged: boolean;
   flagCount: number;
+  practice: boolean;
   solveClock: string;
 }) {
   return (
@@ -611,7 +666,10 @@ function Console({
             Write your solution, then{" "}
             <span className="text-bronze">Run</span> it against the sample or{" "}
             <span className="text-bronze">Submit</span> to the judge&apos;s hidden
-            tests. Faster accepted solves earn more of the daily bounty.
+            tests.{" "}
+            {practice
+              ? "This past problem is for practice — it won't change the leaderboard."
+              : "Faster accepted solves earn more of the daily bounty."}
           </p>
         ) : judgement.mode === "submit" ? (
           <SubmitResult
@@ -620,6 +678,7 @@ function Console({
             myPoints={myPoints}
             flagged={flagged}
             flagCount={flagCount}
+            practice={practice}
             solveClock={solveClock}
           />
         ) : (
@@ -636,6 +695,7 @@ function SubmitResult({
   myPoints,
   flagged,
   flagCount,
+  practice,
   solveClock,
 }: {
   judgement: NonNullable<Judgement>;
@@ -643,8 +703,26 @@ function SubmitResult({
   myPoints: number | null;
   flagged: boolean;
   flagCount: number;
+  practice: boolean;
   solveClock: string;
 }) {
+  if (judgement.status === "AC" && practice) {
+    return (
+      <div className="space-y-2">
+        <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+          Accepted — all {judgement.total ?? ""} tests passed.
+        </p>
+        <p className="text-[var(--ide-code)]">
+          Practice solve in{" "}
+          <span className="font-semibold text-[var(--ide-ink-strong)]">
+            {solveClock}
+          </span>
+          . Past problems don&apos;t affect the leaderboard — nice work.
+        </p>
+      </div>
+    );
+  }
+
   if (judgement.status === "AC") {
     return (
       <div className="space-y-2">

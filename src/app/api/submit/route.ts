@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/server/db";
 import { submissions } from "@/server/db/schema";
 import { getCurrentUser } from "@/server/auth/session";
+import { getDailyChallenge } from "@/lib/challenges";
 import { judge } from "@/server/judge";
 
 export const dynamic = "force-dynamic";
@@ -52,30 +53,38 @@ export async function POST(req: Request) {
     );
   }
 
+  // Only the current Problem of the Day is ranked. Past problems are practice:
+  // they're judged for AC/WA feedback but not recorded, so re-solving an old
+  // problem at leisure can't mint fresh speed-bounty points or move the boards.
+  const daily = getDailyChallenge();
+  const ranked = daily?.slug === slug;
+
   const result = await judge({ slug, language, code });
 
   if (result.verdict === "ERR") {
     return NextResponse.json({ ok: false, error: result.message ?? "Judge error." }, { status: 503 });
   }
 
-  // Record every judged submission (audit trail + leaderboard source).
-  try {
-    await db.insert(submissions).values({
-      id: crypto.randomUUID(),
-      challengeSlug: slug,
-      userId: user.id,
-      language,
-      code,
-      status: result.verdict,
-      elapsedSeconds:
-        typeof body.elapsedSeconds === "number" ? Math.round(body.elapsedSeconds) : null,
-      flags: typeof body.flags === "number" ? Math.max(0, Math.round(body.flags)) : 0,
-      flagsBreakdown: body.flagsBreakdown ? JSON.stringify(body.flagsBreakdown) : null,
-      createdAt: Date.now(),
-    });
-  } catch (error) {
-    console.error("[submit] failed to record submission:", error);
+  // Record every ranked judged submission (audit trail + leaderboard source).
+  if (ranked) {
+    try {
+      await db.insert(submissions).values({
+        id: crypto.randomUUID(),
+        challengeSlug: slug,
+        userId: user.id,
+        language,
+        code,
+        status: result.verdict,
+        elapsedSeconds:
+          typeof body.elapsedSeconds === "number" ? Math.round(body.elapsedSeconds) : null,
+        flags: typeof body.flags === "number" ? Math.max(0, Math.round(body.flags)) : 0,
+        flagsBreakdown: body.flagsBreakdown ? JSON.stringify(body.flagsBreakdown) : null,
+        createdAt: Date.now(),
+      });
+    } catch (error) {
+      console.error("[submit] failed to record submission:", error);
+    }
   }
 
-  return NextResponse.json({ ok: true, ...result });
+  return NextResponse.json({ ok: true, practice: !ranked, ...result });
 }
