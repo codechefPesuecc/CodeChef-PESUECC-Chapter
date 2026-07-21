@@ -14,11 +14,27 @@ export const users = sqliteTable("users", {
   // Public leaderboard identity; SRN/PRN/email stay private.
   username: text("username").notNull().unique(),
   email: text("email").notNull().unique(),
+  emailVerified: integer("email_verified", { mode: "boolean" })
+    .notNull()
+    .default(false),
   // Student registration number — permanent, filled in once assigned (first
   // years register with only a PRN). Both are unique → one account per student.
   srn: text("srn").unique(),
   prn: text("prn").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
+  createdAt: integer("created_at").notNull(),
+});
+
+// Email OTP codes (hashed). One active row per user; verified on match.
+export const emailVerifications = sqliteTable("email_verifications", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  email: text("email").notNull(),
+  codeHash: text("code_hash").notNull(),
+  expiresAt: integer("expires_at").notNull(),
+  attempts: integer("attempts").notNull().default(0),
   createdAt: integer("created_at").notNull(),
 });
 
@@ -46,3 +62,4 @@ export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Submission = typeof submissions.$inferSelect;
 export type NewSubmission = typeof submissions.$inferInsert;
+export type EmailVerification = typeof emailVerifications.$inferSelect;

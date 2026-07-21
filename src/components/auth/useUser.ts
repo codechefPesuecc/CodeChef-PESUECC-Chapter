@@ -6,6 +6,7 @@ export interface AuthUser {
   id: string;
   username: string;
   email: string;
+  emailVerified: boolean;
   srn: string | null;
   prn: string;
   createdAt: number;

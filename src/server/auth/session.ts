@@ -20,6 +20,7 @@ export interface SessionUser {
   id: string;
   username: string;
   email: string;
+  emailVerified: boolean;
   srn: string | null;
   prn: string;
   createdAt: number;
@@ -80,6 +81,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     id: user.id,
     username: user.username,
     email: user.email,
+    emailVerified: user.emailVerified,
     srn: user.srn,
     prn: user.prn,
     createdAt: user.createdAt,

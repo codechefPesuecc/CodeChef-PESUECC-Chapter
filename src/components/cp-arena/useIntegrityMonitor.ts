@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { FLAG_LIMIT } from "@/lib/points";
 
 /**
  * Client-side integrity signals for the CP Arena.
@@ -11,12 +12,9 @@ import { useCallback, useEffect, useState } from "react";
  * the submission for server-side review. Real enforcement stays server-side.
  */
 
-/**
- * Accumulating MORE than this many flags removes a solver from the day's top 10
- * — an accepted solve then earns only the 100-point base instead of the speed
- * bounty.
- */
-export const FLAG_LIMIT = 5;
+// Re-exported so existing importers keep working; defined in lib/points so the
+// server can apply the same rule.
+export { FLAG_LIMIT };
 
 export type IntegrityEvent =
   | "paste"

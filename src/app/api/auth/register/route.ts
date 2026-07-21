@@ -92,7 +92,15 @@ export async function POST(req: Request) {
     );
   }
 
-  const user: SessionUser = { id, username, email, srn, prn, createdAt };
+  const user: SessionUser = {
+    id,
+    username,
+    email,
+    emailVerified: false,
+    srn,
+    prn,
+    createdAt,
+  };
   const res = NextResponse.json({ ok: true, user });
   res.cookies.set(SESSION_COOKIE, createSessionToken(id), cookieOptions);
   return res;

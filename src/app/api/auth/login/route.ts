@@ -51,6 +51,7 @@ export async function POST(req: Request) {
       id: user.id,
       username: user.username,
       email: user.email,
+      emailVerified: user.emailVerified,
       srn: user.srn,
       prn: user.prn,
       createdAt: user.createdAt,
