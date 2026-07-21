@@ -1,5 +1,5 @@
 /**
- * Daily CP Arena — speed bounty scoring.
+ * Daily Arena — speed bounty scoring.
  *
  * Points are awarded by finish order for the Problem of the Day: the faster you
  * submit an accepted solution, the more you earn. Everyone who solves after the

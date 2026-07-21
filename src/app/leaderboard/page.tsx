@@ -4,7 +4,7 @@ import LeaderboardView from "@/components/cp-arena/LeaderboardView";
 export const metadata: Metadata = {
   title: "Leaderboard",
   description:
-    "The CodeChef PESUECC Chapter CP Arena leaderboard — today's speed-bounty standings, this month's totals, and the all-time rankings.",
+    "The CodeChef PESUECC Chapter Arena leaderboard — today's speed-bounty standings, this month's totals, and the all-time rankings.",
 };
 
 export default function LeaderboardPage() {
@@ -12,7 +12,7 @@ export default function LeaderboardPage() {
     <main className="flex-1">
       <section className="mx-auto max-w-4xl px-6 pt-8 pb-24">
         <span className="font-mono text-xs font-semibold uppercase tracking-wider text-bronze">
-          CP Arena
+          Arena
         </span>
         <h1 className="mt-2 font-display text-3xl font-bold tracking-tight text-chocolate sm:text-4xl">
           Leaderboard

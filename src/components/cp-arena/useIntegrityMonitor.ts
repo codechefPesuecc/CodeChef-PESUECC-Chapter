@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { FLAG_LIMIT } from "@/lib/points";
 
 /**
- * Client-side integrity signals for the CP Arena.
+ * Client-side integrity signals for the Arena.
  *
  * These are deterrents, not security — any of them can be bypassed via DevTools
  * or with scripting disabled. Their value is (a) adding friction to casual

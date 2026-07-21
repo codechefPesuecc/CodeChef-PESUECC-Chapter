@@ -3,7 +3,7 @@ import Link from "next/link";
 
 const explore = [
   { href: "/", label: "Home" },
-  { href: "/cp-arena", label: "CP Arena" },
+  { href: "/cp-arena", label: "Arena" },
   { href: "/initiatives", label: "Initiatives" },
   { href: "/team", label: "Team" },
   { href: "/newsroom", label: "Newsroom" },
@@ -79,7 +79,7 @@ export default function Footer() {
             </div>
             <p className="mt-5 max-w-xs text-sm leading-6 text-cream/60">
               Building a campus competitive programming culture at PES University,
-              ECC — a daily CP arena, technical initiatives, and platforms
+              ECC — a daily arena, technical initiatives, and platforms
               engineered in the open.
             </p>
           </div>

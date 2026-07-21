@@ -117,7 +117,7 @@ button:focus-visible,
 }
 
 /*
- * CP Arena — problem statement prose. Rendered from challenge markdown by
+ * Arena — problem statement prose. Rendered from challenge markdown by
  * ProblemStatement. Colours use brand tokens so the copy re-themes in dark mode;
  * fenced code blocks stay a warm terminal-dark in both themes.
  */

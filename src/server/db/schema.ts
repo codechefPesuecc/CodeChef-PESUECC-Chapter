@@ -1,7 +1,7 @@
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 
 /**
- * CP Arena persistence (SQLite via libSQL / Drizzle).
+ * Arena persistence (SQLite via libSQL / Drizzle).
  *
  * Challenges live as GitOps JSON; the DB holds accounts and the dynamic state —
  * who solved what, when, and how. Timestamps are unix epoch milliseconds recorded

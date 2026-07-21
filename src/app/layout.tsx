@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     template: "%s · CodeChef PESUECC Chapter",
   },
   description:
-    "The official portal and competitive programming ecosystem of the CodeChef PESUECC Chapter — a daily CP arena, technical initiatives, and the team building it in the open.",
+    "The official portal and competitive programming ecosystem of the CodeChef PESUECC Chapter — a daily arena, technical initiatives, and the team building it in the open.",
 };
 
 export default function RootLayout({

@@ -1,5 +1,5 @@
 /**
- * Server component — the CP Arena rulebook. Collapsible so it stays visible
+ * Server component — the Arena rulebook. Collapsible so it stays visible
  * without pushing the editor too far down. Styled with brand tokens, so it
  * re-themes in dark mode automatically.
  */
@@ -24,7 +24,7 @@ export default function ArenaRules() {
         </span>
         <div className="flex-1">
           <h2 className="font-display text-base font-bold text-chocolate">
-            How the CP Arena works · Rules
+            How the Arena works · Rules
           </h2>
           <p className="text-xs text-charcoal/55">
             Scoring, fair play, and what gets you disqualified.

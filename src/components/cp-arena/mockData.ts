@@ -1,5 +1,5 @@
 /**
- * Frontend-only fixtures for the CP Arena. Starter templates seed the editor and
+ * Frontend-only fixtures for the Arena. Starter templates seed the editor and
  * the standings seed the live board so the speed-bounty flow can be demonstrated
  * before the real judge (README: Piston sandbox) and Cloudflare D1 are wired up.
  */

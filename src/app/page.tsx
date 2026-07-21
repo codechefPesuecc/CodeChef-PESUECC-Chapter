@@ -6,7 +6,7 @@ import Reveal from "@/components/Reveal";
 const metrics = [
   { prefix: "", value: 50, suffix: "+", label: "Active Developers" },
   { prefix: "", value: 3, suffix: "+", label: "Production Platforms Built" },
-  { prefix: "Rs ", value: 1500, suffix: "+", label: "Monthly CP Arena Rewards" },
+  { prefix: "Rs ", value: 1500, suffix: "+", label: "Monthly Arena Rewards" },
 ];
 
 const pillars = [
@@ -39,7 +39,7 @@ const benefits = [
   {
     icon: <TrophyIcon />,
     title: "Monthly Cash Bounties",
-    body: "Top solvers on the CP Arena leaderboard earn real cash rewards every single month.",
+    body: "Top solvers on the Arena leaderboard earn real cash rewards every single month.",
   },
   {
     icon: <RocketIcon />,
@@ -109,7 +109,7 @@ export default function Home() {
                   href="/cp-arena"
                   className="group inline-flex items-center gap-2 rounded-lg bg-bronze px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-bronze/90 hover:shadow-md"
                 >
-                  Enter the CP Arena
+                  Enter the Arena
                   <span className="transition-transform group-hover:translate-x-0.5">
                     →
                   </span>
@@ -308,7 +308,7 @@ export default function Home() {
                   href="/cp-arena"
                   className="group inline-flex items-center gap-2 rounded-lg bg-bronze px-6 py-3 text-sm font-semibold text-white shadow-[0_4px_24px_-2px_rgba(166,124,82,0.6)] transition-all hover:bg-bronze/90"
                 >
-                  Enter the CP Arena
+                  Enter the Arena
                   <span className="transition-transform group-hover:translate-x-0.5">
                     →
                   </span>

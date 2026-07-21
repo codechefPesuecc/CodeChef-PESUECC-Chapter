@@ -6,7 +6,7 @@ import ArenaWorkspace from "@/components/cp-arena/ArenaWorkspace";
 import ArenaRules from "@/components/cp-arena/ArenaRules";
 
 export const metadata: Metadata = {
-  title: "CP Arena",
+  title: "Arena",
   description:
     "The daily competitive programming arena of the CodeChef PESUECC Chapter — solve the Problem of the Day, submit in the browser, and climb the live speed-bounty leaderboard.",
 };

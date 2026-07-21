@@ -62,7 +62,7 @@ export default function RegisterForm() {
           Create your account
         </h1>
         <p className="mt-1 text-sm text-charcoal/60">
-          Join the CP Arena and climb the daily leaderboard.
+          Join the Arena and climb the daily leaderboard.
         </p>
         <form onSubmit={submit} className="mt-6 space-y-4">
           <Field label="Username" hint="Your public name on the leaderboard.">
@@ -125,7 +125,7 @@ export default function RegisterForm() {
               className="mt-0.5 accent-bronze"
             />
             <span>
-              I agree to the CP Arena fair-play rules — no plagiarism, sharing, or
+              I agree to the Arena fair-play rules — no plagiarism, sharing, or
               automating submissions.
             </span>
           </label>

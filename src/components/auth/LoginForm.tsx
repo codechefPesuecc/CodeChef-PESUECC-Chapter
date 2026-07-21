@@ -40,7 +40,7 @@ export default function LoginForm() {
       <div className="rounded-2xl border border-hairline bg-panel p-8 shadow-sm">
         <h1 className="font-display text-2xl font-bold text-chocolate">Log in</h1>
         <p className="mt-1 text-sm text-charcoal/60">
-          Welcome back to the CP Arena.
+          Welcome back to the Arena.
         </p>
         <form onSubmit={submit} className="mt-6 space-y-4">
           <div>
