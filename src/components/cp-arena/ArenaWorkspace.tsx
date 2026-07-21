@@ -276,6 +276,15 @@ export default function ArenaWorkspace({
         });
         return;
       }
+      if (res.status === 403 || data.needsVerify) {
+        setJudgement({
+          mode: "submit",
+          status: "ERR",
+          message:
+            "Verify your email before submitting — open the verification page from your profile.",
+        });
+        return;
+      }
       if (!data.ok) {
         setJudgement({
           mode: "submit",

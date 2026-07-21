@@ -77,9 +77,12 @@ export default async function ProfilePage() {
                 verified
               </span>
             ) : (
-              <span className="ml-2 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
-                unverified
-              </span>
+              <Link
+                href="/verify"
+                className="ml-2 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-700 hover:underline dark:text-amber-400"
+              >
+                verify →
+              </Link>
             )}
           </DetailRow>
           <DetailRow label="PRN">

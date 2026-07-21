@@ -48,7 +48,7 @@ export default function RegisterForm() {
         setLoading(false);
         return;
       }
-      window.location.href = "/cp-arena";
+      window.location.href = data.needsVerify ? "/verify" : "/cp-arena";
     } catch {
       setError("Something went wrong. Please try again.");
       setLoading(false);
