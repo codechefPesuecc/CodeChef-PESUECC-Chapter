@@ -3,16 +3,22 @@ import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 /**
  * CP Arena persistence (SQLite via libSQL / Drizzle).
  *
- * Challenges still live as GitOps markdown (see src/lib/challenges.ts); the DB
- * holds the dynamic state — who solved what, when, and how. Timestamps are unix
- * epoch milliseconds recorded server-side, so solve ordering can't be spoofed
- * by the client.
+ * Challenges live as GitOps JSON; the DB holds accounts and the dynamic state —
+ * who solved what, when, and how. Timestamps are unix epoch milliseconds recorded
+ * server-side, so solve ordering can't be spoofed by the client. Sessions are
+ * stateless signed cookies, so there's no sessions table.
  */
 
 export const users = sqliteTable("users", {
   id: text("id").primaryKey(),
-  handle: text("handle").notNull().unique(),
-  name: text("name"),
+  // Public leaderboard identity; SRN/PRN/email stay private.
+  username: text("username").notNull().unique(),
+  email: text("email").notNull().unique(),
+  // Student registration number — permanent, filled in once assigned (first
+  // years register with only a PRN). Both are unique → one account per student.
+  srn: text("srn").unique(),
+  prn: text("prn").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
   createdAt: integer("created_at").notNull(),
 });
 

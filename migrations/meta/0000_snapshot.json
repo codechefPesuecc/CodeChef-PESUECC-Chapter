@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "0f4704a5-475a-409b-8596-8c42fb333d63",
+  "id": "a260c480-fc9c-4110-942e-2fe1c393c6eb",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "submissions": {
@@ -117,18 +117,39 @@
           "notNull": true,
           "autoincrement": false
         },
-        "handle": {
-          "name": "handle",
+        "username": {
+          "name": "username",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "name": {
-          "name": "name",
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "srn": {
+          "name": "srn",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
+          "autoincrement": false
+        },
+        "prn": {
+          "name": "prn",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "password_hash": {
+          "name": "password_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
           "autoincrement": false
         },
         "created_at": {
@@ -140,10 +161,31 @@
         }
       },
       "indexes": {
-        "users_handle_unique": {
-          "name": "users_handle_unique",
+        "users_username_unique": {
+          "name": "users_username_unique",
           "columns": [
-            "handle"
+            "username"
+          ],
+          "isUnique": true
+        },
+        "users_email_unique": {
+          "name": "users_email_unique",
+          "columns": [
+            "email"
+          ],
+          "isUnique": true
+        },
+        "users_srn_unique": {
+          "name": "users_srn_unique",
+          "columns": [
+            "srn"
+          ],
+          "isUnique": true
+        },
+        "users_prn_unique": {
+          "name": "users_prn_unique",
+          "columns": [
+            "prn"
           ],
           "isUnique": true
         }

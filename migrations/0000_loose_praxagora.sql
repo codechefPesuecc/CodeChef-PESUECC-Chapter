@@ -15,9 +15,15 @@ CREATE TABLE `submissions` (
 --> statement-breakpoint
 CREATE TABLE `users` (
 	`id` text PRIMARY KEY NOT NULL,
-	`handle` text NOT NULL,
-	`name` text,
+	`username` text NOT NULL,
+	`email` text NOT NULL,
+	`srn` text,
+	`prn` text NOT NULL,
+	`password_hash` text NOT NULL,
 	`created_at` integer NOT NULL
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `users_handle_unique` ON `users` (`handle`);
+CREATE UNIQUE INDEX `users_username_unique` ON `users` (`username`);--> statement-breakpoint
+CREATE UNIQUE INDEX `users_email_unique` ON `users` (`email`);--> statement-breakpoint
+CREATE UNIQUE INDEX `users_srn_unique` ON `users` (`srn`);--> statement-breakpoint
+CREATE UNIQUE INDEX `users_prn_unique` ON `users` (`prn`);
