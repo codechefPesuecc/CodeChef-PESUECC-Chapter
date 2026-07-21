@@ -11,8 +11,14 @@ const PISTON_URL = process.env.PISTON_URL ?? "http://localhost:2000";
 /** Maps our language ids to Piston's language names. */
 export const PISTON_LANGUAGE: Record<string, string> = {
   cpp: "c++",
+  c: "c",
   python: "python",
   java: "java",
+  csharp: "csharp",
+  javascript: "javascript",
+  go: "go",
+  rust: "rust",
+  zig: "zig",
 };
 
 export interface PistonRuntime {

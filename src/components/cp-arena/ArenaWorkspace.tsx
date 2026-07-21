@@ -16,8 +16,14 @@ import { FLAG_LIMIT, useIntegrityMonitor } from "./useIntegrityMonitor";
 
 const FILE_EXT: Record<LanguageId, string> = {
   cpp: "cpp",
+  c: "c",
   python: "py",
   java: "java",
+  csharp: "cs",
+  javascript: "js",
+  go: "go",
+  rust: "rs",
+  zig: "zig",
 };
 
 type Judgement = {

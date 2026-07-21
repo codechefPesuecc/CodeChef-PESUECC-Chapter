@@ -6,8 +6,14 @@ export const dynamic = "force-dynamic";
 
 const FILE_NAME: Record<string, string> = {
   cpp: "main.cpp",
+  c: "main.c",
   python: "main.py",
   java: "Main.java",
+  csharp: "main.cs",
+  javascript: "main.js",
+  go: "main.go",
+  rust: "main.rs",
+  zig: "main.zig",
 };
 
 // Must not exceed PISTON_RUN_TIMEOUT on the container (see docker-compose.yml).

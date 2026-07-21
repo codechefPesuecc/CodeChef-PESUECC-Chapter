@@ -4,12 +4,27 @@
  * before the real judge (README: Piston sandbox) and Cloudflare D1 are wired up.
  */
 
-export type LanguageId = "cpp" | "python" | "java";
+export type LanguageId =
+  | "cpp"
+  | "python"
+  | "java"
+  | "c"
+  | "csharp"
+  | "javascript"
+  | "go"
+  | "rust"
+  | "zig";
 
 export const LANGUAGES: { id: LanguageId; label: string }[] = [
   { id: "cpp", label: "C++" },
   { id: "python", label: "Python" },
   { id: "java", label: "Java" },
+  { id: "c", label: "C" },
+  { id: "csharp", label: "C#" },
+  { id: "javascript", label: "JavaScript" },
+  { id: "go", label: "Go" },
+  { id: "rust", label: "Rust" },
+  { id: "zig", label: "Zig" },
 ];
 
 export function languageLabel(id: LanguageId): string {
@@ -56,6 +71,84 @@ public class Main {
 
         // TODO: compute the minimum number of candies and print it.
     }
+}
+`,
+  c: `#include <stdio.h>
+#include <stdlib.h>
+
+int main(void) {
+    int n;
+    if (scanf("%d", &n) != 1) return 0;
+    long long *r = malloc(sizeof(long long) * n);
+    for (int i = 0; i < n; i++) scanf("%lld", &r[i]);
+
+    // TODO: compute the minimum number of candies and print it.
+
+    free(r);
+    return 0;
+}
+`,
+  csharp: `using System;
+using System.Linq;
+
+class Program {
+    static void Main() {
+        int n = int.Parse(Console.ReadLine().Trim());
+        long[] r = Console.ReadLine()
+            .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(long.Parse).ToArray();
+
+        // TODO: compute the minimum number of candies and print it.
+    }
+}
+`,
+  javascript: `const data = require("fs").readFileSync(0, "utf8").split(/\\s+/).filter(Boolean);
+let idx = 0;
+const n = Number(data[idx++]);
+const r = data.slice(idx, idx + n).map(Number);
+idx += n;
+
+// TODO: compute the minimum number of candies and print it with console.log.
+`,
+  go: `package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+)
+
+func main() {
+	reader := bufio.NewReader(os.Stdin)
+	var n int
+	fmt.Fscan(reader, &n)
+	r := make([]int64, n)
+	for i := 0; i < n; i++ {
+		fmt.Fscan(reader, &r[i])
+	}
+
+	// TODO: compute the minimum number of candies and print it.
+}
+`,
+  rust: `use std::io::{self, Read};
+
+fn main() {
+    let mut input = String::new();
+    io::stdin().read_to_string(&mut input).unwrap();
+    let mut it = input.split_whitespace();
+    let n: usize = it.next().unwrap().parse().unwrap();
+    let r: Vec<i64> = (0..n).map(|_| it.next().unwrap().parse().unwrap()).collect();
+
+    // TODO: compute the minimum number of candies and print it.
+    let _ = r;
+}
+`,
+  zig: `const std = @import("std");
+
+pub fn main() !void {
+    const stdout = std.io.getStdOut().writer();
+    // TODO: read from stdin and print your answer.
+    try stdout.print("", .{});
 }
 `,
 };
