@@ -34,7 +34,7 @@ const FILE_EXT: Record<LanguageId, string> = {
   zig: "zig",
 };
 
-type Verdict = "AC" | "WA" | "TLE" | "RE" | "CE";
+type Verdict = "AC" | "WA" | "TLE" | "MLE" | "RE" | "CE";
 
 type Judgement = {
   mode: "run" | "submit";
@@ -830,15 +830,17 @@ function SubmitResult({
     );
   }
 
-  // WA / TLE / RE — never reveal the hidden test data, only which one failed.
+  // WA / TLE / MLE / RE — never reveal the hidden test data, only which one failed.
   const heading =
     judgement.status === "WA"
       ? "Wrong Answer"
       : judgement.status === "TLE"
         ? "Time Limit Exceeded"
-        : "Runtime Error";
+        : judgement.status === "MLE"
+          ? "Memory Limit Exceeded"
+          : "Runtime Error";
   const tone =
-    judgement.status === "TLE"
+    judgement.status === "TLE" || judgement.status === "MLE"
       ? "text-amber-600 dark:text-amber-400"
       : "text-red-600 dark:text-red-400";
   return (
@@ -974,12 +976,14 @@ function VerdictBadge({
   }
   if (!judgement) return null;
   const red = "bg-red-500/15 text-red-600 dark:text-red-400";
+  const amber = "bg-amber-500/15 text-amber-600 dark:text-amber-400";
   const map = {
     AC: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
     WA: red,
     RAN: "bg-bronze/15 text-bronze",
     CE: red,
-    TLE: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+    TLE: amber,
+    MLE: amber,
     RE: red,
     ERR: red,
   } as const;
@@ -989,6 +993,7 @@ function VerdictBadge({
     RAN: "Ran",
     CE: "Compile Error",
     TLE: "Time Limit Exceeded",
+    MLE: "Memory Limit Exceeded",
     RE: "Runtime Error",
     ERR: "Error",
   } as const;

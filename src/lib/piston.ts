@@ -84,6 +84,8 @@ export async function pistonExecute(params: {
   files: { name: string; content: string }[];
   stdin?: string;
   runTimeoutMs?: number;
+  /** Per-run address-space limit in bytes (omit / <=0 for unlimited). */
+  runMemoryLimitBytes?: number;
 }): Promise<PistonExecuteResult> {
   // Bounded concurrency: wait for a slot before hitting the sandbox.
   await acquireSlot();
@@ -98,6 +100,9 @@ export async function pistonExecute(params: {
         files: params.files,
         stdin: params.stdin ?? "",
         run_timeout: params.runTimeoutMs ?? 3000,
+        ...(params.runMemoryLimitBytes && params.runMemoryLimitBytes > 0
+          ? { run_memory_limit: params.runMemoryLimitBytes }
+          : {}),
       }),
     });
     if (!res.ok) {

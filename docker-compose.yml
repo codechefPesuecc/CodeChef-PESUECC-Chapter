@@ -15,6 +15,9 @@ services:
       # 10s are honoured. The submit/run routes pass each problem's own limit.
       - PISTON_RUN_TIMEOUT=10000
       - PISTON_COMPILE_TIMEOUT=20000
+      # Ceiling for per-run memory (512 MiB). The judge passes each problem's own
+      # memory limit (default 256 MiB) per request, which must be <= this cap.
+      - PISTON_RUN_MEMORY_LIMIT=536870912
     # Published on localhost so the Node app and the install script can reach it.
     ports:
       - "127.0.0.1:2000:2000"

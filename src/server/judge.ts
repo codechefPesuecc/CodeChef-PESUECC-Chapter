@@ -1,6 +1,7 @@
 import {
   getChallengeBySlug,
   parseTimeLimitMs,
+  parseMemoryLimitBytes,
   type Checker,
 } from "@/lib/challenges";
 import { PISTON_LANGUAGE, pistonExecute, pistonRuntimes } from "@/lib/piston";
@@ -12,7 +13,7 @@ import { PISTON_LANGUAGE, pistonExecute, pistonRuntimes } from "@/lib/piston";
  * failed.
  */
 
-export type Verdict = "AC" | "WA" | "TLE" | "RE" | "CE" | "NO_TESTS" | "ERR";
+export type Verdict = "AC" | "WA" | "TLE" | "MLE" | "RE" | "CE" | "NO_TESTS" | "ERR";
 
 export interface JudgeResult {
   verdict: Verdict;
@@ -38,6 +39,19 @@ const FILE_NAME: Record<string, string> = {
 };
 
 const MAX_RUN_MS = 10000;
+
+const DEFAULT_MEM_BYTES = 256 * 1024 * 1024;
+const MIN_MEM_BYTES = 32 * 1024 * 1024;
+const MAX_MEM_BYTES = 512 * 1024 * 1024; // must stay <= PISTON_RUN_MEMORY_LIMIT
+
+// Out-of-memory signatures across the supported runtimes — a memory-limited run
+// usually fails to allocate (non-zero exit) rather than being SIGKILLed.
+const OOM_RE =
+  /bad_alloc|OutOfMemoryError|MemoryError|out of memory|cannot allocate memory|memory allocation of|GC overhead limit|fatal error: runtime: out of memory/i;
+
+function looksLikeOom(stderr: string | undefined): boolean {
+  return !!stderr && OOM_RE.test(stderr);
+}
 
 /** Compares program output to the expected output per the problem's checker. */
 function outputMatches(got: string, expected: string, checker: Checker): boolean {
@@ -105,6 +119,13 @@ export async function judge(params: {
     Math.max(parseTimeLimitMs(challenge?.timeLimit, 2000), 500),
     MAX_RUN_MS,
   );
+  const memLimitBytes = Math.min(
+    Math.max(
+      parseMemoryLimitBytes(challenge?.memoryLimit, DEFAULT_MEM_BYTES),
+      MIN_MEM_BYTES,
+    ),
+    MAX_MEM_BYTES,
+  );
   const fileName = FILE_NAME[language] ?? "main.txt";
 
   let passed = 0;
@@ -118,6 +139,7 @@ export async function judge(params: {
         files: [{ name: fileName, content: code }],
         stdin: test.input,
         runTimeoutMs: timeLimitMs,
+        runMemoryLimitBytes: memLimitBytes,
       });
     } catch (error) {
       return { verdict: "ERR", passed, total: tests.length, message: String(error) };
@@ -130,7 +152,9 @@ export async function judge(params: {
       return { verdict: "TLE", passed, total: tests.length, failedOn: i + 1 };
     }
     if (result.run.code !== 0) {
-      return { verdict: "RE", passed, total: tests.length, failedOn: i + 1, detail: result.run.stderr };
+      // A memory-limited run typically fails to allocate rather than time out.
+      const verdict = looksLikeOom(result.run.stderr) ? "MLE" : "RE";
+      return { verdict, passed, total: tests.length, failedOn: i + 1, detail: result.run.stderr };
     }
     if (!outputMatches(result.run.stdout, test.output, checker)) {
       return { verdict: "WA", passed, total: tests.length, failedOn: i + 1 };

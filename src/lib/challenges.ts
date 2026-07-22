@@ -184,3 +184,23 @@ export function parseTimeLimitMs(timeLimit: string | undefined, fallback = 2000)
   const unit = (match[2] ?? "s").toLowerCase();
   return Math.round(unit === "ms" ? value : value * 1000);
 }
+
+/**
+ * Parses a memory limit like "256 MB", "256MiB", "512m", or a raw byte count
+ * into bytes. Units are treated as binary (MB = MiB = 1024², the CP convention).
+ * Falls back to `fallback` when absent or unparseable.
+ */
+export function parseMemoryLimitBytes(
+  memoryLimit: string | undefined,
+  fallback: number,
+): number {
+  if (!memoryLimit) return fallback;
+  const match = memoryLimit.trim().match(/^([\d.]+)\s*(k|m|g)?i?b?$/i);
+  if (!match) return fallback;
+  const value = parseFloat(match[1]);
+  if (!Number.isFinite(value)) return fallback;
+  const unit = (match[2] ?? "").toLowerCase();
+  const mult =
+    unit === "g" ? 1024 ** 3 : unit === "m" ? 1024 ** 2 : unit === "k" ? 1024 : 1;
+  return Math.round(value * mult);
+}
