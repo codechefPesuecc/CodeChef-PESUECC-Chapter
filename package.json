@@ -11,6 +11,9 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "challenges:validate": "tsx scripts/validate-challenges.ts",
+    "cf:build": "opennextjs-cloudflare build",
+    "cf:deploy": "opennextjs-cloudflare build && wrangler deploy",
+    "cf:preview": "opennextjs-cloudflare build && wrangler dev",
     "piston:up": "docker compose up -d",
     "piston:down": "docker compose down",
     "piston:install": "sh scripts/install-runtimes.sh"
