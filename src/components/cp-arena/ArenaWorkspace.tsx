@@ -19,6 +19,7 @@ import { BASE_POINTS, BOUNTY_LADDER, ordinal } from "@/lib/points";
 import { FLAG_LIMIT, useIntegrityMonitor } from "./useIntegrityMonitor";
 import { useUser } from "@/components/auth/useUser";
 import LeaderboardTable, { type LeaderRow } from "./LeaderboardTable";
+import Turnstile, { turnstileConfigured } from "./Turnstile";
 import Link from "next/link";
 
 const FILE_EXT: Record<LanguageId, string> = {
@@ -96,6 +97,8 @@ export default function ArenaWorkspace({
   const [board, setBoard] = useState<LeaderRow[] | null>(null);
   const [pageFocused, setPageFocused] = useState(true);
   const [busyLabel, setBusyLabel] = useState("Running…");
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileNonce, setTurnstileNonce] = useState(0);
 
   const startRef = useRef<number | null>(null);
   const frozenRef = useRef(false);
@@ -249,6 +252,14 @@ export default function ArenaWorkspace({
 
   const submit = async () => {
     if (running || solved || !user) return;
+    if (turnstileConfigured && !turnstileToken) {
+      setJudgement({
+        mode: "submit",
+        status: "ERR",
+        message: "Please complete the verification challenge, then submit.",
+      });
+      return;
+    }
     setRunning(true);
     setBusyLabel("Judging against the hidden tests…");
     setJudgement(null);
@@ -265,9 +276,18 @@ export default function ArenaWorkspace({
           elapsedSeconds: solveSecs,
           flags: flagsNow,
           flagsBreakdown: integrity.counts,
+          turnstileToken,
         }),
       });
       const data = await res.json();
+      if (res.status === 429 || data.rateLimited) {
+        setJudgement({
+          mode: "submit",
+          status: "ERR",
+          message: data.error ?? "Too many submissions — slow down a moment.",
+        });
+        return;
+      }
       if (res.status === 401 || data.needsAuth) {
         setJudgement({
           mode: "submit",
@@ -346,6 +366,11 @@ export default function ArenaWorkspace({
       });
     } finally {
       setRunning(false);
+      // Turnstile tokens are single-use — refresh the widget for a next attempt.
+      if (turnstileConfigured) {
+        setTurnstileToken(null);
+        setTurnstileNonce((n) => n + 1);
+      }
     }
   };
 
@@ -473,6 +498,12 @@ export default function ArenaWorkspace({
               lockClipboard
               onBlocked={integrity.record}
             />
+
+            {turnstileConfigured && !solved && (
+              <div className="border-t border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 py-3">
+                <Turnstile key={turnstileNonce} onToken={setTurnstileToken} />
+              </div>
+            )}
 
             {/* Action bar */}
             <div className="flex items-center gap-3 border-t border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 py-3">

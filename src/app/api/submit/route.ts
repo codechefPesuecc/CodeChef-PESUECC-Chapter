@@ -5,11 +5,18 @@ import { submissions } from "@/server/db/schema";
 import { getCurrentUser } from "@/server/auth/session";
 import { getDailyChallenge } from "@/lib/challenges";
 import { judge } from "@/server/judge";
+import { rateLimit, clientIp } from "@/server/rateLimit";
+import { verifyTurnstile } from "@/server/turnstile";
 
 export const dynamic = "force-dynamic";
 
 // Turn on once an email provider is configured (see AUTH docs).
 const REQUIRE_VERIFIED = process.env.REQUIRE_EMAIL_VERIFICATION === "true";
+
+// Per-user submission cap — the FIFO judge queue bounds throughput, this bounds
+// spam per account before it ever reaches the queue.
+const SUBMIT_LIMIT = 20;
+const SUBMIT_WINDOW_MS = 60_000;
 
 /**
  * Graded submission: requires login, runs the code against the hidden tests, and
@@ -31,6 +38,18 @@ export async function POST(req: Request) {
     );
   }
 
+  const limit = rateLimit(`submit:${user.id}`, SUBMIT_LIMIT, SUBMIT_WINDOW_MS);
+  if (!limit.ok) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: `Too many submissions — try again in ${Math.ceil(limit.retryAfterMs / 1000)}s.`,
+        rateLimited: true,
+      },
+      { status: 429, headers: { "Retry-After": String(Math.ceil(limit.retryAfterMs / 1000)) } },
+    );
+  }
+
   let body: {
     slug?: string;
     language?: string;
@@ -38,6 +57,7 @@ export async function POST(req: Request) {
     elapsedSeconds?: number;
     flags?: number;
     flagsBreakdown?: unknown;
+    turnstileToken?: string;
   };
   try {
     body = await req.json();
@@ -50,6 +70,15 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { ok: false, error: "slug, language and code are required." },
       { status: 400 },
+    );
+  }
+
+  // Bot check (no-op unless TURNSTILE_SECRET_KEY is configured).
+  const turnstile = await verifyTurnstile(body.turnstileToken, clientIp(req));
+  if (!turnstile.ok) {
+    return NextResponse.json(
+      { ok: false, error: turnstile.error, needsTurnstile: true },
+      { status: 403 },
     );
   }
 

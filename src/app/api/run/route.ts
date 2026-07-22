@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { PISTON_LANGUAGE, pistonExecute, pistonRuntimes } from "@/lib/piston";
 import { getChallengeBySlug, parseTimeLimitMs } from "@/lib/challenges";
+import { rateLimit, clientIp } from "@/server/rateLimit";
 
 export const dynamic = "force-dynamic";
+
+// "Run" is unauthenticated, so cap it per IP to keep the sandbox fair.
+const RUN_LIMIT = 40;
+const RUN_WINDOW_MS = 60_000;
 
 const FILE_NAME: Record<string, string> = {
   cpp: "main.cpp",
@@ -27,6 +32,18 @@ const DEFAULT_RUN_MS = 2000;
  * Piston. Grading against hidden tests will live in /api/submit.
  */
 export async function POST(req: Request) {
+  const limit = rateLimit(`run:${clientIp(req)}`, RUN_LIMIT, RUN_WINDOW_MS);
+  if (!limit.ok) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: `Too many runs — try again in ${Math.ceil(limit.retryAfterMs / 1000)}s.`,
+        rateLimited: true,
+      },
+      { status: 429, headers: { "Retry-After": String(Math.ceil(limit.retryAfterMs / 1000)) } },
+    );
+  }
+
   let body: {
     language?: string;
     code?: string;
