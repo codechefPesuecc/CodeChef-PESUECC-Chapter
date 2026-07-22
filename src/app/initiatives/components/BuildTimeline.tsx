@@ -11,16 +11,16 @@ export function BuildTimeline() {
         body="The chapter builds in loops: discover the need, ship the smallest real thing, run it live, and compound the learning."
       />
 
-      <div className="relative mt-12">
+      <div className="relative mt-12 rounded-3xl border border-hairline bg-panel/60 p-8 shadow-sm backdrop-blur-md sm:p-12">
         <div
           aria-hidden
-          className="absolute left-4 top-0 h-full w-px bg-hairline lg:left-0 lg:top-9 lg:h-px lg:w-full"
+          className="absolute left-12 top-8 h-[calc(100%-4rem)] w-px bg-hairline lg:left-12 lg:top-20 lg:h-px lg:w-[calc(100%-6rem)]"
         />
-        <div className="grid gap-5 lg:grid-cols-5">
+        <div className="grid gap-8 lg:grid-cols-5 lg:gap-5">
           {timeline.map((item, i) => (
             <Reveal key={item.step} delay={i * 0.06}>
-              <article className="relative pl-12 lg:pl-0 lg:pt-14">
-                <span className="absolute left-0 top-1 flex h-8 w-8 items-center justify-center rounded-full border border-bronze/35 bg-panel font-mono text-[10px] font-bold text-bronze shadow-sm lg:top-0">
+              <article className="relative pl-12 lg:pl-0 lg:pt-12">
+                <span className="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full border border-bronze/35 bg-panel font-mono text-[10px] font-bold text-bronze shadow-sm">
                   {item.step}
                 </span>
                 <h3 className="font-display text-lg font-bold text-chocolate">

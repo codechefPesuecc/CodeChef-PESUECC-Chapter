@@ -30,7 +30,7 @@ function EventScrollStory({
   index: number;
 }) {
   return (
-    <article className="grid gap-10 lg:grid-cols-[0.55fr_0.45fr] lg:items-start xl:grid-cols-[0.6fr_0.4fr]">
+    <article className="grid gap-10 lg:grid-cols-[1.1fr_1fr] lg:items-start xl:grid-cols-[1.2fr_1fr]">
       <div className="lg:sticky lg:top-28">
         <Reveal delay={index * 0.05}>
           <div className="relative overflow-hidden rounded-2xl border border-hairline bg-panel p-6 shadow-sm sm:p-8">
@@ -83,7 +83,7 @@ function EventScrollStory({
         </Reveal>
       </div>
 
-      <div className="space-y-6 lg:min-h-[155vh]">
+      <div className="space-y-8 lg:min-h-[175vh] xl:space-y-12 xl:min-h-[200vh]">
         {event.gallery.map((photo, photoIndex) => (
           <div
             key={`${event.id}-${photo.caption}`}
@@ -94,13 +94,13 @@ function EventScrollStory({
                 className="group overflow-hidden rounded-2xl border border-hairline bg-panel shadow-xl"
                 style={{ zIndex: photoIndex + 1 }}
               >
-                <div className="relative aspect-[4/3] min-h-[320px] lg:min-h-[520px]">
+                <div className="relative aspect-[4/3] min-h-[400px] lg:min-h-[600px] 2xl:min-h-[750px]">
                   <Image
                     src={photo.src}
                     alt={`${event.title}: ${photo.caption}`}
                     fill
-                    priority={photoIndex === 0}
-                    sizes="(min-width: 1024px) 54vw, 100vw"
+                    priority={index === 0 && photoIndex === 0}
+                    sizes="(min-width: 1024px) 50vw, 100vw"
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                   <div
@@ -128,3 +128,4 @@ function EventScrollStory({
     </article>
   );
 }
+
