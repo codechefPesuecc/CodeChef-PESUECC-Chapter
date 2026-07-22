@@ -6,7 +6,7 @@ import { SectionIntro, MetaPill, ArrowIcon } from "./Shared";
 
 export function FlagshipEvents() {
   return (
-    <section id="flagship-events" className="mx-auto w-[92%] max-w-[1440px] py-16 sm:py-20">
+    <section id="flagship-events" className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
       <SectionIntro
         eyebrow="Flagship events"
         title="Scroll through the event engines"

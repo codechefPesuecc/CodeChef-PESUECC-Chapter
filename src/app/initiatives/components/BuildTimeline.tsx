@@ -4,7 +4,7 @@ import { SectionIntro } from "./Shared";
 
 export function BuildTimeline() {
   return (
-    <section className="mx-auto w-[92%] max-w-[1440px] py-16 sm:py-20">
+    <section className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
       <SectionIntro
         eyebrow="Operating model"
         title="How an initiative becomes a system"

@@ -4,7 +4,7 @@ import { ArrowIcon } from "./Shared";
 
 export function ClosingImpact() {
   return (
-    <section className="mx-auto w-[92%] max-w-[1440px] pb-24">
+    <section className="mx-auto max-w-6xl px-6 pb-24">
       <Reveal>
         <div className="relative overflow-hidden rounded-3xl bg-panel shadow-xl ring-1 ring-hairline">
           <div

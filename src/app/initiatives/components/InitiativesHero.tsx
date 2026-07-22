@@ -7,7 +7,7 @@ export function InitiativesHero() {
   return (
     <section className="relative -mt-24 overflow-hidden pt-24">
       <TechnicalBackdrop />
-      <div className="relative z-10 mx-auto grid w-[92%] max-w-[1440px] gap-10 pt-10 pb-16 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:pt-16 lg:pb-20">
+      <div className="relative z-10 mx-auto max-w-6xl px-6 gap-10 pt-10 pb-16 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:pt-16 lg:pb-20">
         <Reveal>
           <span className="inline-flex items-center rounded-full border border-bronze/25 bg-panel/75 px-3 py-1 font-mono text-xs font-semibold uppercase tracking-wider text-bronze shadow-sm backdrop-blur">
             Product studio · Engineering lab
