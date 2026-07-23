@@ -235,3 +235,113 @@ button:focus-visible,
   font-weight: 600;
   background: color-mix(in oklab, var(--color-bronze) 8%, transparent);
 }
+
+/*
+ * --- Mecha / HUD panels ---
+ * Chamfered "tech panel" cards with a double outline. The notched shape is a
+ * clip-path octagon; the double line is four nested clip layers whose alternating
+ * fill/line backgrounds paint an outer line, a gap, and an inner line. Each layer
+ * shrinks its own chamfer (`--mecha-n`) by how far it is inset, so the diagonals
+ * stay concentric. Colours are vars so the whole thing themes in light/dark.
+ */
+.mecha {
+  --mecha-n: 14px; /* chamfer size */
+  --mecha-fill: var(--color-panel);
+  --mecha-line: color-mix(in oklab, var(--color-chocolate) 60%, var(--color-bronze));
+  --mecha-clip: polygon(
+    var(--mecha-n) 0,
+    calc(100% - var(--mecha-n)) 0,
+    100% var(--mecha-n),
+    100% calc(100% - var(--mecha-n)),
+    calc(100% - var(--mecha-n)) 100%,
+    var(--mecha-n) 100%,
+    0 calc(100% - var(--mecha-n)),
+    0 var(--mecha-n)
+  );
+  position: relative;
+  clip-path: var(--mecha-clip);
+  background: var(--mecha-line); /* outer line */
+  padding: 1.5px;
+  /* clip-path clips box-shadow, so cast the drop via filter instead. */
+  filter: drop-shadow(0 5px 14px rgb(0 0 0 / 0.1));
+}
+.mecha__gap {
+  --mecha-n: 12.5px; /* 14 - 1.5 inset */
+  clip-path: var(--mecha-clip);
+  background: var(--mecha-fill); /* gap */
+  padding: 4px;
+}
+.mecha__inline {
+  --mecha-n: 8.5px; /* 14 - 5.5 inset */
+  clip-path: var(--mecha-clip);
+  background: var(--mecha-line); /* inner line */
+  padding: 1px;
+}
+.mecha__body {
+  --mecha-n: 7.5px; /* 14 - 6.5 inset */
+  clip-path: var(--mecha-clip);
+  background: var(--mecha-fill);
+  position: relative;
+  height: 100%;
+}
+
+/* Dark-IDE variant: dark fill + warm bronze edge (used for the console). */
+.mecha--ide {
+  --mecha-fill: var(--ide-body);
+  --mecha-line: color-mix(in oklab, var(--color-bronze) 70%, var(--ide-border));
+}
+
+.mecha__telemetry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.6rem 0.9rem 0;
+  font-family: var(--font-mono), monospace;
+}
+.mecha__label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: color-mix(in oklab, var(--mecha-line) 88%, transparent);
+  border: 1px solid color-mix(in oklab, var(--mecha-line) 40%, transparent);
+  padding: 0.16rem 0.5rem;
+  white-space: nowrap;
+}
+.mecha__index {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: color-mix(in oklab, var(--mecha-line) 70%, transparent);
+}
+
+.mecha__tick {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  pointer-events: none;
+  color: color-mix(in oklab, var(--mecha-line) 55%, transparent);
+}
+.mecha__tick--tl {
+  top: 10px;
+  left: 10px;
+  border-top: 1.5px solid;
+  border-left: 1.5px solid;
+}
+.mecha__tick--tr {
+  top: 10px;
+  right: 10px;
+  border-top: 1.5px solid;
+  border-right: 1.5px solid;
+}
+.mecha__tick--bl {
+  bottom: 10px;
+  left: 10px;
+  border-bottom: 1.5px solid;
+  border-left: 1.5px solid;
+}
+.mecha__tick--br {
+  bottom: 10px;
+  right: 10px;
+  border-bottom: 1.5px solid;
+  border-right: 1.5px solid;
+}

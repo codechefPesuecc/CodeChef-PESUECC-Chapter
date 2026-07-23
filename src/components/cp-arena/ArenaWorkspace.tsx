@@ -20,6 +20,7 @@ import { FLAG_LIMIT, useIntegrityMonitor } from "./useIntegrityMonitor";
 import { useUser } from "@/components/auth/useUser";
 import LeaderboardTable, { type LeaderRow } from "./LeaderboardTable";
 import Turnstile, { turnstileConfigured } from "./Turnstile";
+import MechaPanel from "./MechaPanel";
 import Link from "next/link";
 
 const FILE_EXT: Record<LanguageId, string> = {
@@ -378,8 +379,7 @@ export default function ArenaWorkspace({
     <div className="mt-8 space-y-6">
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         {/* Problem statement */}
-        <section className="overflow-hidden rounded-2xl border border-hairline bg-panel shadow-sm">
-          <PanelBar label="Problem" />
+        <MechaPanel label={practice ? "Practice" : "Problem"} index="01" ticks>
           <div className="relative">
             <div
               // `data-lenis-prevent` lets this panel scroll natively instead of
@@ -420,11 +420,11 @@ export default function ArenaWorkspace({
             )}
             {!practice && !pageFocused && <ScreenGuard />}
           </div>
-        </section>
+        </MechaPanel>
 
         {/* Editor + console */}
         <section className="space-y-4">
-          <div className="overflow-hidden rounded-2xl border border-hairline shadow-sm">
+          <MechaPanel className="mecha--ide">
             {/* IDE title bar */}
             <div className="flex items-center gap-3 border-b border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 py-2.5">
               <span className="flex gap-1.5" aria-hidden>
@@ -566,7 +566,7 @@ export default function ArenaWorkspace({
                 )}
               </div>
             </div>
-          </div>
+          </MechaPanel>
 
           <CustomInputPanel
             value={customInput}
@@ -618,27 +618,26 @@ export default function ArenaWorkspace({
       </div>
 
       {practice ? (
-        <section className="rounded-2xl border border-hairline bg-panel p-6 text-center shadow-sm">
-          <p className="text-sm text-charcoal/70">
-            This is a past problem, open for practice. Submissions are judged
-            against the hidden tests but don&apos;t affect the leaderboard.
-          </p>
-          <Link
-            href="/cp-arena"
-            className="mt-3 inline-block text-sm font-semibold text-bronze hover:underline"
-          >
-            Go to today&apos;s Problem of the Day →
-          </Link>
-        </section>
+        <MechaPanel label="Practice">
+          <div className="px-6 pb-6 pt-3 text-center">
+            <p className="text-sm text-charcoal/70">
+              This is a past problem, open for practice. Submissions are judged
+              against the hidden tests but don&apos;t affect the leaderboard.
+            </p>
+            <Link
+              href="/cp-arena"
+              className="mt-3 inline-block text-sm font-semibold text-bronze hover:underline"
+            >
+              Go to today&apos;s Problem of the Day →
+            </Link>
+          </div>
+        </MechaPanel>
       ) : (
         <>
           <SpeedBounty />
 
-          <section className="overflow-hidden rounded-2xl border border-hairline bg-panel shadow-sm">
-            <div className="flex items-center justify-between border-b border-hairline px-6 py-4">
-              <h2 className="font-display text-lg font-bold text-chocolate">
-                Live Standings
-              </h2>
+          <MechaPanel label="Live Standings" ticks>
+            <div className="flex items-center justify-end border-b border-hairline px-6 py-4">
               <span className="inline-flex items-center gap-1.5 text-xs font-medium text-charcoal/60">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
                 {board?.length ?? 0} solved today
@@ -655,7 +654,7 @@ export default function ArenaWorkspace({
                 currentUsername={user?.username}
               />
             )}
-          </section>
+          </MechaPanel>
         </>
       )}
     </div>
@@ -688,14 +687,12 @@ function Console({
   solveClock: string;
 }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-hairline shadow-sm">
-      <div className="flex items-center justify-between border-b border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 py-2.5">
-        <span className="font-mono text-[11px] uppercase tracking-wider text-[var(--ide-ink-dim)]">
-          Console
-        </span>
-        <VerdictBadge running={running} judgement={judgement} />
-      </div>
-      <div className="min-h-[150px] bg-[var(--ide-body)] px-4 py-4 font-mono text-xs leading-relaxed text-[var(--ide-code)]">
+    <MechaPanel
+      className="mecha--ide"
+      label="Console"
+      index={<VerdictBadge running={running} judgement={judgement} />}
+    >
+      <div className="min-h-[150px] px-4 py-4 font-mono text-xs leading-relaxed text-[var(--ide-code)]">
         {running ? (
           <p className="flex items-center gap-2 text-bronze">
             <span className="h-2 w-2 animate-pulse rounded-full bg-bronze" />
@@ -725,7 +722,7 @@ function Console({
           <RunResult judgement={judgement} sampleOutput={sampleOutput} />
         )}
       </div>
-    </div>
+    </MechaPanel>
   );
 }
 
@@ -1020,7 +1017,8 @@ function CustomInputPanel({
   isCustom: boolean;
 }) {
   return (
-    <details className="group overflow-hidden rounded-2xl border border-hairline bg-panel shadow-sm">
+    <MechaPanel>
+      <details className="group">
       <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 [&::-webkit-details-marker]:hidden">
         <span className="text-bronze">
           <TerminalIcon />
@@ -1059,7 +1057,8 @@ function CustomInputPanel({
           </button>
         </div>
       </div>
-    </details>
+      </details>
+    </MechaPanel>
   );
 }
 
@@ -1067,7 +1066,7 @@ function CustomInputPanel({
 
 function SubmissionsPanel({ history }: { history: Submission[] }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-hairline bg-panel shadow-sm">
+    <MechaPanel>
       <div className="flex items-center justify-between border-b border-hairline px-4 py-3">
         <h3 className="font-display text-sm font-bold text-chocolate">
           Your submissions
@@ -1109,7 +1108,7 @@ function SubmissionsPanel({ history }: { history: Submission[] }) {
           ))}
         </ul>
       )}
-    </div>
+    </MechaPanel>
   );
 }
 
@@ -1118,17 +1117,13 @@ function SubmissionsPanel({ history }: { history: Submission[] }) {
 function SpeedBounty() {
   const medal = ["#d9a441", "#b9b4ad", "#c08457"];
   return (
-    <section className="rounded-2xl border border-hairline bg-panel p-6 shadow-sm">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="font-display text-lg font-bold text-chocolate">
-          Speed Bounty
-        </h2>
+    <MechaPanel label="Speed Bounty" ticks>
+      <div className="px-6 pb-6 pt-3">
         <p className="text-xs text-charcoal/60">
           Points by finish order — the faster you get accepted, the more you earn.
         </p>
-      </div>
-      <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-5 lg:grid-cols-10">
-        {BOUNTY_LADDER.map((tier, i) => (
+        <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-5 lg:grid-cols-10">
+          {BOUNTY_LADDER.map((tier, i) => (
           <div
             key={tier.label}
             className="rounded-xl border border-hairline bg-cream/40 px-3 py-3 text-center dark:bg-white/[0.03]"
@@ -1146,9 +1141,10 @@ function SpeedBounty() {
               {i === BOUNTY_LADDER.length - 1 ? "base" : "pts"}
             </div>
           </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </section>
+    </MechaPanel>
   );
 }
 
@@ -1203,19 +1199,6 @@ function EyeOffIcon() {
       <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
       <path d="m2 2 20 20" />
     </svg>
-  );
-}
-
-/* --- Small UI bits --- */
-
-function PanelBar({ label }: { label: string }) {
-  return (
-    <div className="flex items-center gap-2 border-b border-hairline px-6 py-3">
-      <span className="h-1.5 w-1.5 rounded-full bg-bronze" />
-      <span className="font-mono text-[11px] uppercase tracking-wider text-charcoal/50">
-        {label}
-      </span>
-    </div>
   );
 }
 

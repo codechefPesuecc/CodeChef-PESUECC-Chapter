@@ -6,6 +6,7 @@ import LeaderboardTable, {
   type LeaderRow,
   type LeaderScope,
 } from "./LeaderboardTable";
+import MechaPanel from "./MechaPanel";
 
 const TABS: { scope: LeaderScope; label: string }[] = [
   { scope: "today", label: "Today" },
@@ -40,6 +41,7 @@ export default function LeaderboardView() {
   }, [scope]);
 
   const rows = cache[scope];
+  const activeLabel = TABS.find((t) => t.scope === scope)?.label ?? "Standings";
 
   return (
     <div>
@@ -60,7 +62,7 @@ export default function LeaderboardView() {
         ))}
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-2xl border border-hairline bg-panel shadow-sm">
+      <MechaPanel className="mt-4" label={activeLabel} ticks>
         {rows === undefined ? (
           <p className="px-6 py-10 text-center text-sm text-charcoal/50">
             Loading…
@@ -72,7 +74,7 @@ export default function LeaderboardView() {
             currentUsername={user?.username}
           />
         )}
-      </div>
+      </MechaPanel>
     </div>
   );
 }

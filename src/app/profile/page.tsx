@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/server/auth/session";
 import { getUserSubmissions, getProfileStats } from "@/server/profile";
 import { FLAG_LIMIT, ordinal } from "@/lib/points";
+import MechaPanel from "@/components/cp-arena/MechaPanel";
 
 export const metadata: Metadata = {
   title: "Your profile",
@@ -69,7 +70,8 @@ export default async function ProfilePage() {
         </div>
 
         {/* Private identity (only the owner sees this page) */}
-        <div className="mt-6 flex flex-wrap gap-x-8 gap-y-2 rounded-2xl border border-hairline bg-panel px-5 py-4 text-sm shadow-sm">
+        <MechaPanel className="mt-6" label="Identity">
+          <div className="flex flex-wrap gap-x-8 gap-y-2 px-5 pb-4 pt-3 text-sm">
           <DetailRow label="Email">
             <span className="text-charcoal/80">{user.email}</span>
             {user.emailVerified ? (
@@ -93,7 +95,8 @@ export default async function ProfilePage() {
               {user.srn ?? "—"}
             </span>
           </DetailRow>
-        </div>
+          </div>
+        </MechaPanel>
 
         {/* Stats */}
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -120,19 +123,21 @@ export default async function ProfilePage() {
           Submission history
         </h2>
         {subs.length === 0 ? (
-          <div className="mt-4 rounded-2xl border border-hairline bg-panel px-6 py-10 text-center shadow-sm">
-            <p className="text-sm text-charcoal/60">
-              No ranked submissions yet.
-            </p>
-            <Link
-              href="/cp-arena"
-              className="mt-3 inline-block text-sm font-semibold text-bronze hover:underline"
-            >
-              Solve today&apos;s Problem of the Day →
-            </Link>
-          </div>
+          <MechaPanel className="mt-4">
+            <div className="px-6 py-10 text-center">
+              <p className="text-sm text-charcoal/60">
+                No ranked submissions yet.
+              </p>
+              <Link
+                href="/cp-arena"
+                className="mt-3 inline-block text-sm font-semibold text-bronze hover:underline"
+              >
+                Solve today&apos;s Problem of the Day →
+              </Link>
+            </div>
+          </MechaPanel>
         ) : (
-          <div className="mt-4 overflow-hidden rounded-2xl border border-hairline bg-panel shadow-sm">
+          <MechaPanel className="mt-4">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-hairline text-left font-mono text-[11px] uppercase tracking-wider text-charcoal/45">
@@ -191,7 +196,7 @@ export default async function ProfilePage() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </MechaPanel>
         )}
       </section>
     </main>
@@ -225,7 +230,7 @@ function StatCard({
   sub: string;
 }) {
   return (
-    <div className="rounded-2xl border border-hairline bg-panel px-4 py-4 shadow-sm">
+    <MechaPanel bodyClassName="px-4 py-4">
       <div className="font-mono text-[11px] uppercase tracking-wider text-charcoal/45">
         {label}
       </div>
@@ -233,6 +238,6 @@ function StatCard({
         {value}
       </div>
       <div className="text-[11px] text-charcoal/50">{sub}</div>
-    </div>
+    </MechaPanel>
   );
 }
