@@ -538,3 +538,50 @@ button:focus-visible,
 }
 
 }
+
+/*
+ * --- Cockpit atmosphere ---
+ * Bronze HUD scrollbars + a faint blueprint grid behind the page content.
+ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--color-bronze) 45%, transparent)
+    transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--color-bronze) 42%, transparent);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, var(--color-bronze) 68%, transparent);
+  background-clip: padding-box;
+}
+
+/* Faint technical grid over the page canvas (behind content, above the backdrop). */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(
+      color-mix(in oklab, var(--color-bronze) 7%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--color-bronze) 7%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 46px 46px;
+  opacity: 0.55;
+}
