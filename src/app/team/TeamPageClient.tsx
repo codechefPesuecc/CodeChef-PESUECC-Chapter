@@ -38,7 +38,7 @@ export default function TeamPageClient({ data }: TeamPageClientProps) {
         eyebrow="Engineering &amp; Operations"
         title="Core Team"
         members={yearData.core}
-        columns="4"
+        columns="3"
       />
 
       <TeamSection
