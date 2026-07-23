@@ -527,7 +527,7 @@ export default function ArenaWorkspace({
                   type="button"
                   onClick={run}
                   disabled={running}
-                  className="inline-flex items-center gap-2 rounded-lg border border-bronze/60 px-4 py-2 text-sm font-semibold text-bronze transition-colors hover:bg-bronze/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="mecha-btn mecha-btn--ghost mecha-btn--sm"
                 >
                   <PlayIcon />
                   Run
@@ -535,7 +535,7 @@ export default function ArenaWorkspace({
                 {user === null ? (
                   <Link
                     href="/login"
-                    className="inline-flex items-center gap-2 rounded-lg bg-bronze px-5 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-bronze/90"
+                    className="mecha-btn mecha-btn--solid mecha-btn--sm"
                   >
                     <BoltIcon />
                     Log in to submit
@@ -545,10 +545,8 @@ export default function ArenaWorkspace({
                     type="button"
                     onClick={submit}
                     disabled={running || solved || user === undefined}
-                    className={`inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold text-white shadow-sm transition-all disabled:cursor-not-allowed ${
-                      solved
-                        ? "bg-emerald-600 disabled:opacity-100"
-                        : "bg-bronze hover:bg-bronze/90 disabled:opacity-60"
+                    className={`mecha-btn mecha-btn--sm ${
+                      solved ? "mecha-btn--ok" : "mecha-btn--solid"
                     }`}
                   >
                     {solved ? (
@@ -702,7 +700,7 @@ function Console({
           <p className="text-[var(--ide-ink-dim)]">
             Write your solution, then{" "}
             <span className="text-bronze">Run</span> it against the sample or{" "}
-            <span className="text-bronze">Submit</span> to the judge&apos;s hidden
+            <span className="text-bronze">Submit </span> to the judge&apos;s hidden
             tests.{" "}
             {practice
               ? "This past problem is for practice — it won't change the leaderboard."

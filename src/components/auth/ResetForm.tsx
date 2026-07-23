@@ -141,7 +141,7 @@ export default function ResetForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-lg bg-bronze px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-bronze/90 disabled:opacity-60"
+                className="mecha-btn mecha-btn--solid w-full"
               >
                 {loading ? "Updating…" : "Update password"}
               </button>

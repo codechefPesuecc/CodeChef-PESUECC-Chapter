@@ -349,3 +349,68 @@ button:focus-visible,
   border-bottom: 1.5px solid;
   border-right: 1.5px solid;
 }
+
+/*
+ * --- Mecha buttons ---
+ * Chamfered, mono-uppercase controls. Single-element (no border layer) so the
+ * classes drop onto a <button> or a <Link> alike. `solid` is the primary CTA;
+ * `ghost` is a translucent secondary.
+ */
+.mecha-btn {
+  --mb-n: 7px;
+  clip-path: polygon(
+    var(--mb-n) 0,
+    calc(100% - var(--mb-n)) 0,
+    100% var(--mb-n),
+    100% calc(100% - var(--mb-n)),
+    calc(100% - var(--mb-n)) 100%,
+    var(--mb-n) 100%,
+    0 calc(100% - var(--mb-n)),
+    0 var(--mb-n)
+  );
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.62rem 1.15rem;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.08s ease;
+}
+.mecha-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.mecha-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.mecha-btn--solid {
+  background: var(--color-bronze);
+  color: #fff;
+}
+.mecha-btn--solid:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--color-bronze) 86%, black);
+}
+.mecha-btn--ghost {
+  background: color-mix(in oklab, var(--color-bronze) 14%, transparent);
+  color: var(--color-bronze);
+}
+.mecha-btn--ghost:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--color-bronze) 26%, transparent);
+}
+.mecha-btn--ok {
+  background: #059669;
+  color: #fff;
+}
+.mecha-btn--sm {
+  --mb-n: 5px;
+  font-size: 0.68rem;
+  padding: 0.42rem 0.85rem;
+  letter-spacing: 0.06em;
+}

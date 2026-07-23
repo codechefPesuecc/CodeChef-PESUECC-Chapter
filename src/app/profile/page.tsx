@@ -63,7 +63,7 @@ export default async function ProfilePage() {
           </div>
           <Link
             href="/cp-arena"
-            className="ml-auto hidden rounded-lg bg-bronze px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-bronze/90 sm:inline-block"
+            className="mecha-btn mecha-btn--solid mecha-btn--sm ml-auto"
           >
             Today&apos;s problem →
           </Link>

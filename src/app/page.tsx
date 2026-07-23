@@ -109,17 +109,14 @@ export default function Home() {
               <div className="mt-8 flex flex-wrap gap-4">
                 <Link
                   href="/cp-arena"
-                  className="group inline-flex items-center gap-2 rounded-lg bg-bronze px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-bronze/90 hover:shadow-md"
+                  className="group mecha-btn mecha-btn--solid"
                 >
                   Enter the Arena
                   <span className="transition-transform group-hover:translate-x-0.5">
                     →
                   </span>
                 </Link>
-                <Link
-                  href="/team"
-                  className="inline-flex items-center gap-2 rounded-lg border border-brown px-5 py-3 text-sm font-semibold text-brown transition-colors hover:bg-brown hover:text-white dark:hover:text-[#16110c]"
-                >
+                <Link href="/team" className="mecha-btn mecha-btn--ghost">
                   Meet the Team
                 </Link>
               </div>
@@ -328,17 +325,14 @@ export default function Home() {
               <div className="mt-8 flex flex-wrap justify-center gap-4">
                 <Link
                   href="/cp-arena"
-                  className="group inline-flex items-center gap-2 rounded-lg bg-bronze px-6 py-3 text-sm font-semibold text-white shadow-[0_4px_24px_-2px_rgba(166,124,82,0.6)] transition-all hover:bg-bronze/90"
+                  className="group mecha-btn mecha-btn--solid"
                 >
                   Enter the Arena
                   <span className="transition-transform group-hover:translate-x-0.5">
                     →
                   </span>
                 </Link>
-                <Link
-                  href="/initiatives"
-                  className="inline-flex items-center gap-2 rounded-lg border border-cream/25 px-6 py-3 text-sm font-semibold text-cream transition-colors hover:bg-cream/10"
-                >
+                <Link href="/initiatives" className="mecha-btn mecha-btn--ghost">
                   Explore Initiatives
                 </Link>
               </div>

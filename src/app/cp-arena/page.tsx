@@ -78,9 +78,9 @@ export default function CpArenaPage() {
           <span className="grow" />
           <Link
             href="/cp-arena/archive"
-            className="text-charcoal/50 underline decoration-charcoal/20 underline-offset-2 transition-colors hover:text-bronze"
+            className="mecha-btn mecha-btn--ghost mecha-btn--sm"
           >
-            Archive
+            Archive →
           </Link>
         </div>
 
