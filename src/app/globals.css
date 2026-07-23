@@ -298,7 +298,9 @@ button:focus-visible,
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  padding: 0.6rem 0.9rem 0;
+  /* Clear the top frame line and the chamfered corners so the label/index
+   * never collide with the border. */
+  padding: 0.95rem 1.15rem 0;
   font-family: var(--font-mono), monospace;
 }
 .mecha__label {
