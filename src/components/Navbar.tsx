@@ -70,8 +70,13 @@ export default function Navbar() {
               className="h-9 w-9 object-contain"
             />
           </span>
-          <span className="hidden font-display text-lg font-bold tracking-tight text-chocolate sm:inline">
-            CodeChef <span className="text-bronze">·</span> PESUECC
+          <span className="hidden font-display leading-none sm:flex sm:flex-col">
+            <span className="text-lg font-bold tracking-tight text-chocolate">
+              CodeChef
+            </span>
+            <span className="mt-0.5 text-xs font-semibold tracking-[0.25em] text-bronze">
+              PESUECC
+            </span>
           </span>
         </Link>
 
