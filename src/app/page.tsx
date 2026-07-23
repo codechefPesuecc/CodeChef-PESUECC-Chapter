@@ -1,12 +1,14 @@
+import type { CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import CountUp from "@/components/CountUp";
 import Reveal from "@/components/Reveal";
+import MechaPanel from "@/components/cp-arena/MechaPanel";
 
 const metrics = [
   { prefix: "", value: 50, suffix: "+", label: "Active Developers" },
   { prefix: "", value: 3, suffix: "+", label: "Production Platforms Built" },
-  { prefix: "Rs ", value: 1500, suffix: "+", label: "Monthly CP Arena Rewards" },
+  { prefix: "Rs ", value: 1500, suffix: "+", label: "Monthly Arena Rewards" },
 ];
 
 const pillars = [
@@ -39,7 +41,7 @@ const benefits = [
   {
     icon: <TrophyIcon />,
     title: "Monthly Cash Bounties",
-    body: "Top solvers on the CP Arena leaderboard earn real cash rewards every single month.",
+    body: "Top solvers on the Arena leaderboard earn real cash rewards every single month.",
   },
   {
     icon: <RocketIcon />,
@@ -107,25 +109,22 @@ export default function Home() {
               <div className="mt-8 flex flex-wrap gap-4">
                 <Link
                   href="/cp-arena"
-                  className="group inline-flex items-center gap-2 rounded-lg bg-bronze px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-bronze/90 hover:shadow-md"
+                  className="group mecha-btn mecha-btn--solid"
                 >
-                  Enter the CP Arena
+                  Enter the Arena
                   <span className="transition-transform group-hover:translate-x-0.5">
                     →
                   </span>
                 </Link>
-                <Link
-                  href="/team"
-                  className="inline-flex items-center gap-2 rounded-lg border border-brown px-5 py-3 text-sm font-semibold text-brown transition-colors hover:bg-brown hover:text-white dark:hover:text-[#16110c]"
-                >
+                <Link href="/team" className="mecha-btn mecha-btn--ghost">
                   Meet the Team
                 </Link>
               </div>
             </Reveal>
 
             <Reveal delay={0.15}>
-              <div className="rounded-2xl border border-hairline bg-panel p-2 shadow-xl">
-                <div className="relative aspect-[3/2] w-full overflow-hidden rounded-xl">
+              <MechaPanel label="Dev Team" index="01 / 01">
+                <div className="relative aspect-[3/2] w-full overflow-hidden">
                   <Image
                     src="/dev-team.jpg"
                     alt="The CodeChef PESUECC Chapter development team on stage"
@@ -142,7 +141,7 @@ export default function Home() {
                     <span className="font-mono text-xs text-cream">The Dev Team</span>
                   </div>
                 </div>
-              </div>
+              </MechaPanel>
             </Reveal>
           </div>
         </div>
@@ -151,21 +150,23 @@ export default function Home() {
       {/* Live Metrics Ledger — floats over the hero's lower edge */}
       <section className="relative z-20 mx-auto -mt-20 max-w-6xl px-6 sm:-mt-24">
         <Reveal>
-          <div className="grid gap-px overflow-hidden rounded-2xl border border-hairline bg-hairline shadow-xl sm:grid-cols-3">
-            {metrics.map((metric) => (
-              <div key={metric.label} className="bg-panel px-8 py-10 text-center">
-                <CountUp
-                  value={metric.value}
-                  prefix={metric.prefix}
-                  suffix={metric.suffix}
-                  className="font-display text-4xl font-bold text-brown"
-                />
-                <div className="mt-2 text-sm font-medium uppercase tracking-wide text-charcoal/70">
-                  {metric.label}
+          <MechaPanel>
+            <div className="grid gap-px bg-hairline sm:grid-cols-3">
+              {metrics.map((metric) => (
+                <div key={metric.label} className="bg-panel px-8 py-10 text-center">
+                  <CountUp
+                    value={metric.value}
+                    prefix={metric.prefix}
+                    suffix={metric.suffix}
+                    className="font-display text-4xl font-bold text-brown"
+                  />
+                  <div className="mt-2 text-sm font-medium uppercase tracking-wide text-charcoal/70">
+                    {metric.label}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </MechaPanel>
         </Reveal>
       </section>
 
@@ -187,7 +188,11 @@ export default function Home() {
         <div className="mt-12 grid gap-6 md:grid-cols-3">
           {pillars.map((pillar, i) => (
             <Reveal key={pillar.eyebrow} delay={i * 0.1} className="h-full">
-              <article className="group h-full rounded-2xl border border-hairline bg-panel p-8 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-bronze/40 hover:shadow-lg">
+              <MechaPanel
+                ticks
+                className="group h-full transition-transform duration-300 hover:-translate-y-1"
+                bodyClassName="p-8"
+              >
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-bronze/10 text-bronze transition-colors group-hover:bg-bronze group-hover:text-white">
                   {pillar.icon}
                 </div>
@@ -200,7 +205,7 @@ export default function Home() {
                 <p className="mt-3 text-sm leading-6 text-charcoal/75">
                   {pillar.body}
                 </p>
-              </article>
+              </MechaPanel>
             </Reveal>
           ))}
         </div>
@@ -223,7 +228,10 @@ export default function Home() {
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {benefits.map((benefit, i) => (
             <Reveal key={benefit.title} delay={i * 0.08} className="h-full">
-              <div className="h-full rounded-2xl border border-hairline bg-panel p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-bronze/40 hover:shadow-lg">
+              <MechaPanel
+                className="h-full transition-transform duration-300 hover:-translate-y-1"
+                bodyClassName="p-6"
+              >
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-bronze/10 text-bronze">
                   {benefit.icon}
                 </div>
@@ -233,7 +241,7 @@ export default function Home() {
                 <p className="mt-2 text-sm leading-6 text-charcoal/70">
                   {benefit.body}
                 </p>
-              </div>
+              </MechaPanel>
             </Reveal>
           ))}
         </div>
@@ -256,7 +264,10 @@ export default function Home() {
         <div className="mt-10 grid gap-6 md:grid-cols-3">
           {testimonials.map((testimonial, i) => (
             <Reveal key={testimonial.name} delay={i * 0.1} className="h-full">
-              <figure className="flex h-full flex-col rounded-2xl border border-hairline bg-panel p-8 shadow-sm">
+              <MechaPanel
+                className="h-full"
+                bodyClassName="flex h-full flex-col p-8"
+              >
                 <span
                   aria-hidden
                   className="font-display text-5xl leading-none text-bronze/30"
@@ -277,7 +288,7 @@ export default function Home() {
                     <div className="text-xs text-charcoal/60">{testimonial.role}</div>
                   </div>
                 </figcaption>
-              </figure>
+              </MechaPanel>
             </Reveal>
           ))}
         </div>
@@ -286,14 +297,22 @@ export default function Home() {
       {/* Closing CTA */}
       <section className="mx-auto max-w-6xl px-6 pb-24">
         <Reveal>
-          <div className="relative overflow-hidden rounded-3xl bg-chocolate px-8 py-16 text-center shadow-xl sm:px-16 dark:bg-[#1e1610] dark:ring-1 dark:ring-hairline">
+          <MechaPanel
+            style={
+              {
+                "--mecha-fill": "#1e1610",
+                "--mecha-line": "var(--color-bronze)",
+              } as CSSProperties
+            }
+            bodyClassName="relative px-8 py-16 text-center sm:px-16"
+          >
             <div
               aria-hidden
-              className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-bronze/25 blur-3xl"
+              className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-bronze/25 blur-3xl"
             />
             <div
               aria-hidden
-              className="absolute -bottom-20 -left-10 h-64 w-64 rounded-full bg-brown/40 blur-3xl"
+              className="pointer-events-none absolute -bottom-20 -left-10 h-64 w-64 rounded-full bg-brown/40 blur-3xl"
             />
             <div className="relative">
               <h2 className="text-balance font-display text-3xl font-bold tracking-tight text-cream sm:text-4xl">
@@ -306,22 +325,19 @@ export default function Home() {
               <div className="mt-8 flex flex-wrap justify-center gap-4">
                 <Link
                   href="/cp-arena"
-                  className="group inline-flex items-center gap-2 rounded-lg bg-bronze px-6 py-3 text-sm font-semibold text-white shadow-[0_4px_24px_-2px_rgba(166,124,82,0.6)] transition-all hover:bg-bronze/90"
+                  className="group mecha-btn mecha-btn--solid"
                 >
-                  Enter the CP Arena
+                  Enter the Arena
                   <span className="transition-transform group-hover:translate-x-0.5">
                     →
                   </span>
                 </Link>
-                <Link
-                  href="/initiatives"
-                  className="inline-flex items-center gap-2 rounded-lg border border-cream/25 px-6 py-3 text-sm font-semibold text-cream transition-colors hover:bg-cream/10"
-                >
+                <Link href="/initiatives" className="mecha-btn mecha-btn--ghost">
                   Explore Initiatives
                 </Link>
               </div>
             </div>
-          </div>
+          </MechaPanel>
         </Reveal>
       </section>
     </main>

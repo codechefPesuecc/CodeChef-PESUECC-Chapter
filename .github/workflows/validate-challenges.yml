@@ -1,0 +1,29 @@
+name: Validate challenges
+
+# Guards the problem set: any PR that touches a challenge JSON (or the validator
+# itself) must pass the Arena schema before it can be merged and released.
+on:
+  pull_request:
+    paths:
+      - "challenges/**"
+      - "scripts/validate-challenges.ts"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/validate-challenges.yml"
+  push:
+    branches: [main]
+    paths:
+      - "challenges/**"
+      - "scripts/validate-challenges.ts"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - run: npm run challenges:validate

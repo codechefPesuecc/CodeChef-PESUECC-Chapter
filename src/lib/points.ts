@@ -1,5 +1,5 @@
 /**
- * Daily CP Arena — speed bounty scoring.
+ * Daily Arena — speed bounty scoring.
  *
  * Points are awarded by finish order for the Problem of the Day: the faster you
  * submit an accepted solution, the more you earn. Everyone who solves after the
@@ -11,6 +11,9 @@ export const SPEED_BOUNTY = [
 
 /** Reward for every accepted solver who finishes 10th or later. */
 export const BASE_POINTS = 100;
+
+/** More than this many integrity flags drops a solve to the base points. */
+export const FLAG_LIMIT = 5;
 
 /** Points earned for finishing an accepted solution at a given 1-based rank. */
 export function pointsForRank(rank: number): number {

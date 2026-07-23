@@ -4,10 +4,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useUser } from "@/components/auth/useUser";
 
 const links = [
   { href: "/", label: "Home" },
-  { href: "/cp-arena", label: "CP Arena" },
+  { href: "/cp-arena", label: "Arena" },
+  { href: "/leaderboard", label: "Leaderboard" },
   { href: "/initiatives", label: "Initiatives" },
   { href: "/team", label: "Team" },
   { href: "/newsroom", label: "Newsroom" },
@@ -17,6 +19,14 @@ export default function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const user = useUser();
+
+  const logout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {}
+    window.location.href = "/";
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -60,8 +70,13 @@ export default function Navbar() {
               className="h-9 w-9 object-contain"
             />
           </span>
-          <span className="hidden font-display text-lg font-bold tracking-tight text-chocolate sm:inline">
-            CodeChef <span className="text-bronze">·</span> PESUECC
+          <span className="hidden font-display leading-none sm:flex sm:flex-col">
+            <span className="text-lg font-bold tracking-tight text-chocolate">
+              CodeChef
+            </span>
+            <span className="mt-0.5 text-xs font-semibold tracking-[0.2em] text-bronze">
+              PESUECC Chapter
+            </span>
           </span>
         </Link>
 
@@ -97,12 +112,31 @@ export default function Navbar() {
             <SunIcon className="hidden dark:block" />
           </button>
 
-          <Link
-            href="/cp-arena"
-            className="rounded-full bg-chocolate px-5 py-2.5 text-sm font-semibold text-cream shadow-[0_4px_20px_-2px_rgba(166,124,82,0.55)] ring-1 ring-bronze/50 transition-shadow hover:shadow-[0_6px_28px_0_rgba(166,124,82,0.75)] dark:bg-[#241a12]"
-          >
-            Login
-          </Link>
+          {user ? (
+            <div className="flex items-center gap-2">
+              <Link
+                href="/profile"
+                title={`@${user.username} · your profile`}
+                className="hidden max-w-[10rem] truncate rounded-full bg-bronze/10 px-3.5 py-2 text-sm font-semibold text-bronze sm:block"
+              >
+                @{user.username}
+              </Link>
+              <button
+                type="button"
+                onClick={logout}
+                className="rounded-full border border-hairline bg-white/70 px-4 py-2 text-sm font-medium text-chocolate shadow-sm backdrop-blur transition-colors hover:text-bronze dark:bg-panel/70"
+              >
+                Log out
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="rounded-full bg-chocolate px-5 py-2.5 text-sm font-semibold text-cream shadow-[0_4px_20px_-2px_rgba(166,124,82,0.55)] ring-1 ring-bronze/50 transition-shadow hover:shadow-[0_6px_28px_0_rgba(166,124,82,0.75)] dark:bg-[#241a12]"
+            >
+              Log in
+            </Link>
+          )}
 
           <button
             type="button"

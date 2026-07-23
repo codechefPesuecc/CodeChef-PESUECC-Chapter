@@ -1,0 +1,32 @@
+{
+  // Cloudflare deploy config for the Next app via the OpenNext adapter.
+  // This file is inert for local dev (`npm run dev`) and the Docker judge —
+  // it only takes effect when building/deploying to Cloudflare. See DEPLOY.md.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "pesuecc-arena",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-03-25",
+  // Required so node:crypto / node:buffer (auth, hashing) work on Workers.
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  }
+
+  // --- Database ---
+  // Recommended: use Turso (libSQL over HTTP) — no binding needed, just set the
+  // DATABASE_URL and DATABASE_AUTH_TOKEN secrets (see DEPLOY.md). The db client
+  // works unchanged.
+  //
+  // Alternative: Cloudflare D1. Uncomment and fill in the id from
+  // `npx wrangler d1 create pesuecc-arena`, then refactor src/server/db to build
+  // the client per request from the binding (drizzle-orm/d1 + getCloudflareContext).
+  // "d1_databases": [
+  //   {
+  //     "binding": "DB",
+  //     "database_name": "pesuecc-arena",
+  //     "database_id": "<from wrangler d1 create>",
+  //     "migrations_dir": "migrations"
+  //   }
+  // ]
+}

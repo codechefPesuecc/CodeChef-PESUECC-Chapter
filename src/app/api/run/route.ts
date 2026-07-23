@@ -1,8 +1,17 @@
 import { NextResponse } from "next/server";
 import { PISTON_LANGUAGE, pistonExecute, pistonRuntimes } from "@/lib/piston";
-import { getChallengeBySlug, parseTimeLimitMs } from "@/lib/challenges";
+import {
+  getChallengeBySlug,
+  parseTimeLimitMs,
+  parseMemoryLimitBytes,
+} from "@/lib/challenges";
+import { rateLimit, clientIp } from "@/server/rateLimit";
 
 export const dynamic = "force-dynamic";
+
+// "Run" is unauthenticated, so cap it per IP to keep the sandbox fair.
+const RUN_LIMIT = 40;
+const RUN_WINDOW_MS = 60_000;
 
 const FILE_NAME: Record<string, string> = {
   cpp: "main.cpp",
@@ -20,6 +29,11 @@ const FILE_NAME: Record<string, string> = {
 const MAX_RUN_MS = 10000;
 const DEFAULT_RUN_MS = 2000;
 
+// Must stay <= PISTON_RUN_MEMORY_LIMIT on the container.
+const DEFAULT_MEM_BYTES = 256 * 1024 * 1024;
+const MIN_MEM_BYTES = 32 * 1024 * 1024;
+const MAX_MEM_BYTES = 512 * 1024 * 1024;
+
 /**
  * Runs a submission in the Piston sandbox against the provided stdin and returns
  * the raw result. This backs the editor's "Run" button (test against the sample
@@ -27,6 +41,18 @@ const DEFAULT_RUN_MS = 2000;
  * Piston. Grading against hidden tests will live in /api/submit.
  */
 export async function POST(req: Request) {
+  const limit = rateLimit(`run:${clientIp(req)}`, RUN_LIMIT, RUN_WINDOW_MS);
+  if (!limit.ok) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: `Too many runs — try again in ${Math.ceil(limit.retryAfterMs / 1000)}s.`,
+        rateLimited: true,
+      },
+      { status: 429, headers: { "Retry-After": String(Math.ceil(limit.retryAfterMs / 1000)) } },
+    );
+  }
+
   let body: {
     language?: string;
     code?: string;
@@ -47,16 +73,19 @@ export async function POST(req: Request) {
     );
   }
 
-  // Resolve the run-time limit from the problem itself (server-side, so it
-  // can't be spoofed by the client), clamped to what the sandbox allows.
+  // Resolve the run-time + memory limits from the problem itself (server-side,
+  // so they can't be spoofed by the client), clamped to what the sandbox allows.
   let runTimeoutMs = DEFAULT_RUN_MS;
+  let memLimitBytes = DEFAULT_MEM_BYTES;
   if (typeof slug === "string") {
     const challenge = getChallengeBySlug(slug);
     if (challenge) {
       runTimeoutMs = parseTimeLimitMs(challenge.timeLimit, DEFAULT_RUN_MS);
+      memLimitBytes = parseMemoryLimitBytes(challenge.memoryLimit, DEFAULT_MEM_BYTES);
     }
   }
   runTimeoutMs = Math.min(Math.max(runTimeoutMs, 500), MAX_RUN_MS);
+  memLimitBytes = Math.min(Math.max(memLimitBytes, MIN_MEM_BYTES), MAX_MEM_BYTES);
 
   const pistonLang = PISTON_LANGUAGE[language];
   if (!pistonLang) {
@@ -96,6 +125,7 @@ export async function POST(req: Request) {
       files: [{ name: FILE_NAME[language] ?? "main.txt", content: code }],
       stdin: typeof stdin === "string" ? stdin : "",
       runTimeoutMs,
+      runMemoryLimitBytes: memLimitBytes,
     });
 
     const compileFailed = !!result.compile && result.compile.code !== 0;

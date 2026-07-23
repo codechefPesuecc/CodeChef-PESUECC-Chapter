@@ -3,6 +3,7 @@ import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import HudFrame from "@/components/HudFrame";
 import SmoothScroll from "@/components/SmoothScroll";
 import ScrollProgress from "@/components/ScrollProgress";
 import MotionProvider from "@/components/MotionProvider";
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
     template: "%s · CodeChef PESUECC Chapter",
   },
   description:
-    "The official portal and competitive programming ecosystem of the CodeChef PESUECC Chapter — a daily CP arena, technical initiatives, and the team building it in the open.",
+    "The official portal and competitive programming ecosystem of the CodeChef PESUECC Chapter — a daily arena, technical initiatives, and the team building it in the open.",
 };
 
 export default function RootLayout({
@@ -61,6 +62,7 @@ export default function RootLayout({
           <SmoothScroll />
           <ScrollProgress />
           <Navbar />
+          <HudFrame />
           <div className="flex flex-1 flex-col pt-24">{children}</div>
           <Footer />
         </MotionProvider>

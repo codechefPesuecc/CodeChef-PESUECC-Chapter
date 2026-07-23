@@ -10,6 +10,10 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
+    "challenges:validate": "tsx scripts/validate-challenges.ts",
+    "cf:build": "opennextjs-cloudflare build",
+    "cf:deploy": "opennextjs-cloudflare build && wrangler deploy",
+    "cf:preview": "opennextjs-cloudflare build && wrangler dev",
     "piston:up": "docker compose up -d",
     "piston:down": "docker compose down",
     "piston:install": "sh scripts/install-runtimes.sh"
@@ -45,6 +49,7 @@
     "eslint-config-next": "16.2.10",
     "tailwindcss": "^4",
     "tsx": "^4.23.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "zod": "^4.4.3"
   }
 }

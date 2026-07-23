@@ -1,18 +1,27 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import CodeEditor from "./CodeEditor";
 import {
-  INITIAL_STANDINGS,
   LANGUAGES,
   STARTER_CODE,
   formatClock,
   languageLabel,
   type LanguageId,
-  type Solver,
 } from "./mockData";
-import { BASE_POINTS, BOUNTY_LADDER, ordinal, pointsForRank } from "@/lib/points";
+import { BASE_POINTS, BOUNTY_LADDER, ordinal } from "@/lib/points";
 import { FLAG_LIMIT, useIntegrityMonitor } from "./useIntegrityMonitor";
+import { useUser } from "@/components/auth/useUser";
+import LeaderboardTable, { type LeaderRow } from "./LeaderboardTable";
+import Turnstile, { turnstileConfigured } from "./Turnstile";
+import MechaPanel from "./MechaPanel";
+import Link from "next/link";
 
 const FILE_EXT: Record<LanguageId, string> = {
   cpp: "cpp",
@@ -26,7 +35,7 @@ const FILE_EXT: Record<LanguageId, string> = {
   zig: "zig",
 };
 
-type Verdict = "AC" | "WA" | "TLE" | "RE" | "CE";
+type Verdict = "AC" | "WA" | "TLE" | "MLE" | "RE" | "CE";
 
 type Judgement = {
   mode: "run" | "submit";
@@ -54,11 +63,14 @@ export default function ArenaWorkspace({
   problem,
   sampleInput,
   sampleOutput,
+  practice = false,
 }: {
   slug: string;
   problem: ReactNode;
   sampleInput: string;
   sampleOutput: string;
+  /** Past-problem practice mode: no proctoring, no ranked board or points. */
+  practice?: boolean;
 }) {
   const codeKey = (lang: LanguageId) => `cp-arena:code:${slug}:${lang}`;
   const loadCode = (lang: LanguageId) => {
@@ -70,6 +82,7 @@ export default function ArenaWorkspace({
     }
   };
 
+  const user = useUser();
   const [language, setLanguage] = useState<LanguageId>("cpp");
   const [code, setCode] = useState<string>(() => loadCode("cpp"));
   const [customInput, setCustomInput] = useState(sampleInput);
@@ -78,10 +91,15 @@ export default function ArenaWorkspace({
   const [history, setHistory] = useState<Submission[]>([]);
   const [elapsed, setElapsed] = useState(0);
   const [mySolveSeconds, setMySolveSeconds] = useState<number | null>(null);
-  const [myLanguage, setMyLanguage] = useState<LanguageId>("cpp");
   const [myFlags, setMyFlags] = useState(0);
+  const [myRank, setMyRank] = useState<number | null>(null);
+  const [myPoints, setMyPoints] = useState<number | null>(null);
+  const [myFlaggedSolve, setMyFlaggedSolve] = useState(false);
+  const [board, setBoard] = useState<LeaderRow[] | null>(null);
   const [pageFocused, setPageFocused] = useState(true);
   const [busyLabel, setBusyLabel] = useState("Running…");
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileNonce, setTurnstileNonce] = useState(0);
 
   const startRef = useRef<number | null>(null);
   const frozenRef = useRef(false);
@@ -98,7 +116,24 @@ export default function ArenaWorkspace({
   }, []);
 
   const solved = mySolveSeconds != null;
-  const integrity = useIntegrityMonitor(!solved);
+  // No proctoring on practice (past) problems — they aren't ranked.
+  const integrity = useIntegrityMonitor(!solved && !practice);
+
+  // Live today leaderboard from the DB (refetched after an accepted submit).
+  const fetchBoardRows = useCallback(async (): Promise<LeaderRow[]> => {
+    try {
+      const res = await fetch("/api/leaderboard?scope=today");
+      const data = await res.json();
+      return (data.rows ?? []) as LeaderRow[];
+    } catch {
+      return [];
+    }
+  }, []);
+
+  useEffect(() => {
+    if (practice) return; // practice pages don't show the ranked today board
+    fetchBoardRows().then((rows) => setBoard(rows));
+  }, [fetchBoardRows, practice]);
 
   // Blur the problem when the window/tab loses focus — a screenshot deterrent
   // (e.g. the OS snip overlay steals focus, so it captures a blurred panel).
@@ -217,7 +252,15 @@ export default function ArenaWorkspace({
     ]);
 
   const submit = async () => {
-    if (running || solved) return;
+    if (running || solved || !user) return;
+    if (turnstileConfigured && !turnstileToken) {
+      setJudgement({
+        mode: "submit",
+        status: "ERR",
+        message: "Please complete the verification challenge, then submit.",
+      });
+      return;
+    }
     setRunning(true);
     setBusyLabel("Judging against the hidden tests…");
     setJudgement(null);
@@ -227,9 +270,42 @@ export default function ArenaWorkspace({
       const res = await fetch("/api/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, language, code }),
+        body: JSON.stringify({
+          slug,
+          language,
+          code,
+          elapsedSeconds: solveSecs,
+          flags: flagsNow,
+          flagsBreakdown: integrity.counts,
+          turnstileToken,
+        }),
       });
       const data = await res.json();
+      if (res.status === 429 || data.rateLimited) {
+        setJudgement({
+          mode: "submit",
+          status: "ERR",
+          message: data.error ?? "Too many submissions — slow down a moment.",
+        });
+        return;
+      }
+      if (res.status === 401 || data.needsAuth) {
+        setJudgement({
+          mode: "submit",
+          status: "ERR",
+          message: "Your session expired — please log in again to submit.",
+        });
+        return;
+      }
+      if (res.status === 403 || data.needsVerify) {
+        setJudgement({
+          mode: "submit",
+          status: "ERR",
+          message:
+            "Verify your email before submitting — open the verification page from your profile.",
+        });
+        return;
+      }
       if (!data.ok) {
         setJudgement({
           mode: "submit",
@@ -243,22 +319,31 @@ export default function ArenaWorkspace({
       if (verdict === "AC") {
         frozenRef.current = true;
         setMySolveSeconds(solveSecs);
-        setMyLanguage(language);
         setMyFlags(flagsNow);
         setJudgement({ mode: "submit", status: "AC", total: data.total });
 
-        let detail: string;
-        if (flagsNow > FLAG_LIMIT) {
-          detail = `Flagged ${flagsNow}× · +${BASE_POINTS} pts`;
+        if (practice || data.practice) {
+          // Past problem: judged for feedback, but no rank/points/board.
+          addHistory("AC", formatClock(solveSecs), "Practice");
         } else {
-          const times = [
-            ...INITIAL_STANDINGS.map((s) => s.timeSeconds),
-            solveSecs,
-          ].sort((a, b) => a - b);
-          const rank = times.indexOf(solveSecs) + 1;
-          detail = `${ordinal(rank)} · +${pointsForRank(rank)} pts`;
+          // The server now owns the standings — read our real rank/points back.
+          const rows = await fetchBoardRows();
+          setBoard(rows);
+          const me = rows.find((r) => r.username === user.username);
+          const rank = me?.rank ?? null;
+          const points = me?.points ?? (flagsNow > FLAG_LIMIT ? BASE_POINTS : null);
+          const flagged = me?.flagged ?? flagsNow > FLAG_LIMIT;
+          setMyRank(rank);
+          setMyPoints(points);
+          setMyFlaggedSolve(flagged);
+
+          const detail = flagged
+            ? `Flagged · +${points ?? BASE_POINTS} pts`
+            : rank
+              ? `${ordinal(rank)} · +${points} pts`
+              : `+${points ?? 0} pts`;
+          addHistory("AC", formatClock(solveSecs), detail);
         }
-        addHistory("AC", formatClock(solveSecs), detail);
       } else {
         setJudgement({
           mode: "submit",
@@ -282,69 +367,64 @@ export default function ArenaWorkspace({
       });
     } finally {
       setRunning(false);
+      // Turnstile tokens are single-use — refresh the widget for a next attempt.
+      if (turnstileConfigured) {
+        setTurnstileToken(null);
+        setTurnstileNonce((n) => n + 1);
+      }
     }
   };
-
-  // Too many integrity flags removes you from the day's top 10: an accepted
-  // solve then only earns the 100-point base and is listed as flagged.
-  const flaggedSolve = solved && myFlags > FLAG_LIMIT;
-  const eligibleYou = solved && !flaggedSolve;
-
-  // Derive the live board: faster solve durations rank higher (the speed bounty).
-  const you: Solver = {
-    name: "You",
-    handle: "you",
-    initials: "YOU",
-    language: languageLabel(myLanguage),
-    timeSeconds: mySolveSeconds ?? 0,
-    isYou: true,
-  };
-  const ranked = [...INITIAL_STANDINGS, ...(eligibleYou ? [you] : [])].sort(
-    (a, b) => a.timeSeconds - b.timeSeconds,
-  );
-  const myRank = eligibleYou ? ranked.findIndex((s) => s.isYou) + 1 : null;
-  const myPoints = flaggedSolve
-    ? BASE_POINTS
-    : myRank
-      ? pointsForRank(myRank)
-      : null;
-  const flaggedYou: Solver | null = flaggedSolve ? you : null;
 
   return (
     <div className="mt-8 space-y-6">
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         {/* Problem statement */}
-        <section className="overflow-hidden rounded-2xl border border-hairline bg-panel shadow-sm">
-          <PanelBar label="Problem" />
+        <MechaPanel label={practice ? "Practice" : "Problem"} index="01" ticks>
           <div className="relative">
             <div
               // `data-lenis-prevent` lets this panel scroll natively instead of
               // Lenis hijacking the wheel for the whole page.
               data-lenis-prevent
-              className="arena-no-print max-h-[560px] select-none overflow-y-auto overscroll-contain px-6 py-6 lg:max-h-[720px]"
-              onCopyCapture={(e) => {
-                e.preventDefault();
-                integrity.record("copy");
-              }}
-              onCutCapture={(e) => {
-                e.preventDefault();
-                integrity.record("cut");
-              }}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                integrity.record("context-menu");
-              }}
+              className={`arena-no-print max-h-[560px] overflow-y-auto overscroll-contain px-6 py-6 lg:max-h-[720px] ${
+                practice ? "" : "select-none"
+              }`}
+              onCopyCapture={
+                practice
+                  ? undefined
+                  : (e) => {
+                      e.preventDefault();
+                      integrity.record("copy");
+                    }
+              }
+              onCutCapture={
+                practice
+                  ? undefined
+                  : (e) => {
+                      e.preventDefault();
+                      integrity.record("cut");
+                    }
+              }
+              onContextMenu={
+                practice
+                  ? undefined
+                  : (e) => {
+                      e.preventDefault();
+                      integrity.record("context-menu");
+                    }
+              }
             >
               {problem}
             </div>
-            <Watermark tag="@you · PESUECC Arena" />
-            {!pageFocused && <ScreenGuard />}
+            {!practice && (
+              <Watermark tag={`@${user?.username ?? "guest"} · PESUECC Arena`} />
+            )}
+            {!practice && !pageFocused && <ScreenGuard />}
           </div>
-        </section>
+        </MechaPanel>
 
         {/* Editor + console */}
         <section className="space-y-4">
-          <div className="overflow-hidden rounded-2xl border border-hairline shadow-sm">
+          <MechaPanel className="mecha--ide">
             {/* IDE title bar */}
             <div className="flex items-center gap-3 border-b border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 py-2.5">
               <span className="flex gap-1.5" aria-hidden>
@@ -363,7 +443,7 @@ export default function ArenaWorkspace({
                   id="language"
                   value={language}
                   onChange={(e) => changeLanguage(e.target.value as LanguageId)}
-                  className="rounded-md border border-[var(--ide-border)] bg-[var(--ide-body)] px-2 py-1 text-xs font-medium text-[var(--ide-ink-strong)] outline-none transition-colors focus:border-bronze"
+                  className="mecha-input w-auto px-2 py-1 text-xs font-medium"
                 >
                   {LANGUAGES.map((l) => (
                     <option
@@ -385,22 +465,29 @@ export default function ArenaWorkspace({
                   <ClockIcon />
                   {formatClock(elapsed)}
                 </span>
-                <span
-                  title={`Copy, paste and right-click are disabled · tab switches are recorded · more than ${FLAG_LIMIT} flags removes you from the top 10`}
-                  className={`inline-flex items-center gap-1.5 font-mono text-xs ${
-                    integrity.flagged
-                      ? "text-red-400"
-                      : integrity.total > 0
-                        ? "text-amber-400"
-                        : "text-[var(--ide-ink-dim)]"
-                  }`}
-                >
-                  <ShieldIcon />
-                  <span className="hidden sm:inline">
-                    {integrity.flagged ? "Flagged" : "Proctored"}
+                {practice ? (
+                  <span className="inline-flex items-center gap-1.5 font-mono text-xs text-[var(--ide-ink-dim)]">
+                    <TerminalIcon />
+                    <span className="hidden sm:inline">Practice</span>
                   </span>
-                  {integrity.total > 0 && <span>· {integrity.total}</span>}
-                </span>
+                ) : (
+                  <span
+                    title={`Copy, paste and right-click are disabled · tab switches are recorded · more than ${FLAG_LIMIT} flags removes you from the top 10`}
+                    className={`inline-flex items-center gap-1.5 font-mono text-xs ${
+                      integrity.flagged
+                        ? "text-red-400"
+                        : integrity.total > 0
+                          ? "text-amber-400"
+                          : "text-[var(--ide-ink-dim)]"
+                    }`}
+                  >
+                    <ShieldIcon />
+                    <span className="hidden sm:inline">
+                      {integrity.flagged ? "Flagged" : "Proctored"}
+                    </span>
+                    {integrity.total > 0 && <span>· {integrity.total}</span>}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -411,6 +498,12 @@ export default function ArenaWorkspace({
               lockClipboard
               onBlocked={integrity.record}
             />
+
+            {turnstileConfigured && !solved && (
+              <div className="border-t border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 py-3">
+                <Turnstile key={turnstileNonce} onToken={setTurnstileToken} />
+              </div>
+            )}
 
             {/* Action bar */}
             <div className="flex items-center gap-3 border-t border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 py-3">
@@ -434,36 +527,44 @@ export default function ArenaWorkspace({
                   type="button"
                   onClick={run}
                   disabled={running}
-                  className="inline-flex items-center gap-2 rounded-lg border border-bronze/60 px-4 py-2 text-sm font-semibold text-bronze transition-colors hover:bg-bronze/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="mecha-btn mecha-btn--ghost mecha-btn--sm"
                 >
                   <PlayIcon />
                   Run
                 </button>
-                <button
-                  type="button"
-                  onClick={submit}
-                  disabled={running || solved}
-                  className={`inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold text-white shadow-sm transition-all disabled:cursor-not-allowed ${
-                    solved
-                      ? "bg-emerald-600 disabled:opacity-100"
-                      : "bg-bronze hover:bg-bronze/90 disabled:opacity-60"
-                  }`}
-                >
-                  {solved ? (
-                    <>
-                      <CheckIcon />
-                      Solved
-                    </>
-                  ) : (
-                    <>
-                      <BoltIcon />
-                      Submit
-                    </>
-                  )}
-                </button>
+                {user === null ? (
+                  <Link
+                    href="/login"
+                    className="mecha-btn mecha-btn--solid mecha-btn--sm"
+                  >
+                    <BoltIcon />
+                    Log in to submit
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={submit}
+                    disabled={running || solved || user === undefined}
+                    className={`mecha-btn mecha-btn--sm ${
+                      solved ? "mecha-btn--ok" : "mecha-btn--solid"
+                    }`}
+                  >
+                    {solved ? (
+                      <>
+                        <CheckIcon />
+                        Solved
+                      </>
+                    ) : (
+                      <>
+                        <BoltIcon />
+                        Submit
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
-          </div>
+          </MechaPanel>
 
           <CustomInputPanel
             value={customInput}
@@ -504,8 +605,9 @@ export default function ArenaWorkspace({
             sampleOutput={sampleOutput}
             myRank={myRank}
             myPoints={myPoints}
-            flagged={flaggedSolve}
+            flagged={myFlaggedSolve}
             flagCount={myFlags}
+            practice={practice}
             solveClock={mySolveSeconds != null ? formatClock(mySolveSeconds) : ""}
           />
 
@@ -513,8 +615,46 @@ export default function ArenaWorkspace({
         </section>
       </div>
 
-      <SpeedBounty />
-      <Standings ranked={ranked} flaggedYou={flaggedYou} />
+      {practice ? (
+        <MechaPanel label="Practice">
+          <div className="px-6 pb-6 pt-3 text-center">
+            <p className="text-sm text-charcoal/70">
+              This is a past problem, open for practice. Submissions are judged
+              against the hidden tests but don&apos;t affect the leaderboard.
+            </p>
+            <Link
+              href="/cp-arena"
+              className="mt-3 inline-block text-sm font-semibold text-bronze hover:underline"
+            >
+              Go to today&apos;s Problem of the Day →
+            </Link>
+          </div>
+        </MechaPanel>
+      ) : (
+        <>
+          <SpeedBounty />
+
+          <MechaPanel label="Live Standings" ticks>
+            <div className="flex items-center justify-end border-b border-hairline px-6 py-4">
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-charcoal/60">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+                {board?.length ?? 0} solved today
+              </span>
+            </div>
+            {board === null ? (
+              <p className="px-6 py-8 text-center text-sm text-charcoal/50">
+                Loading…
+              </p>
+            ) : (
+              <LeaderboardTable
+                rows={board}
+                scope="today"
+                currentUsername={user?.username}
+              />
+            )}
+          </MechaPanel>
+        </>
+      )}
     </div>
   );
 }
@@ -530,6 +670,7 @@ function Console({
   myPoints,
   flagged,
   flagCount,
+  practice,
   solveClock,
 }: {
   running: boolean;
@@ -540,17 +681,16 @@ function Console({
   myPoints: number | null;
   flagged: boolean;
   flagCount: number;
+  practice: boolean;
   solveClock: string;
 }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-hairline shadow-sm">
-      <div className="flex items-center justify-between border-b border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 py-2.5">
-        <span className="font-mono text-[11px] uppercase tracking-wider text-[var(--ide-ink-dim)]">
-          Console
-        </span>
-        <VerdictBadge running={running} judgement={judgement} />
-      </div>
-      <div className="min-h-[150px] bg-[var(--ide-body)] px-4 py-4 font-mono text-xs leading-relaxed text-[var(--ide-code)]">
+    <MechaPanel
+      className="mecha--ide"
+      label="Console"
+      index={<VerdictBadge running={running} judgement={judgement} />}
+    >
+      <div className="min-h-[150px] px-4 py-4 font-mono text-xs leading-relaxed text-[var(--ide-code)]">
         {running ? (
           <p className="flex items-center gap-2 text-bronze">
             <span className="h-2 w-2 animate-pulse rounded-full bg-bronze" />
@@ -560,8 +700,11 @@ function Console({
           <p className="text-[var(--ide-ink-dim)]">
             Write your solution, then{" "}
             <span className="text-bronze">Run</span> it against the sample or{" "}
-            <span className="text-bronze">Submit</span> to the judge&apos;s hidden
-            tests. Faster accepted solves earn more of the daily bounty.
+            <span className="text-bronze">Submit </span> to the judge&apos;s hidden
+            tests.{" "}
+            {practice
+              ? "This past problem is for practice — it won't change the leaderboard."
+              : "Faster accepted solves earn more of the daily bounty."}
           </p>
         ) : judgement.mode === "submit" ? (
           <SubmitResult
@@ -570,13 +713,14 @@ function Console({
             myPoints={myPoints}
             flagged={flagged}
             flagCount={flagCount}
+            practice={practice}
             solveClock={solveClock}
           />
         ) : (
           <RunResult judgement={judgement} sampleOutput={sampleOutput} />
         )}
       </div>
-    </div>
+    </MechaPanel>
   );
 }
 
@@ -586,6 +730,7 @@ function SubmitResult({
   myPoints,
   flagged,
   flagCount,
+  practice,
   solveClock,
 }: {
   judgement: NonNullable<Judgement>;
@@ -593,8 +738,26 @@ function SubmitResult({
   myPoints: number | null;
   flagged: boolean;
   flagCount: number;
+  practice: boolean;
   solveClock: string;
 }) {
+  if (judgement.status === "AC" && practice) {
+    return (
+      <div className="space-y-2">
+        <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+          Accepted — all {judgement.total ?? ""} tests passed.
+        </p>
+        <p className="text-[var(--ide-code)]">
+          Practice solve in{" "}
+          <span className="font-semibold text-[var(--ide-ink-strong)]">
+            {solveClock}
+          </span>
+          . Past problems don&apos;t affect the leaderboard — nice work.
+        </p>
+      </div>
+    );
+  }
+
   if (judgement.status === "AC") {
     return (
       <div className="space-y-2">
@@ -662,15 +825,17 @@ function SubmitResult({
     );
   }
 
-  // WA / TLE / RE — never reveal the hidden test data, only which one failed.
+  // WA / TLE / MLE / RE — never reveal the hidden test data, only which one failed.
   const heading =
     judgement.status === "WA"
       ? "Wrong Answer"
       : judgement.status === "TLE"
         ? "Time Limit Exceeded"
-        : "Runtime Error";
+        : judgement.status === "MLE"
+          ? "Memory Limit Exceeded"
+          : "Runtime Error";
   const tone =
-    judgement.status === "TLE"
+    judgement.status === "TLE" || judgement.status === "MLE"
       ? "text-amber-600 dark:text-amber-400"
       : "text-red-600 dark:text-red-400";
   return (
@@ -799,19 +964,19 @@ function VerdictBadge({
 }) {
   if (running) {
     return (
-      <span className="rounded-full bg-bronze/20 px-2.5 py-0.5 text-[11px] font-semibold text-bronze">
-        Running…
-      </span>
+      <span className="mecha-chip bg-bronze/20 text-bronze">Running…</span>
     );
   }
   if (!judgement) return null;
   const red = "bg-red-500/15 text-red-600 dark:text-red-400";
+  const amber = "bg-amber-500/15 text-amber-600 dark:text-amber-400";
   const map = {
     AC: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
     WA: red,
     RAN: "bg-bronze/15 text-bronze",
     CE: red,
-    TLE: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+    TLE: amber,
+    MLE: amber,
     RE: red,
     ERR: red,
   } as const;
@@ -821,13 +986,12 @@ function VerdictBadge({
     RAN: "Ran",
     CE: "Compile Error",
     TLE: "Time Limit Exceeded",
+    MLE: "Memory Limit Exceeded",
     RE: "Runtime Error",
     ERR: "Error",
   } as const;
   return (
-    <span
-      className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${map[judgement.status]}`}
-    >
+    <span className={`mecha-chip ${map[judgement.status]}`}>
       {labels[judgement.status]}
     </span>
   );
@@ -847,7 +1011,8 @@ function CustomInputPanel({
   isCustom: boolean;
 }) {
   return (
-    <details className="group overflow-hidden rounded-2xl border border-hairline bg-panel shadow-sm">
+    <MechaPanel>
+      <details className="group">
       <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 [&::-webkit-details-marker]:hidden">
         <span className="text-bronze">
           <TerminalIcon />
@@ -856,9 +1021,7 @@ function CustomInputPanel({
           Custom input
         </span>
         {isCustom ? (
-          <span className="rounded-full bg-bronze/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-bronze">
-            custom
-          </span>
+          <span className="mecha-chip bg-bronze/15 text-bronze">custom</span>
         ) : (
           <span className="text-xs text-charcoal/45">using sample</span>
         )}
@@ -871,7 +1034,7 @@ function CustomInputPanel({
           spellCheck={false}
           rows={4}
           placeholder="Enter stdin to Run against…"
-          className="w-full resize-y rounded-lg border border-[var(--ide-border)] bg-[var(--ide-body)] px-3 py-2 font-mono text-xs text-[var(--ide-ink-strong)] outline-none focus:border-bronze"
+          className="mecha-input resize-y py-2 font-mono text-xs"
         />
         <div className="mt-2 flex items-center justify-between gap-3">
           <p className="text-[11px] text-charcoal/50">
@@ -886,7 +1049,8 @@ function CustomInputPanel({
           </button>
         </div>
       </div>
-    </details>
+      </details>
+    </MechaPanel>
   );
 }
 
@@ -894,7 +1058,7 @@ function CustomInputPanel({
 
 function SubmissionsPanel({ history }: { history: Submission[] }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-hairline bg-panel shadow-sm">
+    <MechaPanel>
       <div className="flex items-center justify-between border-b border-hairline px-4 py-3">
         <h3 className="font-display text-sm font-bold text-chocolate">
           Your submissions
@@ -915,7 +1079,7 @@ function SubmissionsPanel({ history }: { history: Submission[] }) {
               className="flex items-center gap-3 px-4 py-2.5 text-sm"
             >
               <span
-                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                className={`mecha-chip ${
                   s.status === "AC"
                     ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
                     : "bg-red-500/15 text-red-600 dark:text-red-400"
@@ -936,7 +1100,7 @@ function SubmissionsPanel({ history }: { history: Submission[] }) {
           ))}
         </ul>
       )}
-    </div>
+    </MechaPanel>
   );
 }
 
@@ -945,17 +1109,13 @@ function SubmissionsPanel({ history }: { history: Submission[] }) {
 function SpeedBounty() {
   const medal = ["#d9a441", "#b9b4ad", "#c08457"];
   return (
-    <section className="rounded-2xl border border-hairline bg-panel p-6 shadow-sm">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="font-display text-lg font-bold text-chocolate">
-          Speed Bounty
-        </h2>
+    <MechaPanel label="Speed Bounty" ticks>
+      <div className="px-6 pb-6 pt-3">
         <p className="text-xs text-charcoal/60">
           Points by finish order — the faster you get accepted, the more you earn.
         </p>
-      </div>
-      <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-5 lg:grid-cols-10">
-        {BOUNTY_LADDER.map((tier, i) => (
+        <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-5 lg:grid-cols-10">
+          {BOUNTY_LADDER.map((tier, i) => (
           <div
             key={tier.label}
             className="rounded-xl border border-hairline bg-cream/40 px-3 py-3 text-center dark:bg-white/[0.03]"
@@ -973,151 +1133,11 @@ function SpeedBounty() {
               {i === BOUNTY_LADDER.length - 1 ? "base" : "pts"}
             </div>
           </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </section>
+    </MechaPanel>
   );
-}
-
-/* --- Live standings --- */
-
-function Standings({
-  ranked,
-  flaggedYou,
-}: {
-  ranked: Solver[];
-  flaggedYou: Solver | null;
-}) {
-  const solvedCount = ranked.length + (flaggedYou ? 1 : 0);
-  return (
-    <section className="overflow-hidden rounded-2xl border border-hairline bg-panel shadow-sm">
-      <div className="flex items-center justify-between border-b border-hairline px-6 py-4">
-        <h2 className="font-display text-lg font-bold text-chocolate">
-          Live Standings
-        </h2>
-        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-charcoal/60">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-          {solvedCount} solved today
-        </span>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[560px] text-sm">
-          <thead>
-            <tr className="text-left font-mono text-[11px] uppercase tracking-wider text-charcoal/45">
-              <th className="px-6 py-3 font-medium">#</th>
-              <th className="px-3 py-3 font-medium">Solver</th>
-              <th className="px-3 py-3 font-medium">Lang</th>
-              <th className="px-3 py-3 font-medium">Time</th>
-              <th className="px-6 py-3 text-right font-medium">Points</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ranked.map((solver, i) => {
-              const rank = i + 1;
-              return (
-                <tr
-                  key={solver.handle}
-                  className={`border-t border-hairline ${
-                    solver.isYou
-                      ? "bg-bronze/10"
-                      : i % 2 === 1
-                        ? "bg-cream/40 dark:bg-white/[0.02]"
-                        : ""
-                  }`}
-                >
-                  <td className="px-6 py-3">
-                    <RankBadge rank={rank} />
-                  </td>
-                  <td className="px-3 py-3">
-                    <div className="flex items-center gap-3">
-                      <span
-                        className={`flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-bold ${
-                          solver.isYou
-                            ? "bg-bronze text-white"
-                            : "bg-bronze/15 text-bronze"
-                        }`}
-                      >
-                        {solver.isYou ? "YOU" : solver.initials}
-                      </span>
-                      <div className="leading-tight">
-                        <div className="font-semibold text-chocolate">
-                          {solver.name}
-                        </div>
-                        <div className="font-mono text-[11px] text-charcoal/50">
-                          @{solver.handle}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-3 py-3 text-charcoal/70">
-                    {solver.language}
-                  </td>
-                  <td className="px-3 py-3 font-mono text-charcoal/70">
-                    {formatClock(solver.timeSeconds)}
-                  </td>
-                  <td className="px-6 py-3 text-right font-display font-bold text-brown">
-                    {pointsForRank(rank)}
-                  </td>
-                </tr>
-              );
-            })}
-            {flaggedYou && (
-              <tr className="border-t border-hairline bg-red-500/10">
-                <td className="px-6 py-3">
-                  <span className="font-mono text-sm text-red-500">—</span>
-                </td>
-                <td className="px-3 py-3">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500/80 text-[11px] font-bold text-white">
-                      YOU
-                    </span>
-                    <div className="leading-tight">
-                      <div className="flex items-center gap-2 font-semibold text-chocolate">
-                        {flaggedYou.name}
-                        <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-600 dark:text-red-400">
-                          Flagged
-                        </span>
-                      </div>
-                      <div className="font-mono text-[11px] text-charcoal/50">
-                        @{flaggedYou.handle}
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-3 py-3 text-charcoal/70">
-                  {flaggedYou.language}
-                </td>
-                <td className="px-3 py-3 font-mono text-charcoal/70">
-                  {formatClock(flaggedYou.timeSeconds)}
-                </td>
-                <td className="px-6 py-3 text-right font-display font-bold text-brown">
-                  {BASE_POINTS}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  );
-}
-
-function RankBadge({ rank }: { rank: number }) {
-  const styles: Record<number, string> = {
-    1: "bg-[#d9a441]/20 text-[#b7842a]",
-    2: "bg-[#b9b4ad]/25 text-[#7d7a76]",
-    3: "bg-[#c08457]/20 text-[#a5623a]",
-  };
-  if (rank <= 3) {
-    return (
-      <span
-        className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${styles[rank]}`}
-      >
-        {rank}
-      </span>
-    );
-  }
-  return <span className="font-mono text-sm text-charcoal/50">{rank}</span>;
 }
 
 /* --- Screenshot deterrents --- */
@@ -1171,19 +1191,6 @@ function EyeOffIcon() {
       <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
       <path d="m2 2 20 20" />
     </svg>
-  );
-}
-
-/* --- Small UI bits --- */
-
-function PanelBar({ label }: { label: string }) {
-  return (
-    <div className="flex items-center gap-2 border-b border-hairline px-6 py-3">
-      <span className="h-1.5 w-1.5 rounded-full bg-bronze" />
-      <span className="font-mono text-[11px] uppercase tracking-wider text-charcoal/50">
-        {label}
-      </span>
-    </div>
   );
 }
 

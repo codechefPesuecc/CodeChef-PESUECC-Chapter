@@ -4,12 +4,17 @@ import { getDailyChallenge } from "@/lib/challenges";
 import ProblemStatement from "@/components/cp-arena/ProblemStatement";
 import ArenaWorkspace from "@/components/cp-arena/ArenaWorkspace";
 import ArenaRules from "@/components/cp-arena/ArenaRules";
+import NextProblemCountdown from "@/components/cp-arena/NextProblemCountdown";
 
 export const metadata: Metadata = {
-  title: "CP Arena",
+  title: "Arena",
   description:
     "The daily competitive programming arena of the CodeChef PESUECC Chapter — solve the Problem of the Day, submit in the browser, and climb the live speed-bounty leaderboard.",
 };
+
+// Resolve the Problem of the Day per request — a statically prerendered page
+// would freeze the daily rotation (and the release gate) at build time.
+export const dynamic = "force-dynamic";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -68,25 +73,29 @@ export default function CpArenaPage() {
           </span>
           <span className="text-charcoal/40">·</span>
           <span className="text-charcoal/60">{formatDate(challenge.date)}</span>
+          <span className="text-charcoal/40">·</span>
+          <NextProblemCountdown />
+          <span className="grow" />
+          <Link
+            href="/cp-arena/archive"
+            className="mecha-btn mecha-btn--ghost mecha-btn--sm"
+          >
+            Archive →
+          </Link>
         </div>
 
         <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
           <h1 className="text-balance font-display text-3xl font-bold tracking-tight text-chocolate sm:text-4xl">
             {challenge.title}
           </h1>
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-semibold ${difficultyStyle}`}
-          >
+          <span className={`mecha-chip ${difficultyStyle}`}>
             {challenge.difficulty}
           </span>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {challenge.tags.map((tag) => (
-            <span
-              key={tag}
-              className="rounded-full border border-hairline bg-panel px-3 py-1 text-xs font-medium text-charcoal/70"
-            >
+            <span key={tag} className="mecha-chip bg-bronze/10 text-brown">
               {tag}
             </span>
           ))}
