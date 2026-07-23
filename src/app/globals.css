@@ -198,20 +198,20 @@ button:focus-visible,
   margin: 1rem 0;
   padding: 0.9rem 1.1rem;
   border-radius: 12px;
-  background: #16110c;
-  border: 1px solid #3a2c20;
   overflow-x: auto;
   font-size: 0.82rem;
   line-height: 1.6;
-  /* The block is a warm terminal-dark in both themes, so its text must be light
-   * in both — the sample I/O blocks are bare <pre> (no <code>), so they'd
-   * otherwise inherit the dark prose colour and vanish in light mode. */
+  /* Theme the code/sample block with the IDE tokens: a light warm surface with
+   * dark text in light mode, a warm terminal-dark with light text in dark mode.
+   * Sample I/O blocks are bare <pre> (no <code>), so the colour lives here. */
   font-family: var(--font-mono), monospace;
-  color: #e8dfd2;
+  background: var(--ide-bar);
+  border: 1px solid var(--ide-border);
+  color: var(--ide-code);
 }
 .arena-prose pre code {
   font-family: var(--font-mono), monospace;
-  color: #e8dfd2;
+  color: inherit;
   background: none;
   border: none;
   padding: 0;
