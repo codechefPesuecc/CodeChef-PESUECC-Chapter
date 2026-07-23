@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion } from "motion/react";
 import type { MemberInfo } from "../lib";
+import MechaPanel from "@/components/cp-arena/MechaPanel";
 
 /* ------------------------------------------------------------------ */
 /*  Social icons                                                       */
@@ -100,89 +101,94 @@ export default function MemberCard({
         delay: Math.min(index * 0.05, 0.5),
         ease: [0.22, 1, 0.36, 1],
       }}
-      className="group relative flex flex-col items-center rounded-2xl border border-hairline bg-panel p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-bronze/40 hover:shadow-lg"
+      className="group transition-all duration-300 hover:-translate-y-1"
     >
-      {/* Photo / Initials fallback */}
-      <div
-        className={`relative overflow-hidden rounded-full border-2 border-bronze/30 transition-colors group-hover:border-bronze ${isCoordinator ? "h-32 w-32" : "h-[104px] w-[104px]"
-          }`}
+      <MechaPanel
+        ticks={true}
+        bodyClassName="flex flex-col items-center p-6"
       >
-        {member.photo ? (
-          <Image
-            src={member.photo}
-            alt={member.name}
-            width={photoSize}
-            height={photoSize}
-            className="h-full w-full object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-bronze/15">
-            <span className="font-display text-2xl font-bold text-bronze">
-              {initials}
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Name */}
-      <h3
-        className={`mt-4 text-center font-display font-bold text-chocolate ${isCoordinator ? "text-lg" : "text-base"
-          }`}
-      >
-        {member.name}
-      </h3>
-
-      {/* Role */}
-      <p className="mt-1 text-center text-xs font-medium text-bronze">
-        {member.role}
-      </p>
-
-      {/* Bio — visible on hover (desktop) or always visible on mobile */}
-      {member.bio && (
-        <p className="mt-3 line-clamp-2 text-center text-xs leading-5 text-charcoal/60 transition-colors group-hover:text-charcoal/80">
-          {member.bio}
-        </p>
-      )}
-
-      {/* Social links */}
-      {hasSocials && (
-        <div className="mt-4 flex items-center gap-3">
-          {member.linkedin && (
-            <a
-              href={member.linkedin}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`${member.name} on LinkedIn`}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-hairline text-charcoal/50 transition-all hover:border-bronze/40 hover:text-bronze"
-            >
-              <LinkedInIcon />
-            </a>
-          )}
-          {member.github && (
-            <a
-              href={member.github}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`${member.name} on GitHub`}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-hairline text-charcoal/50 transition-all hover:border-bronze/40 hover:text-bronze"
-            >
-              <GitHubIcon />
-            </a>
-          )}
-          {member.instagram && (
-            <a
-              href={member.instagram}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`${member.name} on Instagram`}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-hairline text-charcoal/50 transition-all hover:border-bronze/40 hover:text-bronze"
-            >
-              <InstagramIcon />
-            </a>
+        {/* Photo / Initials fallback */}
+        <div
+          className={`relative overflow-hidden rounded-full border-2 border-bronze/30 transition-colors group-hover:border-bronze ${isCoordinator ? "h-32 w-32" : "h-[104px] w-[104px]"
+            }`}
+        >
+          {member.photo ? (
+            <Image
+              src={member.photo}
+              alt={member.name}
+              width={photoSize}
+              height={photoSize}
+              className="h-full w-full object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-bronze/15">
+              <span className="font-display text-2xl font-bold text-bronze">
+                {initials}
+              </span>
+            </div>
           )}
         </div>
-      )}
+
+        {/* Name */}
+        <h3
+          className={`mt-4 text-center font-display font-bold text-chocolate ${isCoordinator ? "text-lg" : "text-base"
+            }`}
+        >
+          {member.name}
+        </h3>
+
+        {/* Role */}
+        <p className="mt-1 text-center text-xs font-medium text-bronze">
+          {member.role}
+        </p>
+
+        {/* Bio — visible on hover (desktop) or always visible on mobile */}
+        {member.bio && (
+          <p className="mt-3 line-clamp-2 text-center text-xs leading-5 text-charcoal/60 transition-colors group-hover:text-charcoal/80">
+            {member.bio}
+          </p>
+        )}
+
+        {/* Social links */}
+        {hasSocials && (
+          <div className="mt-4 flex items-center gap-3">
+            {member.linkedin && (
+              <a
+                href={member.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${member.name} on LinkedIn`}
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-hairline text-charcoal/50 transition-all hover:border-bronze/40 hover:text-bronze"
+              >
+                <LinkedInIcon />
+              </a>
+            )}
+            {member.github && (
+              <a
+                href={member.github}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${member.name} on GitHub`}
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-hairline text-charcoal/50 transition-all hover:border-bronze/40 hover:text-bronze"
+              >
+                <GitHubIcon />
+              </a>
+            )}
+            {member.instagram && (
+              <a
+                href={member.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${member.name} on Instagram`}
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-hairline text-charcoal/50 transition-all hover:border-bronze/40 hover:text-bronze"
+              >
+                <InstagramIcon />
+              </a>
+            )}
+          </div>
+        )}
+      </MechaPanel>
     </motion.article>
   );
 }
