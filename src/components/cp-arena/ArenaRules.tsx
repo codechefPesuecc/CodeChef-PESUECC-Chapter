@@ -3,6 +3,7 @@
  * without pushing the editor too far down. Styled with brand tokens, so it
  * re-themes in dark mode automatically.
  */
+import MechaPanel from "./MechaPanel";
 const RULES: string[] = [
   "One Problem of the Day. Read the statement on the left and solve it in the browser editor on the right.",
   "Points are awarded by speed: the faster your first Accepted submission, the higher you rank on the daily board (1000 for 1st down to 100 for 10th and beyond).",
@@ -17,7 +18,8 @@ const RULES: string[] = [
 
 export default function ArenaRules() {
   return (
-    <details className="group mt-6 overflow-hidden rounded-2xl border border-hairline border-l-4 border-l-bronze bg-panel shadow-sm">
+    <MechaPanel className="mt-6" label="Rules">
+      <details className="group">
       <summary className="flex cursor-pointer list-none items-center gap-3 px-6 py-4 [&::-webkit-details-marker]:hidden">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-bronze/15 text-bronze">
           <BookIcon />
@@ -42,7 +44,8 @@ export default function ArenaRules() {
           </li>
         ))}
       </ol>
-    </details>
+      </details>
+    </MechaPanel>
   );
 }
 

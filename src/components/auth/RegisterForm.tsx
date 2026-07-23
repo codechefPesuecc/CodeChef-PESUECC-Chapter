@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import MechaPanel from "@/components/cp-arena/MechaPanel";
 
 const inputCls =
   "w-full rounded-lg border border-hairline bg-cream/40 px-3 py-2.5 text-sm text-charcoal outline-none transition-colors focus:border-bronze dark:bg-white/[0.03]";
@@ -57,7 +58,7 @@ export default function RegisterForm() {
 
   return (
     <div className="mx-auto flex max-w-md flex-col justify-center px-6 py-12">
-      <div className="rounded-2xl border border-hairline bg-panel p-8 shadow-sm">
+      <MechaPanel bodyClassName="p-8">
         <h1 className="font-display text-2xl font-bold text-chocolate">
           Create your account
         </h1>
@@ -146,7 +147,7 @@ export default function RegisterForm() {
             Log in
           </Link>
         </p>
-      </div>
+      </MechaPanel>
     </div>
   );
 }

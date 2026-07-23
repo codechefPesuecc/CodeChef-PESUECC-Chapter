@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getReleasedChallenges, getDailyChallenge } from "@/lib/challenges";
+import MechaPanel from "@/components/cp-arena/MechaPanel";
 
 export const metadata: Metadata = {
   title: "Arena Archive",
@@ -68,10 +69,8 @@ export default function ArchivePage() {
                 DIFFICULTY_STYLES[c.difficulty] ?? "bg-bronze/15 text-bronze";
               return (
                 <li key={c.slug}>
-                  <Link
-                    href={href}
-                    className="group flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-hairline bg-panel px-5 py-4 shadow-sm transition-colors hover:border-bronze/50"
-                  >
+                  <Link href={href} className="group block">
+                    <MechaPanel bodyClassName="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-4">
                     <span className="font-mono text-xs text-charcoal/50">
                       {formatDate(c.date)}
                     </span>
@@ -92,6 +91,7 @@ export default function ArchivePage() {
                     <span className="ml-auto font-mono text-xs text-charcoal/40 transition-transform group-hover:translate-x-0.5">
                       {isLive ? "Solve →" : "Practice →"}
                     </span>
+                    </MechaPanel>
                   </Link>
                 </li>
               );

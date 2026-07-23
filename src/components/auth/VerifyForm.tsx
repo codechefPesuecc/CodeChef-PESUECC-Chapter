@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useUser } from "@/components/auth/useUser";
+import MechaPanel from "@/components/cp-arena/MechaPanel";
 
 export default function VerifyForm() {
   const user = useUser();
@@ -78,7 +79,7 @@ export default function VerifyForm() {
 
   return (
     <div className="mx-auto flex max-w-md flex-col justify-center px-6 py-12">
-      <div className="rounded-2xl border border-hairline bg-panel p-8 shadow-sm">
+      <MechaPanel bodyClassName="p-8">
         {user === undefined ? (
           <p className="text-sm text-charcoal/60">Loading…</p>
         ) : user === null ? (
@@ -175,7 +176,7 @@ export default function VerifyForm() {
             </button>
           </>
         )}
-      </div>
+      </MechaPanel>
     </div>
   );
 }

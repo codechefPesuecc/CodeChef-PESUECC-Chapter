@@ -270,12 +270,14 @@ button:focus-visible,
   clip-path: var(--mecha-clip);
   background: var(--mecha-fill); /* gap */
   padding: 4px;
+  height: 100%;
 }
 .mecha__inline {
   --mecha-n: 8.5px; /* 14 - 5.5 inset */
   clip-path: var(--mecha-clip);
   background: var(--mecha-line); /* inner line */
   padding: 1px;
+  height: 100%;
 }
 .mecha__body {
   --mecha-n: 7.5px; /* 14 - 6.5 inset */
