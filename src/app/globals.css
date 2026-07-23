@@ -203,6 +203,11 @@ button:focus-visible,
   overflow-x: auto;
   font-size: 0.82rem;
   line-height: 1.6;
+  /* The block is a warm terminal-dark in both themes, so its text must be light
+   * in both — the sample I/O blocks are bare <pre> (no <code>), so they'd
+   * otherwise inherit the dark prose colour and vanish in light mode. */
+  font-family: var(--font-mono), monospace;
+  color: #e8dfd2;
 }
 .arena-prose pre code {
   font-family: var(--font-mono), monospace;
