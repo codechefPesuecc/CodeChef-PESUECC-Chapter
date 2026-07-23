@@ -236,6 +236,10 @@ button:focus-visible,
   background: color-mix(in oklab, var(--color-bronze) 8%, transparent);
 }
 
+/* Mecha component classes live in the components layer so Tailwind utilities
+ * (text-2xl, hidden, flex, …) applied alongside them still win. */
+@layer components {
+
 /*
  * --- Mecha / HUD panels ---
  * Chamfered "tech panel" cards with a double outline. The notched shape is a
@@ -495,4 +499,42 @@ button:focus-visible,
 .mecha-tab--active {
   background: color-mix(in oklab, var(--color-bronze) 18%, transparent);
   color: var(--color-chocolate);
+}
+
+/*
+ * --- Mecha inputs ---
+ * Filled, chamfered fields with a bronze left-accent bar that brightens on
+ * focus. Single-element, so it drops onto any <input>/<textarea>/<select>.
+ */
+.mecha-input {
+  --mi-n: 6px;
+  clip-path: polygon(
+    var(--mi-n) 0,
+    calc(100% - var(--mi-n)) 0,
+    100% var(--mi-n),
+    100% calc(100% - var(--mi-n)),
+    calc(100% - var(--mi-n)) 100%,
+    var(--mi-n) 100%,
+    0 calc(100% - var(--mi-n)),
+    0 var(--mi-n)
+  );
+  width: 100%;
+  background: color-mix(in oklab, var(--color-charcoal) 5%, var(--color-panel));
+  border-left: 2px solid color-mix(in oklab, var(--color-bronze) 55%, transparent);
+  padding: 0.6rem 0.85rem;
+  font-size: 0.875rem;
+  color: var(--color-charcoal);
+  outline: none;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+.mecha-input::placeholder {
+  color: color-mix(in oklab, var(--color-charcoal) 42%, transparent);
+}
+.mecha-input:focus {
+  background: color-mix(in oklab, var(--color-bronze) 10%, var(--color-panel));
+  border-left-color: var(--color-bronze);
+}
+
 }

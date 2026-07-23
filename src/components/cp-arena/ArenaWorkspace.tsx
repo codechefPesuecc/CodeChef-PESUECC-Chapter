@@ -443,7 +443,7 @@ export default function ArenaWorkspace({
                   id="language"
                   value={language}
                   onChange={(e) => changeLanguage(e.target.value as LanguageId)}
-                  className="rounded-md border border-[var(--ide-border)] bg-[var(--ide-body)] px-2 py-1 text-xs font-medium text-[var(--ide-ink-strong)] outline-none transition-colors focus:border-bronze"
+                  className="mecha-input w-auto px-2 py-1 text-xs font-medium"
                 >
                   {LANGUAGES.map((l) => (
                     <option
@@ -1034,7 +1034,7 @@ function CustomInputPanel({
           spellCheck={false}
           rows={4}
           placeholder="Enter stdin to Run against…"
-          className="w-full resize-y rounded-lg border border-[var(--ide-border)] bg-[var(--ide-body)] px-3 py-2 font-mono text-xs text-[var(--ide-ink-strong)] outline-none focus:border-bronze"
+          className="mecha-input resize-y py-2 font-mono text-xs"
         />
         <div className="mt-2 flex items-center justify-between gap-3">
           <p className="text-[11px] text-charcoal/50">

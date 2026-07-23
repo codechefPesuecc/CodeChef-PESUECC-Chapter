@@ -4,8 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import MechaPanel from "@/components/cp-arena/MechaPanel";
 
-const inputCls =
-  "w-full rounded-lg border border-hairline bg-cream/40 px-3 py-2.5 text-sm text-charcoal outline-none transition-colors focus:border-bronze dark:bg-white/[0.03]";
+const inputCls = "mecha-input";
 
 export default function ForgotForm() {
   const [email, setEmail] = useState("");

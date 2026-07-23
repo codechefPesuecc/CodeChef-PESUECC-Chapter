@@ -148,7 +148,7 @@ export default function VerifyForm() {
                   setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
                 }
                 placeholder="000000"
-                className="w-full rounded-lg border border-hairline bg-cream/40 px-3 py-3 text-center font-mono text-2xl tracking-[0.4em] text-charcoal outline-none transition-colors focus:border-bronze dark:bg-white/[0.03]"
+                className="mecha-input py-3 text-center font-mono text-2xl tracking-[0.4em]"
                 required
               />
               {error && (
