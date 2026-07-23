@@ -964,9 +964,7 @@ function VerdictBadge({
 }) {
   if (running) {
     return (
-      <span className="rounded-full bg-bronze/20 px-2.5 py-0.5 text-[11px] font-semibold text-bronze">
-        Running…
-      </span>
+      <span className="mecha-chip bg-bronze/20 text-bronze">Running…</span>
     );
   }
   if (!judgement) return null;
@@ -993,9 +991,7 @@ function VerdictBadge({
     ERR: "Error",
   } as const;
   return (
-    <span
-      className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${map[judgement.status]}`}
-    >
+    <span className={`mecha-chip ${map[judgement.status]}`}>
       {labels[judgement.status]}
     </span>
   );
@@ -1025,9 +1021,7 @@ function CustomInputPanel({
           Custom input
         </span>
         {isCustom ? (
-          <span className="rounded-full bg-bronze/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-bronze">
-            custom
-          </span>
+          <span className="mecha-chip bg-bronze/15 text-bronze">custom</span>
         ) : (
           <span className="text-xs text-charcoal/45">using sample</span>
         )}
@@ -1085,7 +1079,7 @@ function SubmissionsPanel({ history }: { history: Submission[] }) {
               className="flex items-center gap-3 px-4 py-2.5 text-sm"
             >
               <span
-                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                className={`mecha-chip ${
                   s.status === "AC"
                     ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
                     : "bg-red-500/15 text-red-600 dark:text-red-400"

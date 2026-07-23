@@ -45,17 +45,13 @@ export default function LeaderboardView() {
 
   return (
     <div>
-      <div className="inline-flex rounded-full border border-hairline bg-panel p-1 shadow-sm">
+      <div className="mecha-tabs">
         {TABS.map((t) => (
           <button
             key={t.scope}
             type="button"
             onClick={() => setScope(t.scope)}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-              scope === t.scope
-                ? "bg-bronze/15 font-semibold text-chocolate"
-                : "text-charcoal/60 hover:text-chocolate"
-            }`}
+            className={`mecha-tab ${scope === t.scope ? "mecha-tab--active" : ""}`}
           >
             {t.label}
           </button>

@@ -82,19 +82,14 @@ export default async function ArchiveProblemPage({
           <h1 className="text-balance font-display text-3xl font-bold tracking-tight text-chocolate sm:text-4xl">
             {challenge.title}
           </h1>
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-semibold ${difficultyStyle}`}
-          >
+          <span className={`mecha-chip ${difficultyStyle}`}>
             {challenge.difficulty}
           </span>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {challenge.tags.map((tag) => (
-            <span
-              key={tag}
-              className="rounded-full border border-hairline bg-panel px-3 py-1 text-xs font-medium text-charcoal/70"
-            >
+            <span key={tag} className="mecha-chip bg-bronze/10 text-brown">
               {tag}
             </span>
           ))}

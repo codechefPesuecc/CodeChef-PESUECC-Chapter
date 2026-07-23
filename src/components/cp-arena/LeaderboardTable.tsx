@@ -83,7 +83,7 @@ export default function LeaderboardTable({
                     <span className="flex items-center gap-2 font-semibold text-chocolate">
                       @{r.username}
                       {r.flagged && (
-                        <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-600 dark:text-red-400">
+                        <span className="mecha-chip bg-red-500/15 text-red-600 dark:text-red-400">
                           Flagged
                         </span>
                       )}

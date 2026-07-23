@@ -414,3 +414,85 @@ button:focus-visible,
   padding: 0.42rem 0.85rem;
   letter-spacing: 0.06em;
 }
+
+/*
+ * --- Mecha chips ---
+ * Small chamfered status/tag pills. Colour comes from utility classes
+ * (bg-emerald-500/15 text-emerald-600, …); this only sets the shape + mono type.
+ */
+.mecha-chip {
+  --mc-n: 4px;
+  clip-path: polygon(
+    var(--mc-n) 0,
+    calc(100% - var(--mc-n)) 0,
+    100% var(--mc-n),
+    100% calc(100% - var(--mc-n)),
+    calc(100% - var(--mc-n)) 100%,
+    var(--mc-n) 100%,
+    0 calc(100% - var(--mc-n)),
+    0 var(--mc-n)
+  );
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.66rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.55rem;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+/*
+ * --- Mecha tabs (segmented control) ---
+ */
+.mecha-tabs {
+  --mt-n: 7px;
+  display: inline-flex;
+  gap: 3px;
+  padding: 4px;
+  background: var(--color-panel);
+  clip-path: polygon(
+    var(--mt-n) 0,
+    calc(100% - var(--mt-n)) 0,
+    100% var(--mt-n),
+    100% calc(100% - var(--mt-n)),
+    calc(100% - var(--mt-n)) 100%,
+    var(--mt-n) 100%,
+    0 calc(100% - var(--mt-n)),
+    0 var(--mt-n)
+  );
+  filter: drop-shadow(0 3px 8px rgb(0 0 0 / 0.08));
+}
+.mecha-tab {
+  --mt-n: 5px;
+  clip-path: polygon(
+    var(--mt-n) 0,
+    calc(100% - var(--mt-n)) 0,
+    100% var(--mt-n),
+    100% calc(100% - var(--mt-n)),
+    calc(100% - var(--mt-n)) 100%,
+    var(--mt-n) 100%,
+    0 calc(100% - var(--mt-n)),
+    0 var(--mt-n)
+  );
+  font-family: var(--font-mono), monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.42rem 0.95rem;
+  color: color-mix(in oklab, var(--color-charcoal) 58%, transparent);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+.mecha-tab:hover {
+  color: var(--color-chocolate);
+}
+.mecha-tab--active {
+  background: color-mix(in oklab, var(--color-bronze) 18%, transparent);
+  color: var(--color-chocolate);
+}

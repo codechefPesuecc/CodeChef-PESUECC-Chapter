@@ -77,13 +77,11 @@ export default function ArchivePage() {
                     <span className="font-display text-lg font-semibold text-chocolate group-hover:text-bronze">
                       {c.title}
                     </span>
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${difficultyStyle}`}
-                    >
+                    <span className={`mecha-chip ${difficultyStyle}`}>
                       {c.difficulty}
                     </span>
                     {isLive && (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                      <span className="mecha-chip bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
                         <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
                         Live today
                       </span>

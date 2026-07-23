@@ -75,13 +75,13 @@ export default async function ProfilePage() {
           <DetailRow label="Email">
             <span className="text-charcoal/80">{user.email}</span>
             {user.emailVerified ? (
-              <span className="ml-2 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
+              <span className="mecha-chip ml-2 bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
                 verified
               </span>
             ) : (
               <Link
                 href="/verify"
-                className="ml-2 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-700 hover:underline dark:text-amber-400"
+                className="mecha-chip ml-2 bg-amber-500/15 text-amber-700 hover:underline dark:text-amber-400"
               >
                 verify →
               </Link>
@@ -164,7 +164,7 @@ export default async function ProfilePage() {
                       </Link>
                       {s.flags > 0 && (
                         <span
-                          className={`ml-2 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+                          className={`mecha-chip ml-2 ${
                             s.flags > FLAG_LIMIT
                               ? "bg-red-500/15 text-red-700 dark:text-red-400"
                               : "bg-amber-500/15 text-amber-700 dark:text-amber-400"
@@ -176,7 +176,7 @@ export default async function ProfilePage() {
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                        className={`mecha-chip ${
                           VERDICT_STYLES[s.status] ?? "bg-charcoal/10 text-charcoal/60"
                         }`}
                       >
