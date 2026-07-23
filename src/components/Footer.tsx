@@ -68,12 +68,12 @@ export default function Footer() {
                   className="h-10 w-10 object-contain"
                 />
               </span>
-              <div>
-                <p className="font-display text-base font-bold text-cream">
-                  CodeChef <span className="text-bronze">·</span> PESUECC
+              <div className="font-display leading-none">
+                <p className="text-lg font-bold tracking-tight text-cream">
+                  CodeChef
                 </p>
-                <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-bronze/90">
-                  Chapter
+                <p className="mt-0.5 text-xs font-semibold tracking-[0.2em] text-bronze">
+                  PESUECC Chapter
                 </p>
               </div>
             </div>

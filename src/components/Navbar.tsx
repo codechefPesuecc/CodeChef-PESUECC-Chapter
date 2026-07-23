@@ -74,8 +74,8 @@ export default function Navbar() {
             <span className="text-lg font-bold tracking-tight text-chocolate">
               CodeChef
             </span>
-            <span className="mt-0.5 text-xs font-semibold tracking-[0.25em] text-bronze">
-              PESUECC
+            <span className="mt-0.5 text-xs font-semibold tracking-[0.2em] text-bronze">
+              PESUECC Chapter
             </span>
           </span>
         </Link>
