@@ -284,7 +284,7 @@ function EventBlueprintCard({
                 href={event.href}
                 className="group/btn self-end mt-10 inline-flex items-center justify-center gap-3 border-[1.5px] border-[#221E1A] dark:border-[#D98A53] bg-transparent px-8 py-3.5 font-mono text-[11px] font-bold tracking-[0.15em] text-[#221E1A] dark:text-[#D98A53] uppercase transition-all duration-300 hover:bg-[#221E1A] dark:hover:bg-[#D98A53] hover:text-[#FBF6ED] dark:hover:text-[#1C1714]"
               >
-                VIEW PROGRAM DETAILS
+                {event.id === "cp-arena" ? "ENTER ARENA" : "VIEW PROGRAM DETAILS"}
                 <span className="inline-block transition-transform duration-300 ease-out group-hover/btn:translate-x-1.5 group-hover/btn:-translate-y-0.5">
                   →
                 </span>
