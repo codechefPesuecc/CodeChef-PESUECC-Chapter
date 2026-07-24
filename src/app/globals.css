@@ -695,6 +695,7 @@ body::before {
       linear-gradient(to right, rgba(245,241,235,0.06) 1px, transparent 1px),
       linear-gradient(to bottom, rgba(245,241,235,0.06) 1px, transparent 1px);
     background-size: auto, 46px 46px, 46px 46px;
+    background-position: 0 0, center center, center center;
     background-attachment: scroll, fixed, fixed;
   }
   .bg-tech-grid-event {
@@ -702,6 +703,7 @@ body::before {
       linear-gradient(to right, color-mix(in oklab, var(--color-hairline) 58%, transparent) 1px, transparent 1px),
       linear-gradient(to bottom, color-mix(in oklab, var(--color-hairline) 58%, transparent) 1px, transparent 1px);
     background-size: 46px 46px;
+    background-position: center center;
     background-attachment: fixed;
   }
 }
