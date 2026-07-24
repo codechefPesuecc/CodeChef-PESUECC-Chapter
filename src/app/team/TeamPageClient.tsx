@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import type { TeamData } from "./lib";
 import YearSelector from "./components/YearSelector";
@@ -17,9 +17,9 @@ export default function TeamPageClient({ data }: TeamPageClientProps) {
   // Track whether user has changed the year at least once.
   // On the very first render we skip AnimatePresence entirely
   // so there is zero motion wrapper around the SSR content.
-  const hasChangedYear = useRef(false);
+  const [hasChangedYear, setHasChangedYear] = useState(false);
   const handleSelect = (year: string) => {
-    hasChangedYear.current = true;
+    setHasChangedYear(true);
     setSelectedYear(year);
   };
 
@@ -94,7 +94,7 @@ export default function TeamPageClient({ data }: TeamPageClientProps) {
 
       {/* Team grid */}
       <section className="mx-auto max-w-6xl px-6 pb-24">
-        {hasChangedYear.current ? (
+        {hasChangedYear ? (
           <AnimatePresence mode="wait">
             <motion.div
               key={selectedYear}
