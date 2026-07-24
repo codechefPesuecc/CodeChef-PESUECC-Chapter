@@ -59,13 +59,13 @@ function SystemPanel({
 }) {
   return (
     <Reveal delay={delay} className="h-full">
-      <article className="relative overflow-hidden rounded-3xl border border-cream/10 bg-cream/[0.055] shadow-2xl backdrop-blur">
+      <article className="relative overflow-hidden rounded-3xl border border-cream/10 bg-[#0f0b07]/90 shadow-2xl backdrop-blur">
         <div
           aria-hidden
           className="absolute inset-0 bg-tech-grid-card opacity-80"
         />
         <div className="relative grid gap-0 lg:grid-cols-[0.38fr_0.62fr]">
-          <div className="border-b border-cream/10 p-6 sm:p-8 lg:border-r lg:border-b-0">
+          <div className="p-6 sm:p-8">
             <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-bronze">
               {system.role}
             </span>
