@@ -47,10 +47,6 @@ export function TechnicalBackdrop() {
     <>
       <div
         aria-hidden
-        className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,color-mix(in_oklab,var(--color-bronze)_24%,transparent),transparent_30%),linear-gradient(to_right,color-mix(in_oklab,var(--color-hairline)_55%,transparent)_1px,transparent_1px),linear-gradient(to_bottom,color-mix(in_oklab,var(--color-hairline)_55%,transparent)_1px,transparent_1px)] bg-[size:auto,34px_34px,34px_34px]"
-      />
-      <div
-        aria-hidden
         className="absolute right-0 top-24 h-72 w-72 rounded-full bg-bronze/10 blur-3xl"
       />
     </>
