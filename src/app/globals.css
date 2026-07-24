@@ -678,3 +678,27 @@ body::before {
 .chamfer-image {
   clip-path: polygon(24px 0, calc(100% - 24px) 0, 100% 24px, 100% calc(100% - 24px), calc(100% - 24px) 100%, 24px 100%, 0 calc(100% - 24px), 0 24px);
 }
+
+@layer utilities {
+  .bg-tech-grid-main {
+    background-image: 
+      radial-gradient(circle at 18% 18%, rgba(166,124,82,0.28), transparent 28%),
+      radial-gradient(circle at 82% 45%, rgba(245,241,235,0.1), transparent 24%),
+      linear-gradient(to right, rgba(245,241,235,0.07) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(245,241,235,0.07) 1px, transparent 1px);
+    background-size: auto, auto, 36px 36px, 36px 36px;
+  }
+  .bg-tech-grid-card {
+    background-image: 
+      linear-gradient(110deg, rgba(166,124,82,0.18), transparent 34%),
+      linear-gradient(to right, rgba(245,241,235,0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(245,241,235,0.06) 1px, transparent 1px);
+    background-size: auto, 30px 30px, 30px 30px;
+  }
+  .bg-tech-grid-event {
+    background-image:
+      linear-gradient(to right, color-mix(in oklab, var(--color-hairline) 58%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklab, var(--color-hairline) 58%, transparent) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+}
