@@ -5,6 +5,13 @@ export const stats = [
   { label: "Culture", value: "Daily CP", progress: 53 },
 ];
 
+export const opsMetrics = [
+  { label: "Active Nodes", value: "12/12", progress: 100 },
+  { label: "Pipeline Load", value: "78%", progress: 78 },
+  { label: "Global Uptime", value: "99.9%", progress: 99 },
+  { label: "Recent Deploys", value: "4", progress: 100 },
+];
+
 export const events = [
   {
     id: "leetcode-101",
@@ -15,7 +22,7 @@ export const events = [
     description:
       "A guided problem-solving pipeline for students moving from syntax comfort to interview-ready competitive thinking. The program bridges the gap between basic coding knowledge and the advanced pattern recognition required to clear technical assessments. It focuses heavily on understanding core algorithmic templates, time-complexity analysis, and translating intuitive logic into optimal code blocks.",
     detailedExplanation:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
+      "LeetCode 101 is our flagship mentorship program engineered to systematically break down data structures and algorithms. Rather than just grinding problems, we focus on recognizing underlying patterns—like sliding window, two pointers, and dynamic programming state transitions. Through weekly whiteboard sessions and editorial discussions, participants learn to dissect optimal solutions and articulate their thought processes exactly as required in top-tier technical interviews.",
     highlights: ["Pattern-first sessions", "Mentor-led reviews", "Editorial practice"],
     accent: "01",
     image: "/dev-team.jpg",
@@ -35,7 +42,7 @@ export const events = [
     description:
       "A physical-digital contest where algorithms unlock checkpoints, clues, and leaderboard momentum across campus. Teams must rapidly decipher algorithmic puzzles that map directly to physical locations, combining high-speed physical coordination with intense technical problem-solving. It's an immersive race designed to test both computational thinking and team execution under severe time constraints.",
     detailedExplanation:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
+      "AlgoHunt transforms competitive programming into a high-octane physical reality. Teams are given encrypted algorithmic puzzles that, once solved, yield location-based clues around the PESU campus. It demands a unique hybrid of rapid code execution, team communication under pressure, and physical stamina. AlgoHunt tests not just how well you know Dijkstra's algorithm, but how fast your team can debug it while racing against the clock to the next checkpoint.",
     highlights: ["Puzzle-backed routes", "Live scoring", "Team-based solving"],
     accent: "02",
     image: "/dev-team.jpg",
@@ -55,7 +62,7 @@ export const events = [
     description:
       "A high-pressure build sprint for shipping AI-assisted products, prototypes, and technical demos under real constraints. Unlike traditional hackathons, Praxis emphasizes the speed of shipping a minimum viable product by leveraging modern AI tools and robust architectural templates. Participants learn how to rapidly iterate, integrate external APIs, and present their engineering choices to a technical jury.",
     detailedExplanation:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
+      "Praxis is designed to push developers out of tutorial hell and into the builder's mindset. It is a time-boxed, high-intensity hackathon where teams are challenged to ideate, architecture, and deploy functional prototypes using modern stacks and AI tooling. We emphasize product viability, clean code architecture, and effective presentation. The judging criteria strictly reward working demos over slide decks, forcing participants to make pragmatic engineering trade-offs to cross the finish line.",
     highlights: ["Fast ideation", "Demo-first judging", "Production mindset"],
     accent: "03",
     image: "/dev-team.jpg",
@@ -74,7 +81,7 @@ export const systems = [
     title: "Eclipse",
     role: "Event Infrastructure",
     description:
-      "The operations layer for registrations, team flows, announcements, check-ins, and event control during large chapter launches.",
+      "The unified operations layer driving all large-scale chapter launches. Eclipse handles high-volume concurrent registrations, seamless QR-based check-ins, dynamic team formation flows, and real-time event control. By abstracting away logistical friction, it allows organizers to monitor crowd flow, issue bulk announcements, and execute complex multi-stage events with military precision from a single centralized dashboard.",
     metrics: [
       { label: "Modules", value: "Ops" },
       { label: "Surface", value: "Event" },
@@ -93,7 +100,7 @@ export const systems = [
     title: "AlgoHunt Base",
     role: "Contest / Judge Platform",
     description:
-      "The contest substrate behind algorithmic events: problem delivery, solve tracking, judge-backed feedback, and live standings.",
+      "The custom-built contest substrate powering our most intense algorithmic events. Built around a robust, isolated sandboxing engine (Piston), it provides secure code execution, real-time judge feedback, and live standings recalculation under heavy load. AlgoHunt Base supports hidden test cases, multi-language compilation, and custom scoring logic, creating an incredibly tight feedback loop for competitive solvers.",
     metrics: [
       { label: "Judge", value: "Piston" },
       { label: "Board", value: "Live" },

@@ -28,10 +28,12 @@ export function ClosingImpact() {
             <div className="flex flex-wrap gap-3 lg:justify-end">
               <Link
                 href="/cp-arena"
-                className="inline-flex items-center gap-2 rounded-lg bg-bronze px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-bronze/90"
+                className="group inline-flex items-center gap-2 rounded-lg bg-bronze px-5 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-bronze/90"
               >
                 Enter CP Arena
-                <ArrowIcon />
+                <span className="transition-transform duration-300 group-hover:translate-x-1">
+                  <ArrowIcon />
+                </span>
               </Link>
               <Link
                 href="/team"

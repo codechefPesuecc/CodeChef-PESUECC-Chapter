@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { InitiativesHero } from "./components/InitiativesHero";
 import { ImpactStats } from "./components/ImpactStats";
-import { FlagshipEvents } from "./components/FlagshipEvents";
-import { SystemsPortfolio } from "./components/SystemsPortfolio";
-import { BuildTimeline } from "./components/BuildTimeline";
-import { ClosingImpact } from "./components/ClosingImpact";
+import dynamic from "next/dynamic";
+
+const FlagshipEvents = dynamic(() => import("./components/FlagshipEvents").then(m => m.FlagshipEvents));
+const SystemsPortfolio = dynamic(() => import("./components/SystemsPortfolio").then(m => m.SystemsPortfolio));
+const BuildTimeline = dynamic(() => import("./components/BuildTimeline").then(m => m.BuildTimeline));
+const ClosingImpact = dynamic(() => import("./components/ClosingImpact").then(m => m.ClosingImpact));
 
 export const metadata: Metadata = {
   title: "Initiatives",

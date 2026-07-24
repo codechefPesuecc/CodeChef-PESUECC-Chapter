@@ -4,11 +4,11 @@ import { SectionIntro } from "./Shared";
 
 export function SystemsPortfolio() {
   return (
-    <section className="relative overflow-hidden py-16 sm:py-24">
+    <section id="engineered-events" className="relative overflow-hidden py-16 sm:py-24">
       <div className="absolute inset-0 bg-chocolate dark:bg-[#0f0b07]" />
       <div
         aria-hidden
-        className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(166,124,82,0.28),transparent_28%),radial-gradient(circle_at_82%_45%,rgba(245,241,235,0.1),transparent_24%),linear-gradient(to_right,rgba(245,241,235,0.07)_1px,transparent_1px),linear-gradient(to_bottom,rgba(245,241,235,0.07)_1px,transparent_1px)] bg-[size:auto,auto,36px_36px,36px_36px]"
+        className="absolute inset-0 bg-tech-grid-main"
       />
       <div className="relative z-10 mx-auto max-w-6xl px-6">
         <div className="grid gap-8 lg:grid-cols-[0.42fr_0.58fr] lg:items-end">
@@ -62,7 +62,7 @@ function SystemPanel({
       <article className="relative overflow-hidden rounded-3xl border border-cream/10 bg-cream/[0.055] shadow-2xl backdrop-blur">
         <div
           aria-hidden
-          className="absolute inset-0 bg-[linear-gradient(110deg,rgba(166,124,82,0.18),transparent_34%),linear-gradient(to_right,rgba(245,241,235,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(245,241,235,0.06)_1px,transparent_1px)] bg-[size:auto,30px_30px,30px_30px]"
+          className="absolute inset-0 bg-tech-grid-card opacity-80"
         />
         <div className="relative grid gap-0 lg:grid-cols-[0.38fr_0.62fr]">
           <div className="border-b border-cream/10 p-6 sm:p-8 lg:border-r lg:border-b-0">

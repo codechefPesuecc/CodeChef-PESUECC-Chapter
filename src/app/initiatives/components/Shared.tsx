@@ -13,12 +13,12 @@ export function SectionIntro({
 }) {
   return (
     <Reveal className="max-w-2xl">
-      <span className="font-mono text-xs font-semibold uppercase tracking-wider text-bronze">
+      <span className="font-mono text-sm font-bold uppercase tracking-wider text-bronze dark:text-bronze/90">
         {eyebrow}
       </span>
       <h2
-        className={`mt-3 text-balance font-display text-3xl font-bold tracking-tight sm:text-4xl ${
-          dark ? "text-cream" : "text-chocolate"
+        className={`mt-3 text-balance font-display text-4xl font-extrabold tracking-tight sm:text-5xl ${
+          dark ? "text-cream" : "text-chocolate dark:text-cream"
         }`}
       >
         {title}
