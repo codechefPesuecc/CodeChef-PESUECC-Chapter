@@ -14,6 +14,26 @@ export const opsMetrics = [
 
 export const events = [
   {
+    id: "cp-arena",
+    title: "CP Arena",
+    category: "Competitive Programming",
+    status: "Active Platform",
+    cadence: "24/7 Availability",
+    description:
+      "Our dedicated platform for daily competitive programming challenges, rigorous upsolving, and rank-based leaderboards. CP Arena provides an isolated, high-performance environment where members can tackle curated problem sets from Codeforces, CodeChef, and AtCoder without distractions. It's the central hub for our coding culture, tracking daily streaks and competitive milestones.",
+    detailedExplanation:
+      "CP Arena is the backbone of our daily coding culture. It functions as a persistent, gamified environment where students engage in rigorous problem-solving and peer-to-peer competition. By integrating with major judging platforms, CP Arena provides real-time analytics on time complexity optimization, algorithmic accuracy, and growth trajectories. It's not just a practice ground; it's a proving ground where theoretical algorithms meet hard competitive constraints.",
+    highlights: ["Daily Problem Sets", "Global Leaderboards", "Upsolving Tracker"],
+    accent: "01",
+    image: "/dev-team.jpg",
+    gallery: [
+      { src: "/dev-team.jpg", caption: "Live contest dashboard" },
+      { src: "/dev-team.jpg", caption: "Performance analytics" },
+      { src: "/dev-team.jpg", caption: "Global standing tracking" },
+    ],
+    href: "/cp-arena",
+  },
+  {
     id: "leetcode-101",
     title: "LeetCode 101",
     category: "Learning Pipeline",
@@ -24,7 +44,7 @@ export const events = [
     detailedExplanation:
       "LeetCode 101 is our flagship mentorship program engineered to systematically break down data structures and algorithms. Rather than just grinding problems, we focus on recognizing underlying patterns—like sliding window, two pointers, and dynamic programming state transitions. Through weekly whiteboard sessions and editorial discussions, participants learn to dissect optimal solutions and articulate their thought processes exactly as required in top-tier technical interviews.",
     highlights: ["Pattern-first sessions", "Mentor-led reviews", "Editorial practice"],
-    accent: "01",
+    accent: "02",
     image: "/dev-team.jpg",
     gallery: [
       { src: "/dev-team.jpg", caption: "Mentor-led pattern sessions" },
@@ -44,7 +64,7 @@ export const events = [
     detailedExplanation:
       "AlgoHunt transforms competitive programming into a high-octane physical reality. Teams are given encrypted algorithmic puzzles that, once solved, yield location-based clues around the PESU campus. It demands a unique hybrid of rapid code execution, team communication under pressure, and physical stamina. AlgoHunt tests not just how well you know Dijkstra's algorithm, but how fast your team can debug it while racing against the clock to the next checkpoint.",
     highlights: ["Puzzle-backed routes", "Live scoring", "Team-based solving"],
-    accent: "02",
+    accent: "03",
     image: "/dev-team.jpg",
     gallery: [
       { src: "/dev-team.jpg", caption: "Campus checkpoints and clue drops" },
@@ -64,7 +84,7 @@ export const events = [
     detailedExplanation:
       "Praxis is designed to push developers out of tutorial hell and into the builder's mindset. It is a time-boxed, high-intensity hackathon where teams are challenged to ideate, architecture, and deploy functional prototypes using modern stacks and AI tooling. We emphasize product viability, clean code architecture, and effective presentation. The judging criteria strictly reward working demos over slide decks, forcing participants to make pragmatic engineering trade-offs to cross the finish line.",
     highlights: ["Fast ideation", "Demo-first judging", "Production mindset"],
-    accent: "03",
+    accent: "04",
     image: "/dev-team.jpg",
     gallery: [
       { src: "/dev-team.jpg", caption: "Rapid AI product ideation" },

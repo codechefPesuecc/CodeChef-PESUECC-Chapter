@@ -107,16 +107,7 @@ export default function Home() {
                 engineered in the open.
               </p>
               <div className="mt-8 flex flex-wrap gap-4">
-                <Link
-                  href="/cp-arena"
-                  className="group mecha-btn mecha-btn--solid"
-                >
-                  Enter the Arena
-                  <span className="transition-transform group-hover:translate-x-0.5">
-                    →
-                  </span>
-                </Link>
-                <Link href="/team" className="mecha-btn mecha-btn--ghost">
+                <Link href="/team" className="mecha-btn mecha-btn--solid">
                   Meet the Team
                 </Link>
               </div>

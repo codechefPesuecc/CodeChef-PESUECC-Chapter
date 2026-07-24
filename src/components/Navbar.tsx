@@ -8,7 +8,6 @@ import { useUser } from "@/components/auth/useUser";
 
 const links = [
   { href: "/", label: "Home" },
-  { href: "/cp-arena", label: "Arena" },
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/initiatives", label: "Initiatives" },
   { href: "/team", label: "Team" },
