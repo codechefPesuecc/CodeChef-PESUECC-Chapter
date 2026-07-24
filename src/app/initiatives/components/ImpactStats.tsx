@@ -35,12 +35,10 @@ export function ImpactStats() {
             </div>
           </div>
 
-          <div className="flex flex-col justify-between bg-panel px-6 py-5">
-            <div className="font-mono text-[12px] font-extrabold uppercase tracking-wider text-charcoal dark:text-cream">
-              Culture: Daily CP
-            </div>
+          <div className="flex flex-col bg-panel px-6 py-7">
+            <div className="font-display text-3xl font-bold text-brown">Daily CP</div>
             <div className="mt-2 font-mono text-[11px] font-semibold uppercase tracking-wider text-charcoal/55">
-              Active Community
+              Active Culture
             </div>
           </div>
 
