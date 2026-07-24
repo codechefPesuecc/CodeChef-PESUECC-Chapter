@@ -6,10 +6,6 @@ export function SystemsPortfolio() {
   return (
     <section id="engineered-events" className="relative overflow-hidden py-16 sm:py-24">
       <div className="absolute inset-0 bg-chocolate dark:bg-[#0f0b07]" />
-      <div
-        aria-hidden
-        className="absolute inset-0 bg-tech-grid-main"
-      />
       <div className="relative z-10 mx-auto max-w-6xl px-6">
         <div className="grid gap-8 lg:grid-cols-[0.42fr_0.58fr] lg:items-end">
           <SectionIntro
@@ -60,10 +56,6 @@ function SystemPanel({
   return (
     <Reveal delay={delay} className="h-full">
       <article className="relative overflow-hidden rounded-3xl border border-cream/10 bg-cream/[0.055] shadow-2xl backdrop-blur">
-        <div
-          aria-hidden
-          className="absolute inset-0 bg-tech-grid-card opacity-80"
-        />
         <div className="relative grid gap-0 lg:grid-cols-[0.38fr_0.62fr]">
           <div className="border-b border-cream/10 p-6 sm:p-8 lg:border-r lg:border-b-0">
             <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-bronze">
