@@ -40,6 +40,7 @@
 :root {
   --site-canvas: var(--color-cream);
   --site-backdrop: url("/lightmode.png");
+  --l-shape-fill: #FBF6ED;
 
   /* Code editor / console surface — light IDE in light mode. */
   --ide-bar: #efe9e0;
@@ -60,6 +61,7 @@
   --color-hairline: #3a2c20; /* borders & hairline dividers */
   --site-canvas: #16110c; /* deep warm near-black page canvas */
   --site-backdrop: url("/darkmode.png");
+  --l-shape-fill: #1C1714;
 
   /* Code editor / console surface — warm terminal-dark in dark mode. */
   --ide-bar: #1e1610;
@@ -570,23 +572,112 @@ button:focus-visible,
   background-clip: padding-box;
 }
 
-/* Faint technical grid over the page canvas (behind content, above the backdrop). */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background-image:
-    linear-gradient(
-      color-mix(in oklab, var(--color-bronze) 7%, transparent) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      90deg,
-      color-mix(in oklab, var(--color-bronze) 7%, transparent) 1px,
-      transparent 1px
+/* 
+ * ==========================================
+ * INITIATIVES — PREMIUM 4-LAYER CHAMFERED L-SHAPE
+ * System: outer-line → gap → inner-accent → body
+ * Inspired by the mecha panel architecture above.
+ * ==========================================
+ */
+
+/* ---- Mobile: Chamfered octagon (no L-notch) ---- */
+.hud-l-outer  { --c: 24px; }
+.hud-l-gap    { --c: 20.5px; }
+.hud-l-inline { --c: 16px; }
+.hud-l-body   { --c: 15px; }
+
+.hud-l-outer,
+.hud-l-gap,
+.hud-l-inline,
+.hud-l-body {
+  clip-path: polygon(
+    var(--c) 0, calc(100% - var(--c)) 0,
+    100% var(--c), 100% calc(100% - var(--c)),
+    calc(100% - var(--c)) 100%, var(--c) 100%,
+    0 calc(100% - var(--c)), 0 var(--c)
+  );
+}
+
+/* ---- Desktop: True L-Shape polygon ---- */
+@media (min-width: 1024px) {
+  .hud-l-outer  { --c: 32px;   --w: 420px;   --h: 480px; }
+  .hud-l-gap    { --c: 28.5px; --w: 416.5px; --h: 476.5px; }
+  .hud-l-inline { --c: 24px;   --w: 412px;   --h: 472px; }
+  .hud-l-body   { --c: 23px;   --w: 411px;   --h: 471px; }
+
+  .hud-l-outer,
+  .hud-l-gap,
+  .hud-l-inline,
+  .hud-l-body {
+    clip-path: polygon(
+      var(--c) 0,
+      calc(var(--w) - var(--c)) 0,
+      var(--w) var(--c),
+      var(--w) calc(var(--h) - var(--c)),
+      calc(var(--w) + var(--c)) var(--h),
+      calc(100% - var(--c)) var(--h),
+      100% calc(var(--h) + var(--c)),
+      100% calc(100% - var(--c)),
+      calc(100% - var(--c)) 100%,
+      var(--c) 100%,
+      0 calc(100% - var(--c)),
+      0 var(--c)
     );
-  background-size: 46px 46px;
-  opacity: 0.55;
+  }
+}
+
+/* ---- Corner tick marks (bracket accents at chamfer vertices) ---- */
+.hud-tick {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  pointer-events: none;
+  z-index: 5;
+}
+.hud-tick--tl { top: 40px; left: 12px; border-top: 1.5px solid; border-left: 1.5px solid; }
+.hud-tick--bl { bottom: 40px; left: 12px; border-bottom: 1.5px solid; border-left: 1.5px solid; }
+.hud-tick--br { bottom: 40px; right: 12px; border-bottom: 1.5px solid; border-right: 1.5px solid; }
+.hud-tick--tr { top: 40px; right: 12px; border-top: 1.5px solid; border-right: 1.5px solid; }
+
+/* ---- Step-corner accent (where the L turns) ---- */
+@media (min-width: 1024px) {
+  .hud-tick--step {
+    position: absolute;
+    top: 470px; /* just below the step height (480px) */
+    left: 428px; /* just past the step width (420px) */
+    width: 10px;
+    height: 10px;
+    border-top: 1.5px solid;
+    border-left: 1.5px solid;
+    pointer-events: none;
+    z-index: 5;
+  }
+}
+
+.chamfer-image {
+  clip-path: polygon(24px 0, calc(100% - 24px) 0, 100% 24px, 100% calc(100% - 24px), calc(100% - 24px) 100%, 24px 100%, 0 calc(100% - 24px), 0 24px);
+}
+
+@layer utilities {
+  .bg-tech-grid-main {
+    background-image: 
+      radial-gradient(circle at 18% 18%, rgba(166,124,82,0.28), transparent 28%),
+      radial-gradient(circle at 82% 45%, rgba(245,241,235,0.1), transparent 24%),
+      linear-gradient(to right, rgba(245,241,235,0.07) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(245,241,235,0.07) 1px, transparent 1px);
+    background-size: auto, auto, 36px 36px, 36px 36px;
+  }
+  .bg-tech-grid-card {
+    background-image: 
+      linear-gradient(110deg, rgba(166,124,82,0.18), transparent 34%),
+      linear-gradient(to right, rgba(245,241,235,0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(245,241,235,0.06) 1px, transparent 1px);
+    background-size: auto, 30px 30px, 30px 30px;
+  }
+  .bg-tech-grid-event {
+    background-image:
+      linear-gradient(to right, color-mix(in oklab, var(--color-hairline) 58%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklab, var(--color-hairline) 58%, transparent) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
 }
