@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Reveal from "@/components/Reveal";
-import { ArrowIcon } from "./Shared";
 
 export function ClosingImpact() {
   return (
