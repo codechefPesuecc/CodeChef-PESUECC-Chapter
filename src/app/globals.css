@@ -572,6 +572,27 @@ button:focus-visible,
   background-clip: padding-box;
 }
 
+/* Faint technical grid over the page canvas (behind content, above the backdrop). */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(
+      color-mix(in oklab, var(--color-bronze) 7%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--color-bronze) 7%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 46px 46px;
+  opacity: 0.55;
+}
+
 /* 
  * ==========================================
  * INITIATIVES — PREMIUM 4-LAYER CHAMFERED L-SHAPE
