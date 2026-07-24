@@ -117,7 +117,7 @@ button:focus-visible,
 }
 
 /*
- * CP Arena — problem statement prose. Rendered from challenge markdown by
+ * Arena — problem statement prose. Rendered from challenge markdown by
  * ProblemStatement. Colours use brand tokens so the copy re-themes in dark mode;
  * fenced code blocks stay a warm terminal-dark in both themes.
  */
@@ -198,15 +198,20 @@ button:focus-visible,
   margin: 1rem 0;
   padding: 0.9rem 1.1rem;
   border-radius: 12px;
-  background: #16110c;
-  border: 1px solid #3a2c20;
   overflow-x: auto;
   font-size: 0.82rem;
   line-height: 1.6;
+  /* Theme the code/sample block with the IDE tokens: a light warm surface with
+   * dark text in light mode, a warm terminal-dark with light text in dark mode.
+   * Sample I/O blocks are bare <pre> (no <code>), so the colour lives here. */
+  font-family: var(--font-mono), monospace;
+  background: var(--ide-bar);
+  border: 1px solid var(--ide-border);
+  color: var(--ide-code);
 }
 .arena-prose pre code {
   font-family: var(--font-mono), monospace;
-  color: #e8dfd2;
+  color: inherit;
   background: none;
   border: none;
   padding: 0;
@@ -234,4 +239,382 @@ button:focus-visible,
   color: var(--color-chocolate);
   font-weight: 600;
   background: color-mix(in oklab, var(--color-bronze) 8%, transparent);
+}
+
+/* Mecha component classes live in the components layer so Tailwind utilities
+ * (text-2xl, hidden, flex, …) applied alongside them still win. */
+@layer components {
+
+/*
+ * --- Mecha / HUD panels ---
+ * Chamfered "tech panel" cards with a double outline. The notched shape is a
+ * clip-path octagon; the double line is four nested clip layers whose alternating
+ * fill/line backgrounds paint an outer line, a gap, and an inner line. Each layer
+ * shrinks its own chamfer (`--mecha-n`) by how far it is inset, so the diagonals
+ * stay concentric. Colours are vars so the whole thing themes in light/dark.
+ */
+.mecha {
+  --mecha-n: 14px; /* chamfer size */
+  --mecha-fill: var(--color-panel);
+  --mecha-line: color-mix(in oklab, var(--color-chocolate) 60%, var(--color-bronze));
+  --mecha-clip: polygon(
+    var(--mecha-n) 0,
+    calc(100% - var(--mecha-n)) 0,
+    100% var(--mecha-n),
+    100% calc(100% - var(--mecha-n)),
+    calc(100% - var(--mecha-n)) 100%,
+    var(--mecha-n) 100%,
+    0 calc(100% - var(--mecha-n)),
+    0 var(--mecha-n)
+  );
+  position: relative;
+  clip-path: var(--mecha-clip);
+  background: var(--mecha-line); /* outer line */
+  padding: 1.5px;
+  /* clip-path clips box-shadow, so cast the drop via filter instead. */
+  filter: drop-shadow(0 5px 14px rgb(0 0 0 / 0.1));
+}
+.mecha__gap {
+  --mecha-n: 12.5px; /* 14 - 1.5 inset */
+  clip-path: var(--mecha-clip);
+  background: var(--mecha-fill); /* gap */
+  padding: 4px;
+  height: 100%;
+}
+.mecha__inline {
+  --mecha-n: 8.5px; /* 14 - 5.5 inset */
+  clip-path: var(--mecha-clip);
+  background: var(--mecha-line); /* inner line */
+  padding: 1px;
+  height: 100%;
+}
+.mecha__body {
+  --mecha-n: 7.5px; /* 14 - 6.5 inset */
+  clip-path: var(--mecha-clip);
+  background: var(--mecha-fill);
+  position: relative;
+  height: 100%;
+}
+
+/* Dark-IDE variant: dark fill + warm bronze edge (used for the console). */
+.mecha--ide {
+  --mecha-fill: var(--ide-body);
+  --mecha-line: color-mix(in oklab, var(--color-bronze) 70%, var(--ide-border));
+}
+
+.mecha__telemetry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  /* Clear the top frame line and the chamfered corners so the label/index
+   * never collide with the border. */
+  padding: 0.95rem 1.15rem 0;
+  font-family: var(--font-mono), monospace;
+}
+.mecha__label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: color-mix(in oklab, var(--mecha-line) 88%, transparent);
+  border: 1px solid color-mix(in oklab, var(--mecha-line) 40%, transparent);
+  padding: 0.16rem 0.5rem;
+  white-space: nowrap;
+}
+.mecha__index {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: color-mix(in oklab, var(--mecha-line) 70%, transparent);
+}
+
+.mecha__tick {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  pointer-events: none;
+  color: color-mix(in oklab, var(--mecha-line) 55%, transparent);
+}
+.mecha__tick--tl {
+  top: 10px;
+  left: 10px;
+  border-top: 1.5px solid;
+  border-left: 1.5px solid;
+}
+.mecha__tick--tr {
+  top: 10px;
+  right: 10px;
+  border-top: 1.5px solid;
+  border-right: 1.5px solid;
+}
+.mecha__tick--bl {
+  bottom: 10px;
+  left: 10px;
+  border-bottom: 1.5px solid;
+  border-left: 1.5px solid;
+}
+.mecha__tick--br {
+  bottom: 10px;
+  right: 10px;
+  border-bottom: 1.5px solid;
+  border-right: 1.5px solid;
+}
+
+/*
+ * --- Mecha buttons ---
+ * Chamfered, mono-uppercase controls. Single-element (no border layer) so the
+ * classes drop onto a <button> or a <Link> alike. `solid` is the primary CTA;
+ * `ghost` is a translucent secondary.
+ */
+.mecha-btn {
+  --mb-n: 7px;
+  clip-path: polygon(
+    var(--mb-n) 0,
+    calc(100% - var(--mb-n)) 0,
+    100% var(--mb-n),
+    100% calc(100% - var(--mb-n)),
+    calc(100% - var(--mb-n)) 100%,
+    var(--mb-n) 100%,
+    0 calc(100% - var(--mb-n)),
+    0 var(--mb-n)
+  );
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.62rem 1.15rem;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.08s ease;
+}
+.mecha-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.mecha-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.mecha-btn--solid {
+  background: var(--color-bronze);
+  color: #fff;
+}
+.mecha-btn--solid:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--color-bronze) 86%, black);
+}
+.mecha-btn--ghost {
+  background: color-mix(in oklab, var(--color-bronze) 14%, transparent);
+  color: var(--color-bronze);
+}
+.mecha-btn--ghost:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--color-bronze) 26%, transparent);
+}
+.mecha-btn--ok {
+  background: #059669;
+  color: #fff;
+}
+.mecha-btn--sm {
+  --mb-n: 5px;
+  font-size: 0.68rem;
+  padding: 0.42rem 0.85rem;
+  letter-spacing: 0.06em;
+}
+
+/*
+ * --- Mecha chips ---
+ * Small chamfered status/tag pills. Colour comes from utility classes
+ * (bg-emerald-500/15 text-emerald-600, …); this only sets the shape + mono type.
+ */
+.mecha-chip {
+  --mc-n: 4px;
+  clip-path: polygon(
+    var(--mc-n) 0,
+    calc(100% - var(--mc-n)) 0,
+    100% var(--mc-n),
+    100% calc(100% - var(--mc-n)),
+    calc(100% - var(--mc-n)) 100%,
+    var(--mc-n) 100%,
+    0 calc(100% - var(--mc-n)),
+    0 var(--mc-n)
+  );
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.66rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.55rem;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+/*
+ * --- Mecha tabs (segmented control) ---
+ */
+.mecha-tabs {
+  --mt-n: 7px;
+  display: inline-flex;
+  gap: 3px;
+  padding: 4px;
+  background: var(--color-panel);
+  clip-path: polygon(
+    var(--mt-n) 0,
+    calc(100% - var(--mt-n)) 0,
+    100% var(--mt-n),
+    100% calc(100% - var(--mt-n)),
+    calc(100% - var(--mt-n)) 100%,
+    var(--mt-n) 100%,
+    0 calc(100% - var(--mt-n)),
+    0 var(--mt-n)
+  );
+  filter: drop-shadow(0 3px 8px rgb(0 0 0 / 0.08));
+}
+.mecha-tab {
+  --mt-n: 5px;
+  clip-path: polygon(
+    var(--mt-n) 0,
+    calc(100% - var(--mt-n)) 0,
+    100% var(--mt-n),
+    100% calc(100% - var(--mt-n)),
+    calc(100% - var(--mt-n)) 100%,
+    var(--mt-n) 100%,
+    0 calc(100% - var(--mt-n)),
+    0 var(--mt-n)
+  );
+  font-family: var(--font-mono), monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.42rem 0.95rem;
+  color: color-mix(in oklab, var(--color-charcoal) 58%, transparent);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+.mecha-tab:hover {
+  color: var(--color-chocolate);
+}
+.mecha-tab--active {
+  background: color-mix(in oklab, var(--color-bronze) 18%, transparent);
+  color: var(--color-chocolate);
+}
+
+/*
+ * --- Mecha inputs ---
+ * Filled, chamfered fields with a bronze left-accent bar that brightens on
+ * focus. Single-element, so it drops onto any <input>/<textarea>/<select>.
+ */
+.mecha-input {
+  --mi-n: 6px;
+  clip-path: polygon(
+    var(--mi-n) 0,
+    calc(100% - var(--mi-n)) 0,
+    100% var(--mi-n),
+    100% calc(100% - var(--mi-n)),
+    calc(100% - var(--mi-n)) 100%,
+    var(--mi-n) 100%,
+    0 calc(100% - var(--mi-n)),
+    0 var(--mi-n)
+  );
+  width: 100%;
+  background: color-mix(in oklab, var(--color-charcoal) 5%, var(--color-panel));
+  border-left: 2px solid color-mix(in oklab, var(--color-bronze) 55%, transparent);
+  padding: 0.6rem 0.85rem;
+  font-size: 0.875rem;
+  color: var(--color-charcoal);
+  outline: none;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+.mecha-input::placeholder {
+  color: color-mix(in oklab, var(--color-charcoal) 42%, transparent);
+}
+.mecha-input:focus {
+  background: color-mix(in oklab, var(--color-bronze) 10%, var(--color-panel));
+  border-left-color: var(--color-bronze);
+}
+
+}
+
+/*
+ * --- Cockpit atmosphere ---
+ * Bronze HUD scrollbars + a faint blueprint grid behind the page content.
+ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--color-bronze) 45%, transparent)
+    transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--color-bronze) 42%, transparent);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, var(--color-bronze) 68%, transparent);
+  background-clip: padding-box;
+}
+
+/* Faint technical grid over the page canvas (behind content, above the backdrop). */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(
+      color-mix(in oklab, var(--color-bronze) 7%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--color-bronze) 7%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 46px 46px;
+  opacity: 0.55;
+}
+/* 
+ * ==========================================
+ * INITIATIVES — THE TRUE CHAMFERED L-SHAPE
+ * ==========================================
+ */
+
+/* Mobile: Standard 4-corner rectangle */
+.hud-l-outer { clip-path: polygon(24px 0, calc(100% - 24px) 0, 100% 24px, 100% calc(100% - 24px), calc(100% - 24px) 100%, 24px 100%, 0 calc(100% - 24px), 0 24px); }
+.hud-l-base  { clip-path: polygon(22px 0, calc(100% - 22px) 0, 100% 22px, 100% calc(100% - 22px), calc(100% - 22px) 100%, 22px 100%, 0 calc(100% - 22px), 0 22px); }
+
+/* Desktop: 6-corner L-Shape */
+@media (min-width: 1024px) {
+  /* Layer 1: Outer Border Box */
+  .hud-l-outer {
+    --c: 32px; --w: 380px; --h: 420px;
+    clip-path: polygon(var(--c) 0, calc(var(--w) - var(--c)) 0, var(--w) var(--c), var(--w) calc(var(--h) - var(--c)), calc(var(--w) + var(--c)) var(--h), calc(100% - var(--c)) var(--h), 100% calc(var(--h) + var(--c)), 100% calc(100% - var(--c)), calc(100% - var(--c)) 100%, var(--c) 100%, 0 calc(100% - var(--c)), 0 var(--c));
+  }
+  /* Layer 2: The Solid Card (Inset precisely 2px inside the outer box) */
+  .hud-l-base {
+    --c: 30px; --w: 378px; --h: 418px; 
+    clip-path: polygon(var(--c) 0, calc(var(--w) - var(--c)) 0, var(--w) var(--c), var(--w) calc(var(--h) - var(--c)), calc(var(--w) + var(--c)) var(--h), calc(100% - var(--c)) var(--h), 100% calc(var(--h) + var(--c)), 100% calc(100% - var(--c)), calc(100% - var(--c)) 100%, var(--c) 100%, 0 calc(100% - var(--c)), 0 var(--c));
+  }
+}
+
+/* Image Chamfer */
+.chamfer-image {
+  clip-path: polygon(24px 0, calc(100% - 24px) 0, 100% 24px, 100% calc(100% - 24px), calc(100% - 24px) 100%, 24px 100%, 0 calc(100% - 24px), 0 24px);
 }

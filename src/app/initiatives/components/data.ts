@@ -14,6 +14,8 @@ export const events = [
     cadence: "Weekly foundations",
     description:
       "A guided problem-solving pipeline for students moving from syntax comfort to interview-ready competitive thinking. The program bridges the gap between basic coding knowledge and the advanced pattern recognition required to clear technical assessments. It focuses heavily on understanding core algorithmic templates, time-complexity analysis, and translating intuitive logic into optimal code blocks.",
+    detailedExplanation:
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
     highlights: ["Pattern-first sessions", "Mentor-led reviews", "Editorial practice"],
     accent: "01",
     image: "/dev-team.jpg",
@@ -32,6 +34,8 @@ export const events = [
     cadence: "Campus-scale hunt",
     description:
       "A physical-digital contest where algorithms unlock checkpoints, clues, and leaderboard momentum across campus. Teams must rapidly decipher algorithmic puzzles that map directly to physical locations, combining high-speed physical coordination with intense technical problem-solving. It's an immersive race designed to test both computational thinking and team execution under severe time constraints.",
+    detailedExplanation:
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
     highlights: ["Puzzle-backed routes", "Live scoring", "Team-based solving"],
     accent: "02",
     image: "/dev-team.jpg",
@@ -50,6 +54,8 @@ export const events = [
     cadence: "Sprint format",
     description:
       "A high-pressure build sprint for shipping AI-assisted products, prototypes, and technical demos under real constraints. Unlike traditional hackathons, Praxis emphasizes the speed of shipping a minimum viable product by leveraging modern AI tools and robust architectural templates. Participants learn how to rapidly iterate, integrate external APIs, and present their engineering choices to a technical jury.",
+    detailedExplanation:
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
     highlights: ["Fast ideation", "Demo-first judging", "Production mindset"],
     accent: "03",
     image: "/dev-team.jpg",

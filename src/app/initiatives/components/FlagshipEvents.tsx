@@ -1,131 +1,173 @@
+import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Reveal from "@/components/Reveal";
 import { events } from "./data";
-import { SectionIntro, MetaPill, ArrowIcon } from "./Shared";
+import { SectionIntro } from "./Shared";
 
 export function FlagshipEvents() {
   return (
-    <section id="flagship-events" className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
-      <SectionIntro
-        eyebrow="Flagship events"
-        title="Scroll through the event engines"
-        body="Each initiative keeps its operating brief pinned while the visual archive changes beside it, making the page feel like a product story rather than a static list."
-      />
+    <section id="flagship-events" className="relative w-full px-6 py-16 sm:py-20 lg:p-16">
+      
+      {/* DECORATIVE BACKGROUND SVGS */}
+      <svg className="absolute top-0 right-0 w-[400px] h-[400px] opacity-[0.15] dark:opacity-[0.15] pointer-events-none z-0 text-[#8B7A5E] dark:text-[#D98A53]" viewBox="0 0 400 400" fill="none">
+        <path d="M400 50 H200 L150 100 V300" stroke="currentColor" strokeWidth="1.5" />
+        <circle cx="200" cy="50" r="3" fill="currentColor" />
+        <circle cx="150" cy="100" r="3" fill="currentColor" />
+        <circle cx="150" cy="300" r="3" fill="currentColor" />
+        <path d="M400 80 H280 L230 130 V350" stroke="currentColor" strokeWidth="1.5" />
+      </svg>
+      
+      <svg className="absolute bottom-0 left-0 w-[300px] h-[300px] opacity-[0.15] dark:opacity-[0.15] pointer-events-none z-0 text-[#8B7A5E] dark:text-[#D98A53]" viewBox="0 0 300 300" fill="none">
+        <circle cx="50" cy="250" r="100" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 4" />
+        <circle cx="50" cy="250" r="150" stroke="currentColor" strokeWidth="1.5" />
+        <circle cx="50" cy="250" r="200" stroke="currentColor" strokeWidth="1.5" />
+        <circle cx="30" cy="270" r="12" fill="currentColor" />
+      </svg>
 
-      <div className="mt-12 space-y-20 lg:space-y-28">
-        {events.map((event, i) => (
-          <EventScrollStory key={event.id} event={event} index={i} />
-        ))}
+      {/* CONTENT */}
+      <div className="relative z-10 mx-auto max-w-7xl">
+        <SectionIntro
+          eyebrow="Flagship events"
+          title="Every initiative, one blueprint"
+          body="Each event ships as a single unified blueprint card — a full-height brief on the left, a floating photo in the cutout, and the detailed explanation tucked into the extension below it."
+        />
+
+        <div className="mt-12 space-y-16 lg:space-y-24">
+          {events.map((event, i) => (
+            <EventBlueprintCard key={event.id} event={event} index={i} />
+          ))}
+        </div>
       </div>
     </section>
   );
 }
 
-function EventScrollStory({
+function EventBlueprintCard({
   event,
   index,
 }: {
   event: (typeof events)[number];
   index: number;
 }) {
+  const cover = event.gallery[0];
+
   return (
-    <article className="grid gap-10 lg:grid-cols-[1.1fr_1fr] lg:items-start xl:grid-cols-[1.2fr_1fr]">
-      <div className="lg:sticky lg:top-28">
-        <Reveal delay={index * 0.05}>
-          <div className="relative overflow-hidden rounded-2xl border border-hairline bg-panel p-6 shadow-sm sm:p-8">
-              <div
-                aria-hidden
-                className="absolute inset-0 bg-[linear-gradient(to_right,color-mix(in_oklab,var(--color-hairline)_58%,transparent)_1px,transparent_1px),linear-gradient(to_bottom,color-mix(in_oklab,var(--color-hairline)_58%,transparent)_1px,transparent_1px)] bg-[size:28px_28px] opacity-25"
-              />
-              <div className="relative">
-                <div className="flex items-start justify-between gap-4">
-                  <span className="rounded-full border border-bronze/25 bg-bronze/10 px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-wider text-bronze">
-                    {event.category}
-                  </span>
-                  <span className="font-mono text-sm font-bold text-bronze/55">
-                    {event.accent}
-                  </span>
-                </div>
-                <h3 className="mt-6 text-balance font-display text-3xl font-bold tracking-tight text-chocolate sm:text-4xl">
-                  {event.title}
-                </h3>
-                <p className="mt-4 max-w-3xl text-pretty text-base leading-7 text-charcoal/72">
-                  {event.description}
-                </p>
-
-                <div className="mt-7 grid gap-2">
-                  {event.highlights.map((highlight) => (
-                    <div
-                      key={highlight}
-                      className="flex items-center gap-3 rounded-lg border border-hairline bg-cream/40 px-3 py-2 text-sm text-charcoal/75 dark:bg-white/[0.03]"
-                    >
-                      <span className="h-1.5 w-1.5 rounded-full bg-bronze" />
-                      {highlight}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-7 flex flex-wrap gap-2 border-t border-hairline pt-5">
-                  <MetaPill label="Status" value={event.status} />
-                  <MetaPill label="Cadence" value={event.cadence} />
-                </div>
-
-                <Link
-                  href={event.href}
-                  className="mt-7 inline-flex items-center gap-2 rounded-lg bg-chocolate px-4 py-2.5 text-sm font-semibold text-cream shadow-sm transition-all hover:bg-brown dark:bg-bronze dark:text-white dark:hover:bg-bronze/90"
-                >
-                  Know more
-                  <ArrowIcon />
-                </Link>
-              </div>
-            </div>
-        </Reveal>
+    <article className="relative w-full isolate">
+      
+      {/* 1. THE PURE CHAMFERED L-SHAPE BACKGROUND */}
+      <div className="absolute inset-0 z-0 pointer-events-none drop-shadow-md dark:drop-shadow-none">
+        <div className="absolute inset-0 bg-white dark:bg-[#3B2F26] hud-l-outer" />
+        <div className="absolute inset-[2px] bg-[#FBF6ED] dark:bg-[#1C1714] hud-l-base" />
       </div>
 
-      <div className="space-y-8 lg:min-h-[175vh] xl:space-y-12 xl:min-h-[200vh]">
-        {event.gallery.map((photo, photoIndex) => (
-          <div
-            key={`${event.id}-${photo.caption}`}
-            className="lg:sticky lg:top-28"
-          >
-            <Reveal delay={photoIndex * 0.04}>
-              <div
-                className="group overflow-hidden rounded-2xl border border-hairline bg-panel shadow-xl"
-                style={{ zIndex: photoIndex + 1 }}
-              >
-                <div className="relative aspect-[4/3] min-h-[400px] lg:min-h-[600px] 2xl:min-h-[750px]">
-                  <Image
-                    src={photo.src}
-                    alt={`${event.title}: ${photo.caption}`}
-                    fill
-                    priority={index === 0 && photoIndex === 0}
-                    sizes="(min-width: 1024px) 50vw, 100vw"
-                    className="object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
+      {/* 2. THE STRICT GRID */}
+      <div className="relative z-10 flex flex-col lg:grid lg:grid-cols-[380px_1fr] lg:grid-rows-[420px_auto]">
+        
+        {/* LEFT COLUMN */}
+        <div className="lg:col-start-1 lg:row-span-2 w-full h-full p-6 lg:p-10">
+          <Reveal delay={index * 0.05} className="h-full">
+            <div className="flex flex-col h-full">
+              <div className="flex items-start justify-between gap-4">
+                <span className="rounded-full bg-[#D9C9AE] dark:bg-[#2B231D] px-3 py-1 font-mono text-[10px] font-semibold tracking-[0.1em] text-[#221E1A] dark:text-[#E8DFD8] uppercase">
+                  {event.category}
+                </span>
+                <span className="font-sans text-3xl font-bold text-[#6B6255] dark:text-[#A39281] opacity-25 dark:opacity-30">
+                  0{index + 1}
+                </span>
+              </div>
+
+              <h3 className="mt-8 font-sans text-[2rem] font-bold leading-tight text-[#221E1A] dark:text-[#E8DFD8] lg:text-[2.5rem]">
+                {event.title}
+              </h3>
+
+              <p className="mt-5 max-w-[40ch] font-sans text-[1rem] leading-[1.6] text-[#6B6255] dark:text-[#A39281]">
+                {event.description}
+              </p>
+
+              <div className="mt-8 flex flex-col items-start gap-3">
+                {event.highlights.map((highlight) => (
                   <div
-                    aria-hidden
-                    className="absolute inset-0 bg-gradient-to-t from-[#16110c]/82 via-[#16110c]/12 to-transparent"
-                  />
-                  <div className="absolute top-4 left-4 rounded-full border border-white/15 bg-[#16110c]/55 px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-wider text-cream/80 backdrop-blur">
-                    {String(photoIndex + 1).padStart(2, "0")} /{" "}
-                    {String(event.gallery.length).padStart(2, "0")}
+                    key={highlight}
+                    className="inline-flex w-fit items-center gap-2.5 rounded-full bg-transparent border border-[#C4B59D] dark:border-[#3B2F26] px-4 py-1.5"
+                  >
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#D9C9AE] dark:bg-[#D98A53]" />
+                    <span className="font-sans text-[0.82rem] font-medium text-[#6B6255] dark:text-[#E8DFD8]">
+                      {highlight}
+                    </span>
                   </div>
-                  <div className="absolute right-4 bottom-4 left-4">
-                    <div className="max-w-md font-display text-2xl font-bold text-cream">
-                      {photo.caption}
-                    </div>
-                    <div className="mt-2 font-mono text-[10px] uppercase tracking-wider text-cream/50">
-                      {event.title} visual archive
-                    </div>
-                  </div>
+                ))}
+              </div>
+
+              <div className="mt-auto pt-10 flex flex-wrap gap-2 font-mono text-[10px] tracking-[0.08em] uppercase">
+                <div className="rounded-full bg-transparent border border-[#C4B59D] dark:border-[#3B2F26] px-3 py-1 text-[#6B6255] dark:text-[#A39281]">
+                  <span className="text-[#D9C9AE] dark:text-[#D98A53]">STATUS:</span> {event.status}
+                </div>
+                <div className="rounded-full bg-transparent border border-[#C4B59D] dark:border-[#3B2F26] px-3 py-1 text-[#6B6255] dark:text-[#A39281]">
+                  <span className="text-[#D9C9AE] dark:text-[#D98A53]">CADENCE:</span> {event.cadence}
                 </div>
               </div>
-            </Reveal>
-          </div>
-        ))}
+            </div>
+          </Reveal>
+        </div>
+
+        {/* THE IMAGE */}
+        <div className="lg:col-start-2 lg:row-start-1 w-full h-[320px] lg:h-full p-6 lg:p-0 lg:pl-[44px] lg:pb-[44px] lg:pr-10 lg:pt-10">
+          <Reveal delay={index * 0.05 + 0.05} className="w-full h-full">
+            <div className="relative w-full h-full chamfer-image overflow-hidden shadow-lg border border-white/60 dark:border-[#3B2F26]/60">
+              <Image
+                src={cover.src}
+                alt={`${event.title}: ${cover.caption}`}
+                fill
+                priority={index === 0}
+                sizes="(min-width: 1024px) 500px, 100vw"
+                className="object-cover"
+              />
+              <div
+                aria-hidden
+                className="absolute inset-0 bg-gradient-to-t from-[rgba(20,16,10,0.85)] via-[rgba(20,16,10,0.2)] to-transparent"
+              />
+              <div className="absolute top-5 left-5 rounded-full bg-[rgba(20,16,10,0.6)] border border-[rgba(255,255,255,0.15)] px-3 py-1 font-mono text-[10px] font-semibold tracking-wider text-white backdrop-blur-sm">
+                01 / {String(event.gallery.length).padStart(2, "0")}
+              </div>
+              <div className="absolute bottom-5 left-5 right-5">
+                <div className="font-sans text-xl font-bold text-white sm:text-2xl">
+                  {cover.caption}
+                </div>
+                <div className="mt-1 font-mono text-[10px] tracking-[0.1em] text-white/70 uppercase">
+                  {event.title} VISUAL ARCHIVE
+                </div>
+              </div>
+            </div>
+          </Reveal>
+        </div>
+
+        {/* DETAILED EXPLANATION */}
+        <div className="lg:col-start-2 lg:row-start-2 w-full h-full p-6 lg:p-0 lg:pl-[44px] lg:pt-[36px]">
+          <Reveal delay={index * 0.05 + 0.1}>
+            <div className="flex flex-col items-start lg:pr-12 lg:pb-12">
+              <h4 className="font-mono text-[11px] font-semibold tracking-[0.12em] text-[#8B7A5E] dark:text-[#A39281] uppercase">
+                overview & details
+              </h4>
+              <p className="mt-4 max-w-prose font-sans text-[1rem] leading-[1.6] text-[#6B6255] dark:text-[#A39281]">
+                {event.detailedExplanation}
+              </p>
+              
+              {/* CTA Button with 1:30 o'clock diagonal arrow rotation on hover */}
+              <Link
+                href={event.href}
+                className="group mt-6 inline-flex items-center justify-center gap-2 border-[1.5px] border-[#221E1A] dark:border-[#D98A53] bg-transparent px-8 py-3 font-mono text-xs font-bold tracking-[0.1em] text-[#221E1A] dark:text-[#D98A53] uppercase transition-all duration-150 hover:bg-[#221E1A] dark:hover:bg-[#D98A53] hover:text-[#FBF6ED] dark:hover:text-[#1C1714]"
+              >
+                KNOWMORE BUTTON HERE
+                <span className="inline-block transition-transform duration-200 ease-out group-hover:translate-x-1 group-hover:-translate-y-1 group-hover:rotate-[-45deg]">
+                  →
+                </span>
+              </Link>
+            </div>
+          </Reveal>
+        </div>
+
       </div>
     </article>
   );
 }
-
