@@ -707,3 +707,22 @@ body::before {
     background-attachment: fixed;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/*  Team member card entrance animation                                */
+/* ------------------------------------------------------------------ */
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-card-in {
+  animation: card-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}

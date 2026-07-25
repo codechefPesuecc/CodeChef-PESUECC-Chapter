@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { motion } from "motion/react";
 import type { MemberInfo } from "../lib";
 import MechaPanel from "@/components/cp-arena/MechaPanel";
 
@@ -69,11 +68,6 @@ interface MemberCardProps {
   index?: number;
 }
 
-const cardVariants = {
-  hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0 },
-};
-
 export default function MemberCard({
   member,
   isCoordinator = false,
@@ -90,17 +84,9 @@ export default function MemberCard({
   const photoSize = isCoordinator ? 128 : 104;
 
   return (
-    <motion.article
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: "-40px" }}
-      variants={cardVariants}
-      transition={{
-        duration: 0.5,
-        delay: Math.min(index * 0.05, 0.5),
-        ease: [0.22, 1, 0.36, 1],
-      }}
-      className="group transition-all duration-300 hover:-translate-y-1"
+    <article
+      className="group animate-card-in opacity-0 transition-all duration-300 hover:-translate-y-1"
+      style={{ animationDelay: `${Math.min(index * 50, 500)}ms` }}
     >
       <MechaPanel
         ticks={true}
@@ -188,6 +174,6 @@ export default function MemberCard({
           </div>
         )}
       </MechaPanel>
-    </motion.article>
+    </article>
   );
 }
