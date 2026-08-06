@@ -59,24 +59,24 @@ const benefits = [
 const testimonials = [
   {
     quote:
-      "The daily Problem of the Day turned practice into a habit, and the leaderboard keeps it competitive. I landed my first internship this year.",
-    name: "Rahul K.",
-    role: "3rd-year CSE",
-    initials: "RK",
+      "The daily Problem of the Day turned practice into a habit, and the leaderboard keeps it competitive.",
+    name: "Alphaslayer",
+    role: "4th-year CSE",
+    initials: "AS",
   },
   {
     quote:
-      "I came for the bounties and stayed for the mentorship. I went from fearing DP to setting problems myself.",
-    name: "Sneha M.",
-    role: "2nd-year ECE",
-    initials: "SM",
+      "I went from fearing DP to setting problems myself.",
+    name: "Akshat Navlani",
+    role: "4th-year AIML",
+    initials: "AN",
   },
   {
     quote:
       "Building Eclipse with the core team taught me more about shipping real software than any course did.",
-    name: "Arjun P.",
-    role: "Core Developer",
-    initials: "AP",
+    name: "Aniket Barun",
+    role: "No longer in 2nd year",
+    initials: "AB",
   },
 ];
 
