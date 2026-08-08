@@ -7,7 +7,6 @@ import HudFrame from "@/components/HudFrame";
 import SmoothScroll from "@/components/SmoothScroll";
 import ScrollProgress from "@/components/ScrollProgress";
 import MotionProvider from "@/components/MotionProvider";
-import CustomCursor from "@/components/CustomCursor";
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
@@ -57,7 +56,6 @@ export default function RootLayout({
         />
       </head>
       <body className="flex min-h-full flex-col font-sans">
-        <CustomCursor />
         <MotionProvider>
           <SmoothScroll />
           <ScrollProgress />
