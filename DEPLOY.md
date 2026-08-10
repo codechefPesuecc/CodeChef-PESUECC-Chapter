@@ -91,8 +91,13 @@ npx wrangler dev
 - **Migrations** don't auto-run at the edge — `src/instrumentation.ts` applies
   them against the local file in dev only. Apply them out-of-band (Turso shell /
   `wrangler d1 migrations apply`) before/at deploy.
-- **In-memory state is per-isolate.** The submit/run rate limiter
-  (`src/server/rateLimit.ts`) and Piston's FIFO job queue live in one process's
-  memory; across many Worker isolates they won't share counts. For strict global
-  limits move the limiter to a Durable Object or KV. The per-account cap still
-  meaningfully curbs abuse as-is.
+- **Rate limiting is DB-backed** (`src/server/rateLimit.ts` → the `rate_limits`
+  table), so limits hold across Worker isolates. Applied to run/submit and the
+  auth endpoints (login/register/forgot/resend). Piston's FIFO job queue is still
+  per-isolate in-memory — acceptable, and only relevant once the judge is live.
+- **Security headers + CSP** ship from `next.config.ts` (`headers()`). The CSP
+  uses `'unsafe-inline'` for scripts/styles (Next bootstrap + CodeMirror); tighten
+  to nonces later if desired.
+- **Sessions carry a `sessionEpoch`** that a password reset bumps, so a reset
+  invalidates every outstanding session. New migrations (e.g. `0003`) must be
+  applied to D1 (`wrangler d1 migrations apply … --remote`) before/at deploy.

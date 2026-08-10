@@ -4,6 +4,7 @@ import { eq, or } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import { users } from "@/server/db/schema";
 import { hashPassword } from "@/server/auth/password";
+import { clientIp, enforceRateLimits } from "@/server/rateLimit";
 import {
   SESSION_COOKIE,
   SESSION_MAX_AGE,
@@ -35,6 +36,11 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ ok: false, error: "Invalid JSON." }, { status: 400 });
   }
+
+  const limited = await enforceRateLimits([
+    [`register:ip:${clientIp(req)}`, 40, 60 * 60_000],
+  ]);
+  if (limited) return limited;
 
   const username = String(body.username ?? "").trim().toLowerCase();
   const email = String(body.email ?? "").trim().toLowerCase();
@@ -111,6 +117,6 @@ export async function POST(req: Request) {
     user,
     needsVerify: REQUIRE_VERIFIED,
   });
-  res.cookies.set(SESSION_COOKIE, createSessionToken(id), cookieOptions);
+  res.cookies.set(SESSION_COOKIE, createSessionToken(id, 0), cookieOptions);
   return res;
 }

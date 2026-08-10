@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createPasswordReset } from "@/server/auth/reset";
+import { clientIp, enforceRateLimits } from "@/server/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,12 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
+
+  const limited = await enforceRateLimits([
+    [`forgot:email:${email}`, 5, 60 * 60_000],
+    [`forgot:ip:${clientIp(req)}`, 40, 60 * 60_000],
+  ]);
+  if (limited) return limited;
 
   const origin = new URL(req.url).origin;
   const result = await createPasswordReset(email, origin);

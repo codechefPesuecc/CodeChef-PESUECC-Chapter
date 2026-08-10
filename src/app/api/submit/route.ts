@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const limit = rateLimit(`submit:${user.id}`, SUBMIT_LIMIT, SUBMIT_WINDOW_MS);
+  const limit = await rateLimit(`submit:user:${user.id}`, SUBMIT_LIMIT, SUBMIT_WINDOW_MS);
   if (!limit.ok) {
     return NextResponse.json(
       {
