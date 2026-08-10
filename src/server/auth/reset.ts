@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import { passwordResets, users } from "@/server/db/schema";
 import { hashPassword } from "@/server/auth/password";
-import { sendEmail, isConsoleTransport } from "@/server/email";
+import { sendEmail, canRevealSecretInResponse } from "@/server/email";
 
 /**
  * Password reset via a single-use emailed link. The token is a 256-bit random
@@ -58,7 +58,7 @@ export async function createPasswordReset(
     text: `Reset your password with this link (valid for 30 minutes):\n\n${link}\n\nIf you didn't request this, you can safely ignore this email.`,
   });
 
-  return { ok: true, devLink: isConsoleTransport() ? link : undefined };
+  return { ok: true, devLink: canRevealSecretInResponse() ? link : undefined };
 }
 
 export interface ResetResult {
