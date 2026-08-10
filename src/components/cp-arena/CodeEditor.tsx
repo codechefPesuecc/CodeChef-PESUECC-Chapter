@@ -20,6 +20,7 @@ export default function CodeEditor(props: {
   language: LanguageId;
   lockClipboard?: boolean;
   onBlocked?: (event: IntegrityEvent) => void;
+  fullscreen?: boolean;
 }) {
   return <CodeMirrorEditor {...props} />;
 }
