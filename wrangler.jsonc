@@ -3,7 +3,7 @@
   // This file is inert for local dev (`npm run dev`) and the Docker judge —
   // it only takes effect when building/deploying to Cloudflare. See DEPLOY.md.
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "pesuecc-arena",
+  "name": "codechef",
   "main": ".open-next/worker.js",
   "compatibility_date": "2025-03-25",
   // Required so node:crypto / node:buffer (auth, hashing) work on Workers.
