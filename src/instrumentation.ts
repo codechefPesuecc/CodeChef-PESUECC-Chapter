@@ -6,6 +6,15 @@
  */
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
+  // On Cloudflare Workers the database is D1, migrated out-of-band via
+  // `wrangler d1 migrations apply`. Skip the local libSQL migrator there — it
+  // would try to touch the filesystem, which Workers don't have.
+  if (
+    typeof navigator !== "undefined" &&
+    navigator.userAgent === "Cloudflare-Workers"
+  ) {
+    return;
+  }
   const { runMigrations } = await import("./server/db/migrate");
   await runMigrations();
 }

@@ -1,5 +1,5 @@
 import { desc, eq } from "drizzle-orm";
-import { db } from "@/server/db";
+import { getDb } from "@/server/db";
 import { submissions } from "@/server/db/schema";
 import { getChallengeBySlug } from "@/lib/challenges";
 import { aggregateLeaderboard } from "@/server/leaderboard";
@@ -35,6 +35,7 @@ export interface ProfileStats {
 export async function getUserSubmissions(
   userId: string,
 ): Promise<ProfileSubmission[]> {
+  const db = getDb();
   const rows = await db
     .select({
       id: submissions.id,

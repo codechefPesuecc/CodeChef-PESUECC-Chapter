@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { eq } from "drizzle-orm";
-import { db } from "@/server/db";
+import { getDb } from "@/server/db";
 import { passwordResets, users } from "@/server/db/schema";
 import { hashPassword } from "@/server/auth/password";
 import { sendEmail, isConsoleTransport } from "@/server/email";
@@ -31,6 +31,7 @@ export async function createPasswordReset(
   email: string,
   origin: string,
 ): Promise<ForgotResult> {
+  const db = getDb();
   const rows = await db
     .select()
     .from(users)
@@ -75,6 +76,7 @@ export async function resetPassword(
   }
 
   const now = Date.now();
+  const db = getDb();
   const rows = await db
     .select()
     .from(passwordResets)

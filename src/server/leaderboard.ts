@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { db } from "@/server/db";
+import { getDb } from "@/server/db";
 import { submissions, users } from "@/server/db/schema";
 import { getDailyChallenge } from "@/lib/challenges";
 import { BASE_POINTS, FLAG_LIMIT, pointsForRank } from "@/lib/points";
@@ -59,6 +59,7 @@ function scoreChallenge(acs: Ac[]) {
 }
 
 async function acRows() {
+  const db = getDb();
   return db
     .select({
       userId: submissions.userId,
@@ -79,6 +80,7 @@ export async function todayLeaderboard(): Promise<LeaderRow[]> {
   const daily = getDailyChallenge();
   if (!daily) return [];
 
+  const db = getDb();
   const rows = await db
     .select({
       userId: submissions.userId,

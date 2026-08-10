@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
-import { db } from "@/server/db";
+import { getDb } from "@/server/db";
 import { submissions } from "@/server/db/schema";
 import { getCurrentUser } from "@/server/auth/session";
 import { getDailyChallenge } from "@/lib/challenges";
@@ -97,6 +97,7 @@ export async function POST(req: Request) {
   // Record every ranked judged submission (audit trail + leaderboard source).
   if (ranked) {
     try {
+      const db = getDb();
       await db.insert(submissions).values({
         id: crypto.randomUUID(),
         challengeSlug: slug,

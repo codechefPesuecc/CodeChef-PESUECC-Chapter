@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { sql } from "drizzle-orm";
-import { db } from "@/server/db";
+import { getDb } from "@/server/db";
 import { pistonQueueStats, pistonRuntimes } from "@/lib/piston";
 
 // Always run at request time — this checks live dependencies.
@@ -14,6 +14,7 @@ export async function GET() {
   const checks = { db: false, piston: false, runtimes: [] as string[] };
 
   try {
+    const db = getDb();
     await db.run(sql`select 1`);
     checks.db = true;
   } catch {

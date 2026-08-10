@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { eq, or } from "drizzle-orm";
-import { db } from "@/server/db";
+import { getDb } from "@/server/db";
 import { users } from "@/server/db/schema";
 import { hashPassword } from "@/server/auth/password";
 import {
@@ -63,6 +63,7 @@ export async function POST(req: Request) {
 
   const conditions = [eq(users.username, username), eq(users.email, email), eq(users.prn, prn)];
   if (srn) conditions.push(eq(users.srn, srn));
+  const db = getDb();
   const clashes = await db.select().from(users).where(or(...conditions));
   if (clashes.length > 0) {
     const c = clashes[0];

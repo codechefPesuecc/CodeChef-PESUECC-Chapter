@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { eq } from "drizzle-orm";
-import { db } from "@/server/db";
+import { getDb } from "@/server/db";
 import { emailVerifications, users } from "@/server/db/schema";
 import { hashPassword, verifyPassword } from "@/server/auth/password";
 import { sendEmail, isConsoleTransport } from "@/server/email";
@@ -34,6 +34,7 @@ export async function createAndSendOtp(
   email: string,
 ): Promise<CreateOtpResult> {
   const now = Date.now();
+  const db = getDb();
 
   const existing = await db
     .select()
@@ -86,6 +87,7 @@ export async function verifyOtp(
   code: string,
 ): Promise<VerifyResult> {
   const now = Date.now();
+  const db = getDb();
   const rows = await db
     .select()
     .from(emailVerifications)

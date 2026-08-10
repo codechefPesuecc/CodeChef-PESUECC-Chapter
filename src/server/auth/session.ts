@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { cookies } from "next/headers";
 import { eq } from "drizzle-orm";
-import { db } from "@/server/db";
+import { getDb } from "@/server/db";
 import { users } from "@/server/db/schema";
 
 /**
@@ -70,6 +70,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   const userId = readSessionToken(token);
   if (!userId) return null;
 
+  const db = getDb();
   const rows = await db
     .select()
     .from(users)
