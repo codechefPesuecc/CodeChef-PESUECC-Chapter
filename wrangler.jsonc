@@ -24,7 +24,7 @@
     {
       "binding": "DB",
       "database_name": "pesuecc-arena",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "database_id": "8af7b1c8-c467-4401-86fe-8abd429c35de",
       "migrations_dir": "migrations"
     }
   ]
