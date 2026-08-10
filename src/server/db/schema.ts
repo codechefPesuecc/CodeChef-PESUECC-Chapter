@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, unique } from "drizzle-orm/sqlite-core";
 
 /**
  * Arena persistence (SQLite via libSQL / Drizzle).
@@ -69,8 +69,28 @@ export const submissions = sqliteTable("submissions", {
   createdAt: integer("created_at").notNull(),
 });
 
+// Server-recorded solve clock: when a candidate first opened the ranked Problem
+// of the Day. One immutable row per (user, challenge) — the official solve time
+// is the accepted submission's createdAt minus startedAt, so it can't be spoofed
+// and survives reloads / a device switch. Past-problem practice never records
+// here (the start endpoint no-ops unless the slug is today's POTD).
+export const attempts = sqliteTable(
+  "attempts",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    challengeSlug: text("challenge_slug").notNull(),
+    // Unix epoch ms of first open, server-recorded.
+    startedAt: integer("started_at").notNull(),
+  },
+  (t) => [unique().on(t.userId, t.challengeSlug)],
+);
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+export type Attempt = typeof attempts.$inferSelect;
 export type Submission = typeof submissions.$inferSelect;
 export type NewSubmission = typeof submissions.$inferInsert;
 export type EmailVerification = typeof emailVerifications.$inferSelect;

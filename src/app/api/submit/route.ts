@@ -1,7 +1,8 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
+import { and, eq } from "drizzle-orm";
 import { getDb } from "@/server/db";
-import { submissions } from "@/server/db/schema";
+import { submissions, attempts } from "@/server/db/schema";
 import { getCurrentUser } from "@/server/auth/session";
 import { getDailyChallenge } from "@/lib/challenges";
 import { judge } from "@/server/judge";
@@ -94,10 +95,29 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: result.message ?? "Judge error." }, { status: 503 });
   }
 
+  // The official solve time is server-authoritative: the submit time minus the
+  // first-open time recorded in `attempts` — never the client's stopwatch.
+  const submittedAt = Date.now();
+  let elapsedSeconds: number | null = null;
+
   // Record every ranked judged submission (audit trail + leaderboard source).
   if (ranked) {
+    const db = getDb();
     try {
-      const db = getDb();
+      const startRows = await db
+        .select({ startedAt: attempts.startedAt })
+        .from(attempts)
+        .where(and(eq(attempts.userId, user.id), eq(attempts.challengeSlug, slug)))
+        .limit(1);
+      const startedAt = startRows[0]?.startedAt;
+      if (typeof startedAt === "number") {
+        elapsedSeconds = Math.max(0, Math.round((submittedAt - startedAt) / 1000));
+      }
+    } catch (error) {
+      console.error("[submit] failed to read attempt start:", error);
+    }
+
+    try {
       await db.insert(submissions).values({
         id: crypto.randomUUID(),
         challengeSlug: slug,
@@ -105,16 +125,15 @@ export async function POST(req: Request) {
         language,
         code,
         status: result.verdict,
-        elapsedSeconds:
-          typeof body.elapsedSeconds === "number" ? Math.round(body.elapsedSeconds) : null,
+        elapsedSeconds,
         flags: typeof body.flags === "number" ? Math.max(0, Math.round(body.flags)) : 0,
         flagsBreakdown: body.flagsBreakdown ? JSON.stringify(body.flagsBreakdown) : null,
-        createdAt: Date.now(),
+        createdAt: submittedAt,
       });
     } catch (error) {
       console.error("[submit] failed to record submission:", error);
     }
   }
 
-  return NextResponse.json({ ok: true, practice: !ranked, ...result });
+  return NextResponse.json({ ok: true, practice: !ranked, ...result, elapsedSeconds });
 }

@@ -104,16 +104,46 @@ export default function ArenaWorkspace({
   const startRef = useRef<number | null>(null);
   const frozenRef = useRef(false);
 
-  // Live "your time" clock. Freezes the moment an accepted solution lands.
+  // Live "your time" clock. Seeded to now, then corrected to the server-recorded
+  // first-open time (below) so it survives reloads. Freezes on an accepted solve.
   useEffect(() => {
-    startRef.current = Date.now();
+    if (startRef.current == null) startRef.current = Date.now();
     const id = setInterval(() => {
       if (!frozenRef.current && startRef.current != null) {
-        setElapsed(Math.floor((Date.now() - startRef.current) / 1000));
+        setElapsed(Math.max(0, Math.floor((Date.now() - startRef.current) / 1000)));
       }
     }, 1000);
     return () => clearInterval(id);
   }, []);
+
+  // Ranked POTD: record the first-open time (server-authoritative and immutable)
+  // and seed the clock from it, so "your time" reads the same after a refresh or
+  // on another device. Practice problems keep the local-only timer above.
+  useEffect(() => {
+    if (practice || !user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/attempt/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ slug }),
+        });
+        const data = await res.json();
+        if (!cancelled && data?.ok && data.ranked && typeof data.startedAt === "number") {
+          startRef.current = data.startedAt;
+          if (!frozenRef.current) {
+            setElapsed(Math.max(0, Math.floor((Date.now() - data.startedAt) / 1000)));
+          }
+        }
+      } catch {
+        // Best-effort — the local timer still ticks if the beacon fails.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [practice, slug, user]);
 
   const solved = mySolveSeconds != null;
   // No proctoring on practice (past) problems — they aren't ranked.
@@ -317,14 +347,18 @@ export default function ArenaWorkspace({
 
       const verdict = data.verdict as Verdict;
       if (verdict === "AC") {
+        // Prefer the server's authoritative solve time (submit − first-open);
+        // fall back to the local stopwatch only if it's somehow absent.
+        const official =
+          typeof data.elapsedSeconds === "number" ? data.elapsedSeconds : solveSecs;
         frozenRef.current = true;
-        setMySolveSeconds(solveSecs);
+        setMySolveSeconds(official);
         setMyFlags(flagsNow);
         setJudgement({ mode: "submit", status: "AC", total: data.total });
 
         if (practice || data.practice) {
           // Past problem: judged for feedback, but no rank/points/board.
-          addHistory("AC", formatClock(solveSecs), "Practice");
+          addHistory("AC", formatClock(official), "Practice");
         } else {
           // The server now owns the standings — read our real rank/points back.
           const rows = await fetchBoardRows();
@@ -342,7 +376,7 @@ export default function ArenaWorkspace({
             : rank
               ? `${ordinal(rank)} · +${points} pts`
               : `+${points ?? 0} pts`;
-          addHistory("AC", formatClock(solveSecs), detail);
+          addHistory("AC", formatClock(official), detail);
         }
       } else {
         setJudgement({
