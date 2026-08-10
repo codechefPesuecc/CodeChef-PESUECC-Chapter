@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import { emailVerifications, users } from "@/server/db/schema";
 import { hashPassword, verifyPassword } from "@/server/auth/password";
-import { sendEmail, isConsoleTransport } from "@/server/email";
+import { sendEmail, canRevealSecretInResponse } from "@/server/email";
 
 /**
  * Email OTP verification. Codes are 6 digits, hashed at rest (scrypt, same as
@@ -73,7 +73,7 @@ export async function createAndSendOtp(
     return { ok: false, error: sent.error ?? "Could not send the email." };
   }
 
-  return { ok: true, devCode: isConsoleTransport() ? code : undefined };
+  return { ok: true, devCode: canRevealSecretInResponse() ? code : undefined };
 }
 
 export interface VerifyResult {

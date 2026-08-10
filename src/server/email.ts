@@ -21,9 +21,20 @@ export function emailTransport(): EmailTransport {
   return process.env.RESEND_API_KEY ? "resend" : "console";
 }
 
-/** True when emails are only logged (dev) — safe to surface an OTP in that case. */
+/** True when emails are only logged instead of sent (no provider configured). */
 export function isConsoleTransport(): boolean {
   return emailTransport() === "console";
+}
+
+/**
+ * Whether it's safe to return a secret (a password-reset link or an OTP) in the
+ * HTTP response, for local testing without an inbox. ONLY true in development
+ * with the console transport — never in production, even if no email provider is
+ * configured. This is the guard that stops reset links / codes from leaking to
+ * an unauthenticated caller in a misconfigured prod deploy.
+ */
+export function canRevealSecretInResponse(): boolean {
+  return isConsoleTransport() && process.env.NODE_ENV !== "production";
 }
 
 export async function sendEmail(
