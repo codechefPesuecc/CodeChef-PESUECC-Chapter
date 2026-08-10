@@ -51,12 +51,15 @@ export default function CodeMirrorEditor({
   language,
   lockClipboard = false,
   onBlocked,
+  fullscreen = false,
 }: {
   value: string;
   onChange: (value: string) => void;
   language: LanguageId;
   lockClipboard?: boolean;
   onBlocked?: (event: IntegrityEvent) => void;
+  /** Maximized editor: fill the container height instead of the fixed 460px. */
+  fullscreen?: boolean;
 }) {
   const mode = useThemeMode();
   const guards = lockClipboard
@@ -99,7 +102,10 @@ export default function CodeMirrorEditor({
       value={value}
       onChange={onChange}
       theme={mode}
-      height="460px"
+      // In fullscreen the wrapper is a flex child with a definite height, so the
+      // editor fills it (100%); otherwise it keeps the standard fixed height.
+      height={fullscreen ? "100%" : "460px"}
+      className={fullscreen ? "h-full" : undefined}
       extensions={[extensionFor(language), ...guards]}
       basicSetup={{
         foldGutter: false,

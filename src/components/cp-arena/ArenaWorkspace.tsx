@@ -5,8 +5,12 @@ import {
   useEffect,
   useRef,
   useState,
+  type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 import CodeEditor from "./CodeEditor";
 import {
   LANGUAGES,
@@ -34,6 +38,14 @@ const FILE_EXT: Record<LanguageId, string> = {
   rust: "rs",
   zig: "zig",
 };
+
+// Draggable split between the problem and the editor (desktop only). Stored as
+// the problem pane's width in percent; clamped so neither side collapses.
+const SPLIT_KEY = "cp-arena:split-pct";
+const SPLIT_MIN = 25;
+const SPLIT_MAX = 75;
+const SPLIT_STEP = 2; // keyboard nudge per arrow press
+const clampSplit = (n: number) => Math.min(SPLIT_MAX, Math.max(SPLIT_MIN, n));
 
 type Verdict = "AC" | "WA" | "TLE" | "MLE" | "RE" | "CE";
 
@@ -100,9 +112,13 @@ export default function ArenaWorkspace({
   const [busyLabel, setBusyLabel] = useState("Running…");
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileNonce, setTurnstileNonce] = useState(0);
+  // Layout: draggable problem/editor split + maximized editor.
+  const [splitPct, setSplitPct] = useState(50);
+  const [editorFullscreen, setEditorFullscreen] = useState(false);
 
   const startRef = useRef<number | null>(null);
   const frozenRef = useRef(false);
+  const splitContainerRef = useRef<HTMLDivElement>(null);
 
   // Live "your time" clock. Freezes the moment an accepted solution lands.
   useEffect(() => {
@@ -161,6 +177,83 @@ export default function ArenaWorkspace({
     }, 400);
     return () => clearTimeout(id);
   }, [code, language, slug]);
+
+  // Restore the saved problem/editor split once on the client. Deferred to the
+  // next frame so the first (hydration) paint still matches SSR at 50% — no
+  // hydration mismatch on the inline width — then it snaps to the stored value.
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => {
+      try {
+        const raw = localStorage.getItem(SPLIT_KEY);
+        const n = raw == null ? NaN : Number(raw);
+        if (Number.isFinite(n)) setSplitPct(clampSplit(n));
+      } catch {}
+    });
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  // Persist the split (debounced) so it survives reloads.
+  useEffect(() => {
+    const id = setTimeout(() => {
+      try {
+        localStorage.setItem(SPLIT_KEY, String(Math.round(splitPct)));
+      } catch {}
+    }, 300);
+    return () => clearTimeout(id);
+  }, [splitPct]);
+
+  // Maximized editor: lock page scroll and let Escape exit. Purely a CSS overlay
+  // (no Fullscreen API), so it never blurs the window and can't trip the
+  // integrity monitor's tab-switch/screenshot flags.
+  useEffect(() => {
+    if (!editorFullscreen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setEditorFullscreen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [editorFullscreen]);
+
+  // Drag the divider: translate the cursor's x within the row into a width %.
+  const startResize = (e: ReactPointerEvent) => {
+    e.preventDefault();
+    const applyFromClientX = (clientX: number) => {
+      const el = splitContainerRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      if (rect.width === 0) return;
+      setSplitPct(clampSplit(((clientX - rect.left) / rect.width) * 100));
+    };
+    const onMove = (ev: PointerEvent) => applyFromClientX(ev.clientX);
+    const onUp = () => {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+    };
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "col-resize";
+  };
+
+  const onResizeKey = (e: ReactKeyboardEvent) => {
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      setSplitPct((p) => clampSplit(p - SPLIT_STEP));
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      setSplitPct((p) => clampSplit(p + SPLIT_STEP));
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      setSplitPct(50);
+    }
+  };
 
   const changeLanguage = (next: LanguageId) => {
     // Persist the current draft before swapping so switching never loses work.
@@ -377,9 +470,34 @@ export default function ArenaWorkspace({
 
   return (
     <div className="mt-8 space-y-6">
-      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+      {/* Dim + blur the whole page behind the maximized editor. Portaled to
+          <body> so the backdrop-filter's root is the document — a nested scrim
+          only blurs its own stacking context, letting late-painted fixed layers
+          (e.g. the HUD frame) escape the blur. The editor panel stays in place
+          (z-100 > this z-95), so it isn't blurred and CodeMirror never
+          remounts. Clicking the scrim exits full screen. */}
+      {editorFullscreen &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            aria-hidden
+            onClick={() => setEditorFullscreen(false)}
+            className="fixed inset-0 z-[95] bg-black/40 backdrop-blur-sm"
+          />,
+          document.body,
+        )}
+      <div
+        ref={splitContainerRef}
+        className="flex flex-col gap-6 lg:flex-row lg:items-start"
+        style={{ "--arena-left": `${splitPct}%` } as CSSProperties}
+      >
         {/* Problem statement */}
-        <MechaPanel label={practice ? "Practice" : "Problem"} index="01" ticks>
+        <MechaPanel
+          label={practice ? "Practice" : "Problem"}
+          index="01"
+          ticks
+          className="w-full lg:w-[var(--arena-left)] lg:shrink-0"
+        >
           <div className="relative">
             <div
               // `data-lenis-prevent` lets this panel scroll natively instead of
@@ -422,11 +540,42 @@ export default function ArenaWorkspace({
           </div>
         </MechaPanel>
 
+        {/* Draggable divider — resizes the problem/editor split on desktop.
+            The whole bar is grabbable; arrow keys nudge it, double-click resets. */}
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize the problem and editor panels"
+          aria-valuemin={SPLIT_MIN}
+          aria-valuemax={SPLIT_MAX}
+          aria-valuenow={Math.round(splitPct)}
+          tabIndex={0}
+          onPointerDown={startResize}
+          onKeyDown={onResizeKey}
+          onDoubleClick={() => setSplitPct(50)}
+          title="Drag to resize · double-click to reset"
+          className="group relative hidden w-1.5 shrink-0 cursor-col-resize touch-none select-none self-stretch rounded-full bg-[var(--ide-border)] transition-colors hover:bg-bronze/60 focus-visible:bg-bronze focus-visible:outline-none lg:block"
+        >
+          <span
+            aria-hidden
+            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[var(--ide-ink-dim)] transition-colors group-hover:text-bronze"
+          >
+            <GripDotsIcon />
+          </span>
+        </div>
+
         {/* Editor + console */}
-        <section className="space-y-4">
-          <MechaPanel className="mecha--ide">
+        <section className="w-full space-y-4 lg:min-w-0 lg:flex-1">
+          <MechaPanel
+            className={`mecha--ide ${
+              editorFullscreen
+                ? "fixed inset-x-0 top-6 bottom-6 z-[100] mx-auto w-[min(1100px,94vw)]"
+                : ""
+            }`}
+            bodyClassName={editorFullscreen ? "flex flex-col" : ""}
+          >
             {/* IDE title bar */}
-            <div className="flex items-center gap-3 border-b border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 py-2.5">
+            <div className="flex shrink-0 items-center gap-3 border-b border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 py-2.5">
               <span className="flex gap-1.5" aria-hidden>
                 <span className="h-2.5 w-2.5 rounded-full bg-[#e06c5b]" />
                 <span className="h-2.5 w-2.5 rounded-full bg-[#e0b24b]" />
@@ -488,25 +637,49 @@ export default function ArenaWorkspace({
                     {integrity.total > 0 && <span>· {integrity.total}</span>}
                   </span>
                 )}
+                <button
+                  type="button"
+                  onClick={() => setEditorFullscreen((v) => !v)}
+                  aria-pressed={editorFullscreen}
+                  title={
+                    editorFullscreen
+                      ? "Exit full screen (Esc)"
+                      : "Full screen editor"
+                  }
+                  className="inline-flex items-center justify-center rounded-md p-1 text-[var(--ide-ink)] transition-colors hover:text-[var(--ide-ink-strong)]"
+                >
+                  {editorFullscreen ? <CompressIcon /> : <ExpandIcon />}
+                </button>
               </div>
             </div>
 
-            <CodeEditor
-              value={code}
-              onChange={setCode}
-              language={language}
-              lockClipboard
-              onBlocked={integrity.record}
-            />
+            <div
+              // Let the editor scroll natively — otherwise Lenis hijacks the
+              // wheel for the page (which is scroll-locked in fullscreen) and
+              // the editor never receives it.
+              data-lenis-prevent
+              className={
+                editorFullscreen ? "min-h-0 flex-1 overflow-hidden" : ""
+              }
+            >
+              <CodeEditor
+                value={code}
+                onChange={setCode}
+                language={language}
+                lockClipboard
+                onBlocked={integrity.record}
+                fullscreen={editorFullscreen}
+              />
+            </div>
 
             {turnstileConfigured && !solved && (
-              <div className="border-t border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 py-3">
+              <div className="shrink-0 border-t border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 py-3">
                 <Turnstile key={turnstileNonce} onToken={setTurnstileToken} />
               </div>
             )}
 
             {/* Action bar */}
-            <div className="flex items-center gap-3 border-t border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 py-3">
+            <div className="flex shrink-0 items-center gap-3 border-t border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 py-3">
               <button
                 type="button"
                 onClick={resetCode}
@@ -1259,6 +1432,39 @@ function ChevronIcon({ className }: { className?: string }) {
   return (
     <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
+function ExpandIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M15 3h6v6" />
+      <path d="M9 21H3v-6" />
+      <path d="M21 3l-7 7" />
+      <path d="M3 21l7-7" />
+    </svg>
+  );
+}
+
+function CompressIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 14h6v6" />
+      <path d="M20 10h-6V4" />
+      <path d="M14 10l7-7" />
+      <path d="M3 21l7-7" />
+    </svg>
+  );
+}
+
+// Vertical grip dots for the resize divider.
+function GripDotsIcon() {
+  return (
+    <svg width="8" height="20" viewBox="0 0 8 20" fill="currentColor" aria-hidden>
+      <circle cx="4" cy="4" r="1.4" />
+      <circle cx="4" cy="10" r="1.4" />
+      <circle cx="4" cy="16" r="1.4" />
     </svg>
   );
 }
