@@ -40,6 +40,7 @@
 :root {
   --site-canvas: var(--color-cream);
   --site-backdrop: url("/lightmode.png");
+  --grid-line: color-mix(in oklab, var(--color-chocolate) 8%, transparent);
   --l-shape-fill: #FBF6ED;
 
   /* Code editor / console surface — light IDE in light mode. */
@@ -61,6 +62,7 @@
   --color-hairline: #3a2c20; /* borders & hairline dividers */
   --site-canvas: #16110c; /* deep warm near-black page canvas */
   --site-backdrop: url("/darkmode.png");
+  --grid-line: color-mix(in oklab, var(--color-cream) 6%, transparent);
   --l-shape-fill: #1C1714;
 
   /* Code editor / console surface — warm terminal-dark in dark mode. */
@@ -581,16 +583,17 @@ body::before {
   pointer-events: none;
   background-image:
     linear-gradient(
-      color-mix(in oklab, var(--color-bronze) 7%, transparent) 1px,
+      var(--grid-line) 1px,
       transparent 1px
     ),
     linear-gradient(
       90deg,
-      color-mix(in oklab, var(--color-bronze) 7%, transparent) 1px,
+      var(--grid-line) 1px,
       transparent 1px
     );
   background-size: 46px 46px;
-  opacity: 0.55;
+  background-position: center top;
+  opacity: 1; /* Opacity is handled by the color-mix in var(--grid-line) */
 }
 
 /* 
@@ -680,30 +683,20 @@ body::before {
 }
 
 @layer utilities {
-  .bg-tech-grid-main {
+  .bg-tech-glow-main {
     background-image: 
       radial-gradient(circle at 18% 18%, rgba(166,124,82,0.28), transparent 28%),
-      radial-gradient(circle at 82% 45%, rgba(245,241,235,0.1), transparent 24%),
-      linear-gradient(to right, rgba(245,241,235,0.07) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(245,241,235,0.07) 1px, transparent 1px);
-    background-size: auto, auto, 46px 46px, 46px 46px;
-    background-attachment: scroll, scroll, fixed, fixed;
+      radial-gradient(circle at 82% 45%, rgba(245,241,235,0.1), transparent 24%);
   }
-  .bg-tech-grid-card {
-    background-image: 
-      linear-gradient(110deg, rgba(166,124,82,0.18), transparent 34%),
-      linear-gradient(to right, rgba(245,241,235,0.06) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(245,241,235,0.06) 1px, transparent 1px);
-    background-size: auto, 46px 46px, 46px 46px;
-    background-position: 0 0, center center, center center;
-    background-attachment: scroll, fixed, fixed;
+  .bg-tech-glow-card {
+    background-image: linear-gradient(110deg, rgba(166,124,82,0.18), transparent 34%);
   }
   .bg-tech-grid-event {
     background-image:
       linear-gradient(to right, color-mix(in oklab, var(--color-hairline) 58%, transparent) 1px, transparent 1px),
       linear-gradient(to bottom, color-mix(in oklab, var(--color-hairline) 58%, transparent) 1px, transparent 1px);
     background-size: 46px 46px;
-    background-position: center center;
+    background-position: center top;
     background-attachment: fixed;
   }
 }
