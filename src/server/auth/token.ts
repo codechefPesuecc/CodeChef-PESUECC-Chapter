@@ -13,11 +13,25 @@ import crypto from "node:crypto";
 /** 30 days, in seconds. */
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 30;
 
+/** Insecure signing key used only outside production (dev/test convenience). */
+const DEV_FALLBACK_SECRET = "dev-insecure-change-me-in-production";
+
 // Read lazily (per call) rather than captured at module load: on Cloudflare
 // Workers env vars/secrets are only reliably present in process.env within a
 // request scope, so capturing at import time could silently use the dev fallback.
 function secret(): string {
-  return process.env.AUTH_SECRET ?? "dev-insecure-change-me-in-production";
+  const configured = process.env.AUTH_SECRET;
+  if (configured && configured !== DEV_FALLBACK_SECRET) return configured;
+  // A missing (or still-default) secret in production would sign every session
+  // with a key that's public in this repo — anyone could then forge a session
+  // for any user. Fail loudly instead of silently using it.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "AUTH_SECRET is not set in production (or is still the dev default). Set " +
+        "it as a Cloudflare Worker secret before deploying — see DEPLOY.md §5.",
+    );
+  }
+  return DEV_FALLBACK_SECRET;
 }
 
 function sign(payload: string): string {

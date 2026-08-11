@@ -6,6 +6,7 @@ import {
   parseMemoryLimitBytes,
 } from "@/lib/challenges";
 import { rateLimit, clientIp } from "@/server/rateLimit";
+import { bodyTooLarge, tooLong, MAX_CODE_CHARS, MAX_STDIN_CHARS } from "@/server/limits";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +54,9 @@ export async function POST(req: Request) {
     );
   }
 
+  const oversize = bodyTooLarge(req);
+  if (oversize) return oversize;
+
   let body: {
     language?: string;
     code?: string;
@@ -71,6 +75,13 @@ export async function POST(req: Request) {
       { ok: false, error: "language and code are required." },
       { status: 400 },
     );
+  }
+
+  const codeTooLong = tooLong(code, MAX_CODE_CHARS, "Code");
+  if (codeTooLong) return codeTooLong;
+  if (typeof stdin === "string") {
+    const stdinTooLong = tooLong(stdin, MAX_STDIN_CHARS, "Input");
+    if (stdinTooLong) return stdinTooLong;
   }
 
   // Resolve the run-time + memory limits from the problem itself (server-side,
