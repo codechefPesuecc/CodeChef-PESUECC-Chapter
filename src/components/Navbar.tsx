@@ -16,6 +16,14 @@ const links = [
   { href: "/newsroom", label: "Newsroom" },
 ];
 
+declare global {
+  interface Document {
+    startViewTransition?: (callback: () => void) => {
+      ready: Promise<void>;
+    };
+  }
+}
+
 export default function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -42,7 +50,7 @@ export default function Navbar() {
     const isDark = document.documentElement.classList.contains("dark");
     
     // Fallback if browser doesn't support startViewTransition
-    if (!(document as any).startViewTransition) {
+    if (!document.startViewTransition) {
       document.documentElement.classList.toggle("dark");
       try { localStorage.setItem("theme", !isDark ? "dark" : "light"); } catch {}
       return;
@@ -55,7 +63,7 @@ export default function Navbar() {
       Math.max(y, window.innerHeight - y)
     );
 
-    const transition = (document as any).startViewTransition(() => {
+    const transition = document.startViewTransition(() => {
       document.documentElement.classList.toggle("dark");
       try { localStorage.setItem("theme", !isDark ? "dark" : "light"); } catch {}
     });
