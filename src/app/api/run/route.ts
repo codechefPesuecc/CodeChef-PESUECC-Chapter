@@ -41,7 +41,7 @@ const MAX_MEM_BYTES = 512 * 1024 * 1024;
  * Piston. Grading against hidden tests will live in /api/submit.
  */
 export async function POST(req: Request) {
-  const limit = rateLimit(`run:${clientIp(req)}`, RUN_LIMIT, RUN_WINDOW_MS);
+  const limit = await rateLimit(`run:ip:${clientIp(req)}`, RUN_LIMIT, RUN_WINDOW_MS);
   if (!limit.ok) {
     return NextResponse.json(
       {

@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import { passwordResets, users } from "@/server/db/schema";
 import { hashPassword } from "@/server/auth/password";
@@ -92,9 +92,14 @@ export async function resetPassword(
     return { ok: false, error: "This reset link has expired — request a new one." };
   }
 
+  // Set the new password AND bump the session epoch in one statement, so every
+  // session issued before this reset is immediately invalidated.
   await db
     .update(users)
-    .set({ passwordHash: hashPassword(password) })
+    .set({
+      passwordHash: hashPassword(password),
+      sessionEpoch: sql`${users.sessionEpoch} + 1`,
+    })
     .where(eq(users.id, row.userId));
   await db
     .delete(passwordResets)

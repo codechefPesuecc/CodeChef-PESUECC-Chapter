@@ -22,6 +22,10 @@ export const users = sqliteTable("users", {
   srn: text("srn").unique(),
   prn: text("prn").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
+  // Bumped on password reset — stateless session tokens carry this epoch and are
+  // rejected once it changes, so a reset (or recovery from a compromise) logs out
+  // every existing session.
+  sessionEpoch: integer("session_epoch").notNull().default(0),
   createdAt: integer("created_at").notNull(),
 });
 
@@ -87,6 +91,15 @@ export const attempts = sqliteTable(
   },
   (t) => [unique().on(t.userId, t.challengeSlug)],
 );
+
+// Fixed-window rate-limit counters, keyed like `login:ip:1.2.3.4`. Lives in the
+// DB (not process memory) so the limit holds across Cloudflare Worker isolates,
+// which each have their own memory. `resetAt` is when the current window ends.
+export const rateLimits = sqliteTable("rate_limits", {
+  key: text("key").primaryKey(),
+  count: integer("count").notNull().default(0),
+  resetAt: integer("reset_at").notNull(),
+});
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
