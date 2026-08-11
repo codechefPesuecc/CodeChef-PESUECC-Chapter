@@ -47,7 +47,7 @@ export function TechnicalBackdrop() {
     <>
       <div
         aria-hidden
-        className="absolute inset-0 bg-tech-grid-main"
+        className="absolute inset-0 bg-tech-glow-main"
       />
       <div
         aria-hidden
