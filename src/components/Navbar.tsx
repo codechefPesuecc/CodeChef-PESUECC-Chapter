@@ -39,12 +39,12 @@ export default function Navbar() {
   // The active theme lives entirely in the `.dark` class on <html>.
   // We use the View Transitions API to create a seamless pan effect across the screen.
   const toggleTheme = (event: React.MouseEvent) => {
-    const isDarkNow = !document.documentElement.classList.contains("dark");
+    const isDark = document.documentElement.classList.contains("dark");
     
     // Fallback if browser doesn't support startViewTransition
     if (!(document as any).startViewTransition) {
       document.documentElement.classList.toggle("dark");
-      try { localStorage.setItem("theme", isDarkNow ? "dark" : "light"); } catch {}
+      try { localStorage.setItem("theme", !isDark ? "dark" : "light"); } catch {}
       return;
     }
 
@@ -57,7 +57,7 @@ export default function Navbar() {
 
     const transition = (document as any).startViewTransition(() => {
       document.documentElement.classList.toggle("dark");
-      try { localStorage.setItem("theme", isDarkNow ? "dark" : "light"); } catch {}
+      try { localStorage.setItem("theme", !isDark ? "dark" : "light"); } catch {}
     });
 
     transition.ready.then(() => {
@@ -67,12 +67,12 @@ export default function Navbar() {
       ];
       document.documentElement.animate(
         {
-          clipPath: isDarkNow ? clipPath : [...clipPath].reverse(),
+          clipPath: clipPath,
         },
         {
           duration: 500,
           easing: "ease-in-out",
-          pseudoElement: isDarkNow ? "::view-transition-new(root)" : "::view-transition-old(root)",
+          pseudoElement: "::view-transition-new(root)",
         }
       );
     });
