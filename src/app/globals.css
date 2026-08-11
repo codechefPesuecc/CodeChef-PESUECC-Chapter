@@ -41,7 +41,7 @@
   --site-canvas: var(--color-cream);
   --site-backdrop: url("/lightmode.png");
   --l-shape-fill: #FBF6ED;
-  --grid-line: color-mix(in oklab, var(--color-chocolate) 7%, transparent);
+  --grid-line: color-mix(in oklab, var(--color-chocolate) 8%, transparent);
 
   /* Code editor / console surface — light IDE in light mode. */
   --ide-bar: #efe9e0;
