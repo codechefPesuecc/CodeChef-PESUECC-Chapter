@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, vi } from "vitest";
+import { describe, it, expect, beforeAll, afterEach, vi } from "vitest";
 import { createSessionToken, readSessionToken } from "./token";
 
 beforeAll(() => {
@@ -50,5 +50,39 @@ describe("session token", () => {
     expect(a).not.toBe(b);
     expect(readSessionToken(a)?.epoch).toBe(0);
     expect(readSessionToken(b)?.epoch).toBe(1);
+  });
+});
+
+describe("AUTH_SECRET production guard", () => {
+  // stubEnv sidesteps the read-only NODE_ENV type and auto-restores on unstub,
+  // so these env changes don't leak into the other tests.
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("throws in production when AUTH_SECRET is unset", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("AUTH_SECRET", undefined);
+    expect(() => createSessionToken("user-123", 0)).toThrow(/AUTH_SECRET/);
+  });
+
+  it("throws in production when AUTH_SECRET is still the dev default", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("AUTH_SECRET", "dev-insecure-change-me-in-production");
+    expect(() => createSessionToken("user-123", 0)).toThrow(/AUTH_SECRET/);
+  });
+
+  it("signs normally in production once AUTH_SECRET is set", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("AUTH_SECRET", "a-real-production-secret");
+    const token = createSessionToken("user-123", 3);
+    expect(readSessionToken(token)).toEqual({ userId: "user-123", epoch: 3 });
+  });
+
+  it("falls back to the dev key outside production", () => {
+    vi.stubEnv("NODE_ENV", "test");
+    vi.stubEnv("AUTH_SECRET", undefined);
+    const token = createSessionToken("user-123", 0);
+    expect(readSessionToken(token)).toEqual({ userId: "user-123", epoch: 0 });
   });
 });
