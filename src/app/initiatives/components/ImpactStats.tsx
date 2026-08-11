@@ -11,7 +11,7 @@ export function ImpactStats() {
           <Link href="#flagship-events" className="group flex flex-col bg-panel px-6 py-7 hover:bg-cream dark:hover:bg-[#1C1714] transition-colors">
             <div className="font-display text-3xl font-bold text-brown">3+</div>
             <div className="mt-2 flex items-center justify-between font-mono text-[11px] font-semibold uppercase tracking-wider text-charcoal/55">
-              Flagship Events
+              Core Initiatives
               <span className="text-bronze opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100">
                 <ArrowIcon />
               </span>
