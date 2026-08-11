@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { motion, useReducedMotion, useMotionValue, useMotionTemplate, useSpring } from "motion/react";
-import { useMemo, useState } from "react";
+import { motion, useReducedMotion, useMotionValue, useMotionTemplate, useSpring, AnimatePresence } from "motion/react";
+import { useMemo, useState, useEffect } from "react";
 import type { EventData } from "@/lib/events";
 
 type FilterKey = "all" | "featured" | "completed" | "upcoming" | "hackathon" | "workshop" | "hunt";
@@ -70,6 +70,9 @@ export default function NewsroomHub({ events }: Props) {
 
     return counts;
   }, [events]);
+
+  const featuredStory = filteredEvents.length > 0 ? filteredEvents[0] : null;
+  const remainingStories = filteredEvents.slice(1);
 
   return (
     <>
@@ -148,22 +151,27 @@ export default function NewsroomHub({ events }: Props) {
       </section>
 
       <section className="mx-auto w-full max-w-6xl px-6 py-16 sm:py-20">
-        {filteredEvents.length > 0 ? (
+        {featuredStory ? (
           <motion.div
-            className="grid gap-6 md:grid-cols-2 xl:grid-cols-3"
-            initial={reduceMotion ? false : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.25 }}
+            initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
           >
-            {filteredEvents.map((event, index) => (
-              <NewsroomCard
-                key={event.slug}
-                event={event}
-                featured={index === 0}
-                delay={reduceMotion ? 0 : index === 0 ? 0.05 : 0.12 + Math.abs(index - 1) * 0.08}
-                reduceMotion={Boolean(reduceMotion)}
-              />
-            ))}
+            <FeaturedStoryCard event={featuredStory} reduceMotion={Boolean(reduceMotion)} />
+            
+            {remainingStories.length > 0 && (
+              <div className="mt-20">
+                <div className="mb-10 text-center">
+                  <h3 className="font-mono text-sm font-semibold uppercase tracking-[0.2em] text-bronze">
+                    Previous Stories
+                  </h3>
+                  <p className="mt-2 text-sm text-charcoal/60 dark:text-cream/60">
+                    Click the top card to cycle through our history
+                  </p>
+                </div>
+                <StoryStack stories={remainingStories} reduceMotion={Boolean(reduceMotion)} />
+              </div>
+            )}
           </motion.div>
         ) : (
           <EmptyState onReset={() => setActiveFilter("all")} />
@@ -173,17 +181,59 @@ export default function NewsroomHub({ events }: Props) {
   );
 }
 
-function NewsroomCard({
-  event,
-  featured,
-  delay,
-  reduceMotion,
-}: {
-  event: EventData;
-  featured: boolean;
-  delay: number;
-  reduceMotion: boolean;
-}) {
+function StoryStack({ stories, reduceMotion }: { stories: EventData[]; reduceMotion: boolean }) {
+  const [cards, setCards] = useState(stories);
+
+  // Reset the deck when the stories prop changes (e.g. from filtering)
+  useEffect(() => {
+    setCards(stories);
+  }, [stories]);
+
+  const handleCycle = () => {
+    if (cards.length > 1) {
+      setCards((prev) => {
+        const next = [...prev];
+        const top = next.shift();
+        if (top) next.push(top);
+        return next;
+      });
+    }
+  };
+
+  return (
+    <div className="relative mx-auto w-full max-w-2xl h-[550px] sm:h-[600px] perspective-1000">
+      <AnimatePresence mode="popLayout">
+        {cards.map((event, index) => {
+          const isTop = index === 0;
+          return (
+            <motion.div
+              key={event.slug}
+              layout
+              initial={{ opacity: 0, y: 100, scale: 0.8 }}
+              animate={{
+                opacity: index < 4 ? 1 - index * 0.15 : 0,
+                y: index * 32,
+                scale: 1 - index * 0.05,
+                zIndex: cards.length - index,
+                rotateX: index * 2,
+              }}
+              exit={{ opacity: 0, scale: 0.8, y: -50 }}
+              transition={{ type: "spring", stiffness: 220, damping: 24, mass: 0.8 }}
+              className={`absolute inset-x-0 top-0 transition-all duration-300 ${
+                isTop ? "cursor-pointer hover:translate-y-[-8px]" : "pointer-events-none"
+              }`}
+              onClick={isTop ? handleCycle : undefined}
+            >
+              <StackedStoryCard event={event} reduceMotion={reduceMotion} />
+            </motion.div>
+          );
+        })}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function FeaturedStoryCard({ event, reduceMotion }: { event: EventData; reduceMotion: boolean }) {
   const canTilt = !reduceMotion;
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -191,20 +241,16 @@ function NewsroomCard({
   const tiltY = useSpring(0, { stiffness: 240, damping: 24 });
   const cardOpacity = useMotionValue(0);
 
-  const internalSpotlight = useMotionTemplate`radial-gradient(220px circle at ${mouseX}px ${mouseY}px, rgba(255,255,255,0.35), transparent 58%)`;
+  const internalSpotlight = useMotionTemplate`radial-gradient(400px circle at ${mouseX}px ${mouseY}px, rgba(255,255,255,0.25), transparent 58%)`;
 
   return (
     <motion.article
       layout
-      initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
-      whileInView={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ type: "spring", stiffness: 180, damping: 26, mass: 0.9, delay }}
-      className={`relative ${featured ? "md:col-span-2 xl:col-span-2" : ""}`}
+      className="relative w-full"
     >
       <Link
         href={`/newsroom/${event.slug}`}
-        className="group block h-full"
+        className="group block h-full w-full"
         onMouseMove={(eventMouse) => {
           if (!canTilt) return;
           const rect = eventMouse.currentTarget.getBoundingClientRect();
@@ -216,8 +262,8 @@ function NewsroomCard({
 
           const offsetX = (x - rect.width / 2) / rect.width;
           const offsetY = (y - rect.height / 2) / rect.height;
-          tiltX.set(Math.max(-10, Math.min(10, offsetY * -18)));
-          tiltY.set(Math.max(-10, Math.min(10, offsetX * 18)));
+          tiltX.set(Math.max(-4, Math.min(4, offsetY * -8)));
+          tiltY.set(Math.max(-4, Math.min(4, offsetX * 8)));
         }}
         onMouseLeave={() => {
           tiltX.set(0);
@@ -226,7 +272,7 @@ function NewsroomCard({
         }}
       >
         <motion.div
-          className="relative h-full overflow-hidden rounded-[1.75rem] border border-white/20 bg-white/70 shadow-[0_20px_70px_rgba(15,23,42,0.09)] backdrop-blur-xl transition-transform duration-200 dark:border-white/10 dark:bg-black/25 group-hover:z-10 group-hover:scale-[1.01]"
+          className="relative h-full w-full overflow-hidden rounded-[2rem] border border-white/20 bg-white/70 shadow-[0_30px_100px_rgba(15,23,42,0.12)] backdrop-blur-xl transition-transform duration-300 dark:border-white/10 dark:bg-black/25 group-hover:z-10 group-hover:scale-[1.01]"
           style={{
             backdropFilter: "blur(16px)",
             transformStyle: canTilt ? "preserve-3d" : "flat",
@@ -241,82 +287,56 @@ function NewsroomCard({
             style={{
               backgroundImage: canTilt
                 ? internalSpotlight
-                : "radial-gradient(220px circle at 50% 50%, rgba(255,255,255,0.18), transparent 58%)",
+                : "radial-gradient(400px circle at 50% 50%, rgba(255,255,255,0.15), transparent 58%)",
               opacity: canTilt ? cardOpacity : 0,
             }}
           />
 
-          <div className={featured ? "grid gap-0 xl:grid-cols-5" : "grid gap-0"}>
-            <div className={featured ? "relative aspect-[4/3] overflow-hidden xl:col-span-3" : "relative aspect-[4/3] overflow-hidden"}>
+          <div className="grid gap-0 lg:grid-cols-5">
+            <div className="relative aspect-[4/3] lg:aspect-auto h-full w-full overflow-hidden lg:col-span-3">
               <Image
                 src={event.image}
                 alt={event.title}
                 fill
-                loading="lazy"
-                sizes={featured ? "(min-width: 1280px) 55vw, (min-width: 768px) 66vw, 100vw" : "(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"}
-                className="object-cover transition duration-700 grayscale-[0.2] group-hover:scale-105 group-hover:grayscale-0"
+                loading="eager"
+                sizes="(min-width: 1024px) 60vw, 100vw"
+                className="object-cover transition duration-1000 grayscale-[0.2] group-hover:scale-105 group-hover:grayscale-0"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-chocolate/85 via-chocolate/20 to-transparent dark:from-[#0d0906]/90" />
+              <div className="absolute inset-0 bg-gradient-to-t from-chocolate/85 via-chocolate/10 to-transparent lg:bg-gradient-to-r lg:from-transparent lg:via-chocolate/10 lg:to-chocolate/90 dark:from-[#0d0906]/90 dark:lg:to-[#0d0906]/90" />
 
-              <div className="absolute left-4 top-4 flex flex-wrap gap-2">
-                <span className="mecha-chip bg-bronze/90 text-white shadow-[0_0_12px_rgba(166,124,82,0.35)] backdrop-blur">
+              <div className="absolute left-6 top-6 flex flex-wrap gap-2">
+                <span className="mecha-chip bg-bronze/90 px-4 py-2 text-sm text-white shadow-[0_0_15px_rgba(166,124,82,0.4)] backdrop-blur">
                   {event.type}
-                </span>
-              </div>
-
-              <div className="absolute right-4 top-4">
-                <span
-                  className={`mecha-chip border border-white/10 backdrop-blur ${
-                    event.status === "completed"
-                      ? "bg-emerald-500/20 text-emerald-200 shadow-[0_0_12px_rgba(16,185,129,0.18)]"
-                      : "animate-pulse bg-amber-500/20 text-amber-100 shadow-[0_0_12px_rgba(245,158,11,0.24)]"
-                  }`}
-                >
-                  <span
-                    className={`h-1.5 w-1.5 rounded-full ${
-                      event.status === "completed" ? "bg-emerald-300" : "bg-amber-200"
-                    }`}
-                  />
-                  {event.status === "completed" ? "Completed" : "Upcoming"}
-                </span>
-              </div>
-
-              <div className="absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-3 py-1.5 text-cream backdrop-blur">
-                <CalendarIcon />
-                <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-cream/90">
-                  {event.date}
                 </span>
               </div>
             </div>
 
-            <div className={featured ? "flex h-full flex-col justify-between p-6 sm:p-7 xl:col-span-2" : "flex h-full flex-col p-6"}>
+            <div className="flex h-full flex-col justify-center p-8 sm:p-12 lg:col-span-2 lg:bg-chocolate/5 lg:dark:bg-black/20">
               <div>
-                <div className="mecha__telemetry px-0 pt-0 pb-3">
-                  <span className="mecha__label">
-                    {featured ? "Featured story" : "Chapter update"}
-                  </span>
+                <div className="mecha__telemetry px-0 pt-0 pb-4">
+                  <span className="mecha__label">Featured story</span>
                   <span className="mecha__index">{event.date}</span>
                 </div>
-                <h2 className={`mt-3 text-balance font-display font-bold tracking-tight text-chocolate dark:text-cream transition-colors duration-300 group-hover:text-bronze ${featured ? "text-2xl sm:text-3xl" : "text-xl"}`}>
+                <h2 className="mt-2 text-balance font-display text-3xl font-bold tracking-tight text-chocolate dark:text-cream sm:text-4xl transition-colors duration-300 group-hover:text-bronze">
                   {event.title}
                 </h2>
-                <p className="mt-2 font-mono text-xs font-semibold uppercase tracking-[0.18em] text-bronze/85">
+                <p className="mt-3 font-mono text-sm font-semibold uppercase tracking-[0.2em] text-bronze/85">
                   {event.tagline}
                 </p>
-                <p className="mt-4 text-sm leading-7 text-charcoal/78 dark:text-cream/78">
+                <p className="mt-5 text-base leading-8 text-charcoal/80 dark:text-cream/80">
                   {event.summary}
                 </p>
 
-                <div className="mt-5 grid grid-cols-2 gap-3">
+                <div className="mt-8 grid grid-cols-2 gap-4">
                   {event.highlights.slice(0, 2).map((highlight) => (
                     <div
                       key={highlight.label}
-                      className="rounded-2xl border border-white/15 bg-white/55 px-3 py-3 text-center shadow-[0_10px_30px_rgba(15,23,42,0.05)] transition-colors duration-300 group-hover:border-bronze/20 dark:bg-black/20"
+                      className="rounded-2xl border border-white/15 bg-white/55 p-4 text-center shadow-[0_10px_30px_rgba(15,23,42,0.05)] transition-colors duration-300 group-hover:border-bronze/20 dark:bg-black/20"
                     >
-                      <div className="font-display text-lg font-bold text-bronze">
+                      <div className="font-display text-2xl font-bold text-bronze">
                         {highlight.value}
                       </div>
-                      <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-charcoal/55 dark:text-cream/55">
+                      <div className="mt-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-charcoal/55 dark:text-cream/55">
                         {highlight.label}
                       </div>
                     </div>
@@ -330,6 +350,106 @@ function NewsroomCard({
         </motion.div>
       </Link>
     </motion.article>
+  );
+}
+
+function StackedStoryCard({ event, reduceMotion }: { event: EventData; reduceMotion: boolean }) {
+  const canTilt = !reduceMotion;
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const tiltX = useSpring(0, { stiffness: 240, damping: 24 });
+  const tiltY = useSpring(0, { stiffness: 240, damping: 24 });
+  const cardOpacity = useMotionValue(0);
+
+  const internalSpotlight = useMotionTemplate`radial-gradient(250px circle at ${mouseX}px ${mouseY}px, rgba(255,255,255,0.3), transparent 58%)`;
+
+  return (
+    <article className="relative w-full shadow-2xl">
+      <div
+        className="group block h-full w-full"
+        onMouseMove={(eventMouse) => {
+          if (!canTilt) return;
+          const rect = eventMouse.currentTarget.getBoundingClientRect();
+          const x = eventMouse.clientX - rect.left;
+          const y = eventMouse.clientY - rect.top;
+          mouseX.set(x);
+          mouseY.set(y);
+          cardOpacity.set(1);
+
+          const offsetX = (x - rect.width / 2) / rect.width;
+          const offsetY = (y - rect.height / 2) / rect.height;
+          tiltX.set(Math.max(-5, Math.min(5, offsetY * -10)));
+          tiltY.set(Math.max(-5, Math.min(5, offsetX * 10)));
+        }}
+        onMouseLeave={() => {
+          tiltX.set(0);
+          tiltY.set(0);
+          cardOpacity.set(0);
+        }}
+      >
+        <motion.div
+          className="relative h-full w-full overflow-hidden rounded-[1.75rem] border border-white/20 bg-white/80 shadow-[0_15px_40px_rgba(15,23,42,0.1)] backdrop-blur-2xl transition-transform duration-300 dark:border-white/10 dark:bg-[#15110e]"
+          style={{
+            transformStyle: canTilt ? "preserve-3d" : "flat",
+            rotateX: tiltX,
+            rotateY: tiltY,
+          }}
+        >
+          <motion.div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 z-20 opacity-0 transition-opacity duration-300"
+            style={{
+              backgroundImage: canTilt
+                ? internalSpotlight
+                : "radial-gradient(250px circle at 50% 50%, rgba(255,255,255,0.1), transparent 58%)",
+              opacity: canTilt ? cardOpacity : 0,
+            }}
+          />
+
+          <div className="grid gap-0">
+            <div className="relative aspect-[16/9] w-full overflow-hidden">
+              <Image
+                src={event.image}
+                alt={event.title}
+                fill
+                loading="lazy"
+                sizes="(min-width: 768px) 50vw, 100vw"
+                className="object-cover transition duration-700 grayscale-[0.2] group-hover:scale-105 group-hover:grayscale-0"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              
+              <div className="absolute right-4 top-4">
+                <span className="mecha-chip border border-white/10 backdrop-blur bg-white/10 text-white shadow-xl">
+                  {event.type}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex h-full flex-col justify-between p-6 sm:p-8">
+              <div>
+                <div className="mecha__telemetry px-0 pt-0 pb-3">
+                  <span className="mecha__index">{event.date}</span>
+                </div>
+                <h2 className="mt-1 text-balance font-display text-2xl font-bold tracking-tight text-chocolate dark:text-cream transition-colors duration-300 group-hover:text-bronze">
+                  {event.title}
+                </h2>
+                <p className="mt-3 text-sm leading-6 text-charcoal/78 dark:text-cream/78 line-clamp-2">
+                  {event.summary}
+                </p>
+              </div>
+              
+              <Link 
+                href={`/newsroom/${event.slug}`}
+                className="mt-6 inline-flex w-fit items-center gap-2 font-mono text-xs font-semibold uppercase tracking-[0.2em] text-bronze transition-colors hover:text-chocolate dark:hover:text-cream"
+                onClick={(e) => e.stopPropagation()} // Prevent clicking the link from cycling the card
+              >
+                Read More →
+              </Link>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </article>
   );
 }
 
@@ -391,26 +511,5 @@ function EmptyState({ onReset }: { onReset: () => void }) {
         Show all stories
       </button>
     </div>
-  );
-}
-
-function CalendarIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="text-cream/80"
-    >
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-      <line x1="16" y1="2" x2="16" y2="6" />
-      <line x1="8" y1="2" x2="8" y2="6" />
-      <line x1="3" y1="10" x2="21" y2="10" />
-    </svg>
   );
 }
