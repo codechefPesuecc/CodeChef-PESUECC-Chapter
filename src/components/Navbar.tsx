@@ -16,14 +16,6 @@ const links = [
   { href: "/newsroom", label: "Newsroom" },
 ];
 
-declare global {
-  interface Document {
-    startViewTransition?: (callback: () => void) => {
-      ready: Promise<void>;
-    };
-  }
-}
-
 export default function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
