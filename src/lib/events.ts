@@ -11,6 +11,12 @@ export interface EventData {
   description: string[];
   highlights: { label: string; value: string }[];
   schedule?: { time: string; activity: string }[];
+  registrationUrl?: string;
+  registrationDeadline?: string;
+  winners?: { name: string; team?: string; prize: string; image?: string }[];
+  judges?: { name: string; role: string; company?: string; image?: string }[];
+  judgeComments?: { judgeName: string; comment: string }[];
+  gallery?: string[];
 }
 
 export const events: EventData[] = [
@@ -46,6 +52,26 @@ export const events: EventData[] = [
       { time: "10:00 AM", activity: "Top 10 Demo Day & Judging" },
       { time: "12:00 PM", activity: "Awards Ceremony" },
     ],
+    winners: [
+      { name: "Team Alpha", team: "NexGen", prize: "1st Place — ₹25,000", image: "/placeholder-avatar.jpg" },
+      { name: "Team Beta", team: "CodeCrafters", prize: "2nd Place — ₹15,000", image: "/placeholder-avatar.jpg" },
+      { name: "Team Gamma", team: "ByteForce", prize: "3rd Place — ₹10,000", image: "/placeholder-avatar.jpg" },
+    ],
+    judges: [
+      { name: "Judge Name 1", role: "Senior Engineer", company: "Company A", image: "/placeholder-avatar.jpg" },
+      { name: "Judge Name 2", role: "CTO", company: "Company B", image: "/placeholder-avatar.jpg" },
+      { name: "Judge Name 3", role: "Lead Developer", company: "Company C", image: "/placeholder-avatar.jpg" },
+    ],
+    judgeComments: [
+      { judgeName: "Judge Name 1", comment: "The quality of projects this year was exceptional. Teams demonstrated real-world problem solving with polished execution." },
+      { judgeName: "Judge Name 2", comment: "I was impressed by how teams balanced innovation with feasibility. Several projects could genuinely be shipped as products." },
+    ],
+    gallery: [
+      "/events/praxis-2024.jpg",
+      "/events/praxis-2024.jpg",
+      "/events/praxis-2024.jpg",
+      "/events/praxis-2024.jpg",
+    ],
   },
   {
     slug: "algohunt",
@@ -77,6 +103,20 @@ export const events: EventData[] = [
       { time: "05:30 PM", activity: "Stage 6 — Final Puzzle Room" },
       { time: "06:30 PM", activity: "Stage 7 — Checkpoint & Grand Finale" },
       { time: "07:00 PM", activity: "Results & Prize Distribution" },
+    ],
+    winners: [
+      { name: "Team Winner 1", prize: "1st Place", image: "/placeholder-avatar.jpg" },
+      { name: "Team Winner 2", prize: "2nd Place", image: "/placeholder-avatar.jpg" },
+      { name: "Team Winner 3", prize: "3rd Place", image: "/placeholder-avatar.jpg" },
+    ],
+    judges: [
+      { name: "Mentor Name 1", role: "Faculty Advisor", company: "PES University", image: "/placeholder-avatar.jpg" },
+      { name: "Mentor Name 2", role: "Alumni", company: "Tech Company", image: "/placeholder-avatar.jpg" },
+    ],
+    gallery: [
+      "/events/algohunt.jpg",
+      "/events/algohunt.jpg",
+      "/events/algohunt.jpg",
     ],
   },
   {
@@ -111,6 +151,10 @@ export const events: EventData[] = [
       { time: "Week 3", activity: "Dynamic Programming Fundamentals" },
       { time: "Week 3", activity: "Advanced DP & Greedy" },
       { time: "Week 3", activity: "Mock Interview Contest" },
+    ],
+    judges: [
+      { name: "Instructor Name 1", role: "Problem Setter", company: "CodeChef Chapter", image: "/placeholder-avatar.jpg" },
+      { name: "Instructor Name 2", role: "Senior Member", company: "CodeChef Chapter", image: "/placeholder-avatar.jpg" },
     ],
   },
 ];
