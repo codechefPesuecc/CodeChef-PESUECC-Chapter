@@ -27,7 +27,7 @@ export function FlagshipEvents() {
       {/* CONTENT */}
       <div className="relative z-10 mx-auto max-w-7xl">
         <SectionIntro
-          eyebrow="Flagship events"
+          eyebrow="Core Initiatives"
           title="Every initiative, one blueprint"
           body="Each event ships as a single unified blueprint card — a full-height brief on the left, a floating photo in the cutout, and the detailed explanation tucked into the extension below it."
         />

@@ -1,5 +1,5 @@
 export const stats = [
-  { label: "Flagship Events", value: "3+", progress: 92 },
+  { label: "Core Initiatives", value: "4+", progress: 100 },
   { label: "Production Platforms", value: "2", progress: 79 },
   { label: "Students Reached", value: "500+", progress: 66 },
   { label: "Culture", value: "Daily CP", progress: 53 },

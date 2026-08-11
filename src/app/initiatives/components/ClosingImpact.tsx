@@ -6,10 +6,6 @@ export function ClosingImpact() {
     <section className="mx-auto max-w-6xl px-6 pb-24">
       <Reveal>
         <div className="relative overflow-hidden rounded-3xl bg-panel shadow-xl ring-1 ring-hairline">
-          <div
-            aria-hidden
-            className="absolute inset-0 bg-[linear-gradient(135deg,color-mix(in_oklab,var(--color-bronze)_18%,transparent),transparent_38%),linear-gradient(to_right,color-mix(in_oklab,var(--color-hairline)_58%,transparent)_1px,transparent_1px),linear-gradient(to_bottom,color-mix(in_oklab,var(--color-hairline)_58%,transparent)_1px,transparent_1px)] bg-[size:auto,32px_32px,32px_32px]"
-          />
           <div className="relative grid gap-8 px-7 py-10 sm:px-10 lg:grid-cols-[1fr_auto] lg:items-center lg:px-12 lg:py-12">
             <div>
               <span className="font-mono text-xs font-semibold uppercase tracking-wider text-bronze">
