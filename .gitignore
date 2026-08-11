@@ -17,6 +17,14 @@
 /.next/
 /out/
 
+# cloudflare / opennext build output
+/.open-next/
+/.wrangler/
+/.wrangler-dryrun/
+.dev.vars
+# wrangler-generated binding types (run `wrangler types` locally)
+/worker-configuration.d.ts
+
 # production
 /build
 

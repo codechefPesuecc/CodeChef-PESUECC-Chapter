@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
-import { db } from "@/server/db";
+import { getDb } from "@/server/db";
 import { users } from "@/server/db/schema";
 import { verifyPassword } from "@/server/auth/password";
+import { clientIp, enforceRateLimits } from "@/server/rateLimit";
 import {
   SESSION_COOKIE,
   SESSION_MAX_AGE,
@@ -36,6 +37,14 @@ export async function POST(req: Request) {
     );
   }
 
+  // Throttle password guessing: tight per-account, looser per-IP (campus NAT).
+  const limited = await enforceRateLimits([
+    [`login:user:${username}`, 10, 5 * 60_000],
+    [`login:ip:${clientIp(req)}`, 50, 5 * 60_000],
+  ]);
+  if (limited) return limited;
+
+  const db = getDb();
   const rows = await db.select().from(users).where(eq(users.username, username)).limit(1);
   const user = rows[0];
   if (!user || !verifyPassword(password, user.passwordHash)) {
@@ -57,6 +66,10 @@ export async function POST(req: Request) {
       createdAt: user.createdAt,
     },
   });
-  res.cookies.set(SESSION_COOKIE, createSessionToken(user.id), cookieOptions);
+  res.cookies.set(
+    SESSION_COOKIE,
+    createSessionToken(user.id, user.sessionEpoch),
+    cookieOptions,
+  );
   return res;
 }

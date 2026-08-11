@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, unique } from "drizzle-orm/sqlite-core";
 
 /**
  * Arena persistence (SQLite via libSQL / Drizzle).
@@ -22,6 +22,10 @@ export const users = sqliteTable("users", {
   srn: text("srn").unique(),
   prn: text("prn").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
+  // Bumped on password reset — stateless session tokens carry this epoch and are
+  // rejected once it changes, so a reset (or recovery from a compromise) logs out
+  // every existing session.
+  sessionEpoch: integer("session_epoch").notNull().default(0),
   createdAt: integer("created_at").notNull(),
 });
 
@@ -69,8 +73,37 @@ export const submissions = sqliteTable("submissions", {
   createdAt: integer("created_at").notNull(),
 });
 
+// Server-recorded solve clock: when a candidate first opened the ranked Problem
+// of the Day. One immutable row per (user, challenge) — the official solve time
+// is the accepted submission's createdAt minus startedAt, so it can't be spoofed
+// and survives reloads / a device switch. Past-problem practice never records
+// here (the start endpoint no-ops unless the slug is today's POTD).
+export const attempts = sqliteTable(
+  "attempts",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    challengeSlug: text("challenge_slug").notNull(),
+    // Unix epoch ms of first open, server-recorded.
+    startedAt: integer("started_at").notNull(),
+  },
+  (t) => [unique().on(t.userId, t.challengeSlug)],
+);
+
+// Fixed-window rate-limit counters, keyed like `login:ip:1.2.3.4`. Lives in the
+// DB (not process memory) so the limit holds across Cloudflare Worker isolates,
+// which each have their own memory. `resetAt` is when the current window ends.
+export const rateLimits = sqliteTable("rate_limits", {
+  key: text("key").primaryKey(),
+  count: integer("count").notNull().default(0),
+  resetAt: integer("reset_at").notNull(),
+});
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+export type Attempt = typeof attempts.$inferSelect;
 export type Submission = typeof submissions.$inferSelect;
 export type NewSubmission = typeof submissions.$inferInsert;
 export type EmailVerification = typeof emailVerifications.$inferSelect;

@@ -1,9 +1,9 @@
 import crypto from "node:crypto";
-import { eq } from "drizzle-orm";
-import { db } from "@/server/db";
+import { eq, sql } from "drizzle-orm";
+import { getDb } from "@/server/db";
 import { passwordResets, users } from "@/server/db/schema";
 import { hashPassword } from "@/server/auth/password";
-import { sendEmail, isConsoleTransport } from "@/server/email";
+import { sendEmail, canRevealSecretInResponse } from "@/server/email";
 
 /**
  * Password reset via a single-use emailed link. The token is a 256-bit random
@@ -31,6 +31,7 @@ export async function createPasswordReset(
   email: string,
   origin: string,
 ): Promise<ForgotResult> {
+  const db = getDb();
   const rows = await db
     .select()
     .from(users)
@@ -57,7 +58,7 @@ export async function createPasswordReset(
     text: `Reset your password with this link (valid for 30 minutes):\n\n${link}\n\nIf you didn't request this, you can safely ignore this email.`,
   });
 
-  return { ok: true, devLink: isConsoleTransport() ? link : undefined };
+  return { ok: true, devLink: canRevealSecretInResponse() ? link : undefined };
 }
 
 export interface ResetResult {
@@ -75,6 +76,7 @@ export async function resetPassword(
   }
 
   const now = Date.now();
+  const db = getDb();
   const rows = await db
     .select()
     .from(passwordResets)
@@ -90,9 +92,14 @@ export async function resetPassword(
     return { ok: false, error: "This reset link has expired — request a new one." };
   }
 
+  // Set the new password AND bump the session epoch in one statement, so every
+  // session issued before this reset is immediately invalidated.
   await db
     .update(users)
-    .set({ passwordHash: hashPassword(password) })
+    .set({
+      passwordHash: hashPassword(password),
+      sessionEpoch: sql`${users.sessionEpoch} + 1`,
+    })
     .where(eq(users.id, row.userId));
   await db
     .delete(passwordResets)

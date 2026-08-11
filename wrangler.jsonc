@@ -3,7 +3,7 @@
   // This file is inert for local dev (`npm run dev`) and the Docker judge —
   // it only takes effect when building/deploying to Cloudflare. See DEPLOY.md.
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "pesuecc-arena",
+  "name": "codechef",
   "main": ".open-next/worker.js",
   "compatibility_date": "2025-03-25",
   // Required so node:crypto / node:buffer (auth, hashing) work on Workers.
@@ -11,22 +11,21 @@
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
-  }
+  },
 
-  // --- Database ---
-  // Recommended: use Turso (libSQL over HTTP) — no binding needed, just set the
-  // DATABASE_URL and DATABASE_AUTH_TOKEN secrets (see DEPLOY.md). The db client
-  // works unchanged.
-  //
-  // Alternative: Cloudflare D1. Uncomment and fill in the id from
-  // `npx wrangler d1 create pesuecc-arena`, then refactor src/server/db to build
-  // the client per request from the binding (drizzle-orm/d1 + getCloudflareContext).
-  // "d1_databases": [
-  //   {
-  //     "binding": "DB",
-  //     "database_name": "pesuecc-arena",
-  //     "database_id": "<from wrangler d1 create>",
-  //     "migrations_dir": "migrations"
-  //   }
-  // ]
+  // --- Database: Cloudflare D1 ---
+  // src/server/db reads this `DB` binding per request (drizzle-orm/d1 +
+  // getCloudflareContext). One-time setup:
+  //   1. npx wrangler d1 create pesuecc-arena   → paste the printed database_id below
+  //   2. npx wrangler d1 migrations apply pesuecc-arena --remote   (and --local for dev)
+  // See DEPLOY.md §2. In `next dev` there's no binding, so the app falls back to
+  // the local libSQL file automatically — no wrangler needed for dev.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "pesuecc-arena",
+      "database_id": "8af7b1c8-c467-4401-86fe-8abd429c35de",
+      "migrations_dir": "migrations"
+    }
+  ]
 }

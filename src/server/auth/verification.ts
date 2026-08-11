@@ -1,9 +1,9 @@
 import crypto from "node:crypto";
 import { eq } from "drizzle-orm";
-import { db } from "@/server/db";
+import { getDb } from "@/server/db";
 import { emailVerifications, users } from "@/server/db/schema";
 import { hashPassword, verifyPassword } from "@/server/auth/password";
-import { sendEmail, isConsoleTransport } from "@/server/email";
+import { sendEmail, canRevealSecretInResponse } from "@/server/email";
 
 /**
  * Email OTP verification. Codes are 6 digits, hashed at rest (scrypt, same as
@@ -34,6 +34,7 @@ export async function createAndSendOtp(
   email: string,
 ): Promise<CreateOtpResult> {
   const now = Date.now();
+  const db = getDb();
 
   const existing = await db
     .select()
@@ -72,7 +73,7 @@ export async function createAndSendOtp(
     return { ok: false, error: sent.error ?? "Could not send the email." };
   }
 
-  return { ok: true, devCode: isConsoleTransport() ? code : undefined };
+  return { ok: true, devCode: canRevealSecretInResponse() ? code : undefined };
 }
 
 export interface VerifyResult {
@@ -86,6 +87,7 @@ export async function verifyOtp(
   code: string,
 ): Promise<VerifyResult> {
   const now = Date.now();
+  const db = getDb();
   const rows = await db
     .select()
     .from(emailVerifications)

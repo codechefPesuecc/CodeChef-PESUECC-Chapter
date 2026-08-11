@@ -15,6 +15,20 @@
       "when": 1784677816165,
       "tag": "0001_glamorous_pestilence",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1786392282553,
+      "tag": "0002_third_doctor_doom",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1786396701103,
+      "tag": "0003_special_wolfsbane",
+      "breakpoints": true
     }
   ]
 }

@@ -1,9 +1,10 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { eq, or } from "drizzle-orm";
-import { db } from "@/server/db";
+import { getDb } from "@/server/db";
 import { users } from "@/server/db/schema";
 import { hashPassword } from "@/server/auth/password";
+import { clientIp, enforceRateLimits } from "@/server/rateLimit";
 import {
   SESSION_COOKIE,
   SESSION_MAX_AGE,
@@ -36,6 +37,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Invalid JSON." }, { status: 400 });
   }
 
+  const limited = await enforceRateLimits([
+    [`register:ip:${clientIp(req)}`, 40, 60 * 60_000],
+  ]);
+  if (limited) return limited;
+
   const username = String(body.username ?? "").trim().toLowerCase();
   const email = String(body.email ?? "").trim().toLowerCase();
   const prn = String(body.prn ?? "").trim().toUpperCase();
@@ -63,6 +69,7 @@ export async function POST(req: Request) {
 
   const conditions = [eq(users.username, username), eq(users.email, email), eq(users.prn, prn)];
   if (srn) conditions.push(eq(users.srn, srn));
+  const db = getDb();
   const clashes = await db.select().from(users).where(or(...conditions));
   if (clashes.length > 0) {
     const c = clashes[0];
@@ -110,6 +117,6 @@ export async function POST(req: Request) {
     user,
     needsVerify: REQUIRE_VERIFIED,
   });
-  res.cookies.set(SESSION_COOKIE, createSessionToken(id), cookieOptions);
+  res.cookies.set(SESSION_COOKIE, createSessionToken(id, 0), cookieOptions);
   return res;
 }

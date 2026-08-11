@@ -12,6 +12,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated build output — never lint these.
+    ".open-next/**",
+    ".wrangler/**",
+    ".wrangler-dryrun/**",
+    "src/lib/challenges.manifest.json",
   ]),
 ]);
 

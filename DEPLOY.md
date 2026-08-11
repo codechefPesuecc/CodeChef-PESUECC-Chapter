@@ -13,68 +13,31 @@ as-is and need decisions up front:
 Everything else (auth, sessions, leaderboards, OTP, rate limits) is portable
 with `nodejs_compat`.
 
-## 1. One-time setup
+## 1. One-time setup (done)
+
+The adapter (`@opennextjs/cloudflare`), `wrangler`, and `@cloudflare/workers-types`
+are in `devDependencies`; `open-next.config.ts` and `wrangler.jsonc` (name, assets,
+`nodejs_compat`, the D1 binding) are committed. Next is pinned to `^16.2.12`, the
+first patch the adapter supports. Nothing to install — `npm install` covers it.
+
+## 2. Database — Cloudflare D1 (implemented)
+
+The app uses **Cloudflare D1**. `src/server/db/index.ts` exposes `getDb()`, which
+reads the `DB` binding per request via `getCloudflareContext()` on Workers, and
+falls back to a local libSQL file (`DATABASE_URL`) under `next dev` / `next build`
+so local development needs no wrangler. All call sites use `getDb()`, and the
+`d1_databases` binding is already in `wrangler.jsonc` (fill in the id).
+
+D1 is SQLite, so the committed `/migrations` apply unchanged:
 
 ```bash
-npm i -D @opennextjs/cloudflare wrangler
+npx wrangler d1 create pesuecc-arena        # paste the printed database_id into wrangler.jsonc
+npx wrangler d1 migrations apply pesuecc-arena --remote    # prod
+npx wrangler d1 migrations apply pesuecc-arena --local     # local wrangler dev/preview
 ```
 
-Add `open-next.config.ts` at the repo root:
-
-```ts
-import { defineCloudflareConfig } from "@opennextjs/cloudflare";
-export default defineCloudflareConfig();
-```
-
-`wrangler.jsonc` is already committed (name, assets, `nodejs_compat`).
-
-## 2. Database
-
-### Option A — Turso (recommended, no code change)
-
-The db client (`src/server/db/index.ts`) already supports this: it uses
-`DATABASE_URL` + optional `DATABASE_AUTH_TOKEN`, and libSQL speaks HTTP so the
-module-level client works on Workers.
-
-```bash
-turso db create pesuecc-arena
-turso db show pesuecc-arena --url          # -> DATABASE_URL (libsql://…)
-turso db tokens create pesuecc-arena       # -> DATABASE_AUTH_TOKEN
-
-# Apply the committed migrations (SQLite DDL):
-turso db shell pesuecc-arena < migrations/0000_*.sql
-turso db shell pesuecc-arena < migrations/0001_*.sql
-# (or point drizzle-kit at the Turso URL and `npm run db:migrate`)
-```
-
-Set the secrets (see §5). Nothing else changes.
-
-### Option B — Cloudflare D1
-
-D1 is SQLite, so the committed `/migrations` apply unchanged, but it's reached
-through a **per-request binding** (`env.DB`), not a URL — so `db` can't stay a
-module singleton. Uncomment the `d1_databases` block in `wrangler.jsonc`, then:
-
-```bash
-npx wrangler d1 create pesuecc-arena       # copy the database_id into wrangler.jsonc
-npx wrangler d1 migrations apply pesuecc-arena --remote
-```
-
-Refactor `src/server/db` to build the client per request:
-
-```ts
-import { drizzle } from "drizzle-orm/d1";
-import { getCloudflareContext } from "@opennextjs/cloudflare";
-import * as schema from "./schema";
-
-export function getDb() {
-  const { env } = getCloudflareContext();
-  return drizzle(env.DB, { schema });
-}
-```
-
-and replace `import { db }` call sites with `getDb()`. This is why Turso is the
-lighter path for a first deploy.
+`src/instrumentation.ts` skips the local libSQL auto-migrator on the Workers
+runtime, so D1 is only ever migrated out-of-band by the commands above.
 
 ## 3. Judge / Piston
 
@@ -84,29 +47,31 @@ a cheap VPS) exactly as `docker-compose.yml` does, expose it over HTTPS, and set
 `PISTON_URL`, so no code change — just the secret. Without a reachable Piston,
 Run/Submit return a 503 "judge unreachable" and the rest of the site works.
 
-## 4. Challenges & hidden tests
+## 4. Challenges & hidden tests (implemented — bundled)
 
-`src/lib/challenges.ts` reads `/challenges/*.json` from the filesystem. On
-Workers there's no `fs`, so either:
+Workers have no `fs`, so the `/challenges/*.json` records are **bundled at build
+time**. `scripts/build-challenges.mjs` reads the folder into
+`src/lib/challenges.manifest.json`, and `next.config.ts` invokes it for `next dev`,
+`next build`, and `opennextjs-cloudflare build` alike. `src/lib/challenges.ts`
+imports that manifest instead of touching the filesystem; the GitOps authoring
+flow (one JSON per problem, author → PR → merge) is unchanged.
 
-- **Bundle them** — import the JSON at build time (e.g. an `import.meta.glob`
-  style manifest) so they're in the worker bundle, or
-- **Move them to the DB** — a `challenges` table in Turso/D1, seeded from the
-  JSON, read like everything else. This also lets you schedule releases without
-  a redeploy.
-
-Keep the repo private either way — the hidden tests live in it.
+Publishing a new problem is a **redeploy** (the manifest is baked into the bundle).
+Run `npm run challenges:build` to refresh the manifest locally; it's also
+regenerated automatically on every build. Keep the repo private — the hidden
+tests ride in the bundle (server-side only, never sent to the client).
 
 ## 5. Secrets
 
 ```bash
 npx wrangler secret put AUTH_SECRET
-npx wrangler secret put DATABASE_URL
-npx wrangler secret put DATABASE_AUTH_TOKEN     # Turso
 npx wrangler secret put PISTON_URL
 npx wrangler secret put RESEND_API_KEY          # if email verification is on
 npx wrangler secret put TURNSTILE_SECRET_KEY    # if Turnstile is on
 ```
+
+The database needs no secret — D1 is the `DB` binding in `wrangler.jsonc`.
+`DATABASE_URL` / `DATABASE_AUTH_TOKEN` are only used by the local dev fallback.
 
 `NEXT_PUBLIC_*` values (e.g. `NEXT_PUBLIC_TURNSTILE_SITE_KEY`) are build-time —
 set them in the build environment, not as secrets. Turn on
@@ -126,8 +91,13 @@ npx wrangler dev
 - **Migrations** don't auto-run at the edge — `src/instrumentation.ts` applies
   them against the local file in dev only. Apply them out-of-band (Turso shell /
   `wrangler d1 migrations apply`) before/at deploy.
-- **In-memory state is per-isolate.** The submit/run rate limiter
-  (`src/server/rateLimit.ts`) and Piston's FIFO job queue live in one process's
-  memory; across many Worker isolates they won't share counts. For strict global
-  limits move the limiter to a Durable Object or KV. The per-account cap still
-  meaningfully curbs abuse as-is.
+- **Rate limiting is DB-backed** (`src/server/rateLimit.ts` → the `rate_limits`
+  table), so limits hold across Worker isolates. Applied to run/submit and the
+  auth endpoints (login/register/forgot/resend). Piston's FIFO job queue is still
+  per-isolate in-memory — acceptable, and only relevant once the judge is live.
+- **Security headers + CSP** ship from `next.config.ts` (`headers()`). The CSP
+  uses `'unsafe-inline'` for scripts/styles (Next bootstrap + CodeMirror); tighten
+  to nonces later if desired.
+- **Sessions carry a `sessionEpoch`** that a password reset bumps, so a reset
+  invalidates every outstanding session. New migrations (e.g. `0003`) must be
+  applied to D1 (`wrangler d1 migrations apply … --remote`) before/at deploy.
