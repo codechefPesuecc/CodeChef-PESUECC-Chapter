@@ -719,3 +719,12 @@ body::before {
 .animate-card-in {
   animation: card-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+
+/* ------------------------------------------------------------------ */
+/*  View Transitions (Dark mode pan effect)                           */
+/* ------------------------------------------------------------------ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}

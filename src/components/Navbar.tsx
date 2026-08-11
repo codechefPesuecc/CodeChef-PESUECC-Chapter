@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useUser } from "@/components/auth/useUser";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const links = [
   { href: "/", label: "Home" },
@@ -35,14 +36,46 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // The active theme lives entirely in the `.dark` class on <html> (set pre-paint
-  // by the inline script in the layout). Read and flip it straight on the DOM so
-  // there is no React state to hydrate — the sun/moon icons are shown via CSS.
-  const toggleTheme = () => {
-    const isDark = document.documentElement.classList.toggle("dark");
-    try {
-      localStorage.setItem("theme", isDark ? "dark" : "light");
-    } catch {}
+  // The active theme lives entirely in the `.dark` class on <html>.
+  // We use the View Transitions API to create a seamless pan effect across the screen.
+  const toggleTheme = (event: React.MouseEvent) => {
+    const isDarkNow = !document.documentElement.classList.contains("dark");
+    
+    // Fallback if browser doesn't support startViewTransition
+    if (!(document as any).startViewTransition) {
+      document.documentElement.classList.toggle("dark");
+      try { localStorage.setItem("theme", isDarkNow ? "dark" : "light"); } catch {}
+      return;
+    }
+
+    const x = event.clientX;
+    const y = event.clientY;
+    const endRadius = Math.hypot(
+      Math.max(x, window.innerWidth - x),
+      Math.max(y, window.innerHeight - y)
+    );
+
+    const transition = (document as any).startViewTransition(() => {
+      document.documentElement.classList.toggle("dark");
+      try { localStorage.setItem("theme", isDarkNow ? "dark" : "light"); } catch {}
+    });
+
+    transition.ready.then(() => {
+      const clipPath = [
+        `circle(0px at ${x}px ${y}px)`,
+        `circle(${endRadius}px at ${x}px ${y}px)`
+      ];
+      document.documentElement.animate(
+        {
+          clipPath: isDarkNow ? clipPath : [...clipPath].reverse(),
+        },
+        {
+          duration: 500,
+          easing: "ease-in-out",
+          pseudoElement: isDarkNow ? "::view-transition-new(root)" : "::view-transition-old(root)",
+        }
+      );
+    });
   };
 
   const isActive = (href: string) =>
@@ -100,17 +133,7 @@ export default function Navbar() {
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={toggleTheme}
-            aria-label="Toggle dark mode"
-            title="Toggle dark mode"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-hairline bg-white/70 text-chocolate shadow-sm backdrop-blur transition-colors hover:text-bronze dark:bg-panel/70"
-          >
-            {/* Icon reflects the theme purely via CSS: moon in light, sun in dark. */}
-            <MoonIcon className="dark:hidden" />
-            <SunIcon className="hidden dark:block" />
-          </button>
+          <ThemeToggle onToggle={toggleTheme} />
 
           {user ? (
             <div className="flex items-center gap-2">
@@ -191,41 +214,4 @@ export default function Navbar() {
   );
 }
 
-/* --- Theme toggle icons --- */
 
-function MoonIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-    </svg>
-  );
-}
-
-function SunIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-    </svg>
-  );
-}
