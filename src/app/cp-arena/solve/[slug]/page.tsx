@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import {
   getChallengeBySlug,
   getDailyChallenge,
 } from "@/lib/challenges";
 import ProblemStatement from "@/components/cp-arena/ProblemStatement";
 import ArenaWorkspace from "@/components/cp-arena/ArenaWorkspace";
+import ArenaRules from "@/components/cp-arena/ArenaRules";
+import NextProblemCountdown from "@/components/cp-arena/NextProblemCountdown";
 
 // The released set and today's daily are date-dependent — resolve per request.
 export const dynamic = "force-dynamic";
@@ -36,11 +38,14 @@ export async function generateMetadata({
   const { slug } = await params;
   const challenge = getChallengeBySlug(slug);
   return {
-    title: challenge ? `${challenge.title} · Practice` : "Practice",
+    title: challenge ? `${challenge.title} · Arena` : "Arena",
+    description: challenge
+      ? `Solve "${challenge.title}" — the Problem of the Day in the CodeChef PESUECC Arena.`
+      : "The daily competitive programming arena.",
   };
 }
 
-export default async function ArchiveProblemPage({
+export default async function SolveProblemPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
@@ -48,12 +53,13 @@ export default async function ArchiveProblemPage({
   const { slug } = await params;
   const challenge = getChallengeBySlug(slug);
 
-  // Unreleased or unknown slugs don't resolve — no early leak of a future set.
+  // Unknown or unreleased slugs don't resolve.
   if (!challenge) notFound();
 
-  // Today's live problem is always solved ranked at /cp-arena/solve/[slug], never as practice.
+  // If this isn't today's live problem, it should be solved as practice via
+  // the archive route, not the ranked solve route.
   const daily = getDailyChallenge();
-  if (daily?.slug === slug) redirect(`/cp-arena/solve/${slug}`);
+  const isLive = daily?.slug === slug;
 
   const difficultyStyle =
     DIFFICULTY_STYLES[challenge.difficulty] ?? "bg-bronze/15 text-bronze";
@@ -72,10 +78,16 @@ export default async function ArchiveProblemPage({
           </Link>
           <span className="text-charcoal/40">·</span>
           <span className="font-semibold uppercase tracking-wider text-bronze">
-            Practice
+            {isLive ? "Problem of the Day" : "Practice"}
           </span>
           <span className="text-charcoal/40">·</span>
           <span className="text-charcoal/60">{formatDate(challenge.date)}</span>
+          {isLive && (
+            <>
+              <span className="text-charcoal/40">·</span>
+              <NextProblemCountdown />
+            </>
+          )}
         </div>
 
         <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
@@ -112,12 +124,14 @@ export default async function ArchiveProblemPage({
           </p>
         )}
 
+        {isLive && <ArenaRules />}
+
         <ArenaWorkspace
           slug={challenge.slug}
           problem={<ProblemStatement challenge={challenge} />}
           sampleInput={sample?.input ?? ""}
           sampleOutput={sample?.output ?? ""}
-          practice
+          {...(!isLive && { practice: true })}
         />
       </section>
     </main>
