@@ -259,7 +259,7 @@ function EventBlueprintCard({
                   {cover.caption}
                 </div>
                 <div className="mt-2 font-mono text-[10px] tracking-[0.1em] text-white/60 uppercase">
-                  {event.title}
+                  {event.title} visual archive
                 </div>
               </div>
             </div>
