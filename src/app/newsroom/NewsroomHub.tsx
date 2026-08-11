@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { motion, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion, useMotionValue, useMotionTemplate, useSpring } from "motion/react";
 import { useMemo, useState } from "react";
 import type { EventData } from "@/lib/events";
 
@@ -40,15 +40,16 @@ function matchesFilter(event: EventData, filter: FilterKey, index: number) {
 export default function NewsroomHub({ events }: Props) {
   const reduceMotion = useReducedMotion();
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
-  const [spotlight, setSpotlight] = useState({ x: 50, y: 20, visible: false });
-  const [hoveredStorySlug, setHoveredStorySlug] = useState<string | null>(null);
+
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const spotlightOpacity = useMotionValue(0);
+  const spotlightStyle = useMotionTemplate`radial-gradient(700px circle at ${mouseX}px ${mouseY}px, rgba(181,138,95,0.22), transparent 48%), radial-gradient(500px circle at 22% 22%, rgba(166,124,82,0.12), transparent 55%)`;
 
   const filteredEvents = useMemo(
     () => events.filter((event, index) => matchesFilter(event, activeFilter, index)),
     [activeFilter, events],
   );
-
-  const activeStorySlug = hoveredStorySlug;
 
   const filterCounts = useMemo(() => {
     const counts = new Map<FilterKey, number>();
@@ -73,13 +74,13 @@ export default function NewsroomHub({ events }: Props) {
   return (
     <>
       <section className="relative overflow-hidden border-b border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.72),rgba(255,255,255,0.5))] dark:bg-[linear-gradient(180deg,rgba(19,14,10,0.88),rgba(19,14,10,0.68))]">
-        <div
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(500px_circle_at_22%_22%,rgba(166,124,82,0.12),transparent_55%)]" />
+        <motion.div
           aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-100 transition-opacity duration-300"
+          className="pointer-events-none absolute inset-0 transition-opacity duration-300"
           style={{
-            backgroundImage: spotlight.visible
-              ? `radial-gradient(700px circle at ${spotlight.x}% ${spotlight.y}%, rgba(181,138,95,0.22), transparent 48%), radial-gradient(500px circle at 22% 22%, rgba(166,124,82,0.12), transparent 55%)`
-              : "radial-gradient(500px circle at 22% 22%, rgba(166,124,82,0.12), transparent 55%)",
+            backgroundImage: spotlightStyle,
+            opacity: spotlightOpacity,
           }}
         />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-bronze/40 to-transparent" />
@@ -89,13 +90,11 @@ export default function NewsroomHub({ events }: Props) {
             onPointerMove={(event) => {
               if (reduceMotion) return;
               const rect = event.currentTarget.getBoundingClientRect();
-              setSpotlight({
-                x: ((event.clientX - rect.left) / rect.width) * 100,
-                y: ((event.clientY - rect.top) / rect.height) * 100,
-                visible: true,
-              });
+              mouseX.set(event.clientX - rect.left);
+              mouseY.set(event.clientY - rect.top);
+              spotlightOpacity.set(1);
             }}
-            onPointerLeave={() => setSpotlight((current) => ({ ...current, visible: false }))}
+            onPointerLeave={() => spotlightOpacity.set(0)}
             className="relative rounded-[2rem] border border-white/20 bg-white/60 p-6 shadow-[0_24px_90px_rgba(15,23,42,0.12)] backdrop-blur-xl dark:border-white/10 dark:bg-black/25 sm:p-8"
             style={{ backdropFilter: "blur(16px)" }}
           >
@@ -160,12 +159,9 @@ export default function NewsroomHub({ events }: Props) {
               <NewsroomCard
                 key={event.slug}
                 event={event}
-                featured={activeStorySlug === event.slug}
-                compact={Boolean(activeStorySlug && activeStorySlug !== event.slug)}
+                featured={index === 0}
                 delay={reduceMotion ? 0 : index === 0 ? 0.05 : 0.12 + Math.abs(index - 1) * 0.08}
                 reduceMotion={Boolean(reduceMotion)}
-                onActivate={() => setHoveredStorySlug(event.slug)}
-                onDeactivate={() => setHoveredStorySlug(null)}
               />
             ))}
           </motion.div>
@@ -180,23 +176,22 @@ export default function NewsroomHub({ events }: Props) {
 function NewsroomCard({
   event,
   featured,
-  compact,
   delay,
   reduceMotion,
-  onActivate,
-  onDeactivate,
 }: {
   event: EventData;
   featured: boolean;
-  compact: boolean;
   delay: number;
   reduceMotion: boolean;
-  onActivate: () => void;
-  onDeactivate: () => void;
 }) {
   const canTilt = !reduceMotion;
-  const [mouse, setMouse] = useState({ x: 50, y: 50 });
-  const [magnet, setMagnet] = useState({ x: 0, y: 0 });
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const tiltX = useSpring(0, { stiffness: 240, damping: 24 });
+  const tiltY = useSpring(0, { stiffness: 240, damping: 24 });
+  const cardOpacity = useMotionValue(0);
+
+  const internalSpotlight = useMotionTemplate`radial-gradient(220px circle at ${mouseX}px ${mouseY}px, rgba(255,255,255,0.35), transparent 58%)`;
 
   return (
     <motion.article
@@ -205,65 +200,49 @@ function NewsroomCard({
       whileInView={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-80px" }}
       transition={{ type: "spring", stiffness: 180, damping: 26, mass: 0.9, delay }}
-      animate={
-        reduceMotion
-          ? { scale: 1, y: 0 }
-          : featured
-            ? { scale: 1.035, y: -8, zIndex: 20 }
-            : compact
-              ? { scale: 0.94, y: 8, zIndex: 5 }
-              : { scale: 1, y: 0, zIndex: 10 }
-      }
       className={`relative ${featured ? "md:col-span-2 xl:col-span-2" : ""}`}
     >
       <Link
         href={`/newsroom/${event.slug}`}
         className="group block h-full"
-        onMouseEnter={onActivate}
         onMouseMove={(eventMouse) => {
           if (!canTilt) return;
           const rect = eventMouse.currentTarget.getBoundingClientRect();
-          const offsetX = (eventMouse.clientX - rect.left - rect.width / 2) / rect.width;
-          const offsetY = (eventMouse.clientY - rect.top - rect.height / 2) / rect.height;
-          setMouse({
-            x: ((eventMouse.clientX - rect.left) / rect.width) * 100,
-            y: ((eventMouse.clientY - rect.top) / rect.height) * 100,
-          });
-          setMagnet({
-            x: Math.max(-10, Math.min(10, offsetX * 18)),
-            y: Math.max(-10, Math.min(10, offsetY * 18)),
-          });
+          const x = eventMouse.clientX - rect.left;
+          const y = eventMouse.clientY - rect.top;
+          mouseX.set(x);
+          mouseY.set(y);
+          cardOpacity.set(1);
+
+          const offsetX = (x - rect.width / 2) / rect.width;
+          const offsetY = (y - rect.height / 2) / rect.height;
+          tiltX.set(Math.max(-10, Math.min(10, offsetY * -18)));
+          tiltY.set(Math.max(-10, Math.min(10, offsetX * 18)));
         }}
         onMouseLeave={() => {
-          setMagnet({ x: 0, y: 0 });
-          onDeactivate();
+          tiltX.set(0);
+          tiltY.set(0);
+          cardOpacity.set(0);
         }}
       >
         <motion.div
-          className="relative h-full overflow-hidden rounded-[1.75rem] border border-white/20 bg-white/70 shadow-[0_20px_70px_rgba(15,23,42,0.09)] backdrop-blur-xl transition-transform duration-200 dark:border-white/10 dark:bg-black/25"
+          className="relative h-full overflow-hidden rounded-[1.75rem] border border-white/20 bg-white/70 shadow-[0_20px_70px_rgba(15,23,42,0.09)] backdrop-blur-xl transition-transform duration-200 dark:border-white/10 dark:bg-black/25 group-hover:z-10 group-hover:scale-[1.01]"
           style={{
             backdropFilter: "blur(16px)",
             transformStyle: canTilt ? "preserve-3d" : "flat",
+            rotateX: tiltX,
+            rotateY: tiltY,
           }}
-          animate={
-            canTilt
-              ? {
-                  rotateX: Math.max(-10, Math.min(10, -magnet.y)),
-                  rotateY: Math.max(-10, Math.min(10, magnet.x)),
-                  scale: 1,
-                }
-              : { rotateX: 0, rotateY: 0, scale: 1 }
-          }
-          whileTap={reduceMotion ? { scale: 1 } : { scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 240, damping: 24 }}
+          whileTap={reduceMotion ? { scale: 1 } : { scale: 0.98 }}
         >
-          <div
+          <motion.div
             aria-hidden
-            className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+            className="pointer-events-none absolute inset-0 z-20 opacity-0 transition-opacity duration-300"
             style={{
               backgroundImage: canTilt
-                ? `radial-gradient(220px circle at ${mouse.x}% ${mouse.y}%, rgba(255,255,255,0.35), transparent 58%)`
+                ? internalSpotlight
                 : "radial-gradient(220px circle at 50% 50%, rgba(255,255,255,0.18), transparent 58%)",
+              opacity: canTilt ? cardOpacity : 0,
             }}
           />
 
@@ -275,7 +254,7 @@ function NewsroomCard({
                 fill
                 loading="lazy"
                 sizes={featured ? "(min-width: 1280px) 55vw, (min-width: 768px) 66vw, 100vw" : "(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"}
-                className="object-cover transition duration-500 grayscale-[0.2] group-hover:scale-105 group-hover:grayscale-0"
+                className="object-cover transition duration-700 grayscale-[0.2] group-hover:scale-105 group-hover:grayscale-0"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-chocolate/85 via-chocolate/20 to-transparent dark:from-[#0d0906]/90" />
 
@@ -318,7 +297,7 @@ function NewsroomCard({
                   </span>
                   <span className="mecha__index">{event.date}</span>
                 </div>
-                <h2 className={`mt-3 text-balance font-display font-bold tracking-tight text-chocolate dark:text-cream ${featured ? "text-2xl sm:text-3xl" : "text-xl"}`}>
+                <h2 className={`mt-3 text-balance font-display font-bold tracking-tight text-chocolate dark:text-cream transition-colors duration-300 group-hover:text-bronze ${featured ? "text-2xl sm:text-3xl" : "text-xl"}`}>
                   {event.title}
                 </h2>
                 <p className="mt-2 font-mono text-xs font-semibold uppercase tracking-[0.18em] text-bronze/85">
@@ -332,7 +311,7 @@ function NewsroomCard({
                   {event.highlights.slice(0, 2).map((highlight) => (
                     <div
                       key={highlight.label}
-                      className="rounded-2xl border border-white/15 bg-white/55 px-3 py-3 text-center shadow-[0_10px_30px_rgba(15,23,42,0.05)] dark:bg-black/20"
+                      className="rounded-2xl border border-white/15 bg-white/55 px-3 py-3 text-center shadow-[0_10px_30px_rgba(15,23,42,0.05)] transition-colors duration-300 group-hover:border-bronze/20 dark:bg-black/20"
                     >
                       <div className="font-display text-lg font-bold text-bronze">
                         {highlight.value}
@@ -355,7 +334,8 @@ function NewsroomCard({
 }
 
 function MagneticReadMore({ reduceMotion }: { reduceMotion: boolean }) {
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const x = useSpring(0, { stiffness: 260, damping: 20 });
+  const y = useSpring(0, { stiffness: 260, damping: 20 });
 
   return (
     <span
@@ -367,18 +347,20 @@ function MagneticReadMore({ reduceMotion }: { reduceMotion: boolean }) {
         const dy = event.clientY - (rect.top + rect.height / 2);
         const distance = Math.hypot(dx, dy);
         if (distance > 100) {
-          setOffset({ x: 0, y: 0 });
+          x.set(0);
+          y.set(0);
           return;
         }
-        setOffset((current) => ({
-          x: current.x + (dx * 0.12 - current.x) * 0.22,
-          y: current.y + (dy * 0.12 - current.y) * 0.22,
-        }));
+        x.set(dx * 0.25);
+        y.set(dy * 0.25);
       }}
-      onMouseLeave={() => setOffset({ x: 0, y: 0 })}
+      onMouseLeave={() => {
+        x.set(0);
+        y.set(0);
+      }}
     >
       Read More
-      <motion.span style={{ x: offset.x, y: offset.y }} transition={{ type: "spring", stiffness: 260, damping: 20 }}>
+      <motion.span style={{ x, y }}>
         →
       </motion.span>
     </span>
