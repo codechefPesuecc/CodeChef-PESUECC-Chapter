@@ -41,7 +41,7 @@
   --site-canvas: var(--color-cream);
   --site-backdrop: url("/lightmode.png");
   --l-shape-fill: #FBF6ED;
-  --grid-line: color-mix(in oklab, var(--color-chocolate) 12%, transparent);
+  --grid-line: color-mix(in oklab, var(--color-chocolate) 8%, transparent);
 
   /* Code editor / console surface — light IDE in light mode. */
   --ide-bar: #efe9e0;
@@ -63,7 +63,7 @@
   --site-canvas: #16110c; /* deep warm near-black page canvas */
   --site-backdrop: url("/darkmode.png");
   --l-shape-fill: #1C1714;
-  --grid-line: color-mix(in oklab, var(--color-cream) 10%, transparent);
+  --grid-line: color-mix(in oklab, var(--color-cream) 5%, transparent);
 
   /* Code editor / console surface — warm terminal-dark in dark mode. */
   --ide-bar: #1e1610;
@@ -718,4 +718,13 @@ body::before {
 
 .animate-card-in {
   animation: card-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ------------------------------------------------------------------ */
+/*  View Transitions (Dark mode pan effect)                           */
+/* ------------------------------------------------------------------ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
 }
