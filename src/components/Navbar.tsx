@@ -48,8 +48,13 @@ export default function Navbar() {
       return;
     }
 
-    const x = event.clientX;
-    const y = event.clientY;
+    // Calculate the center of the toggle button to use as the animation origin.
+    // This is much more robust than event.clientX/Y which can break on external
+    // monitors with different scale factors, or when the button is triggered via keyboard.
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+
     const endRadius = Math.hypot(
       Math.max(x, window.innerWidth - x),
       Math.max(y, window.innerHeight - y)
