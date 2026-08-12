@@ -15,8 +15,12 @@ import {
 export const dynamic = "force-dynamic";
 
 // Turn on once an email provider is configured (see AUTH docs). The first OTP is
-// sent by the /verify page on load, not here.
-const REQUIRE_VERIFIED = process.env.REQUIRE_EMAIL_VERIFICATION === "true";
+// sent by the /verify page on load, not here. Read per-request, not at import:
+// on Workers env vars/secrets are only reliably in process.env within a request
+// scope (see auth/token.ts), so an import-time capture would silently stay false.
+function requireVerified(): boolean {
+  return process.env.REQUIRE_EMAIL_VERIFICATION === "true";
+}
 
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -124,7 +128,7 @@ export async function POST(req: Request) {
   const res = NextResponse.json({
     ok: true,
     user,
-    needsVerify: REQUIRE_VERIFIED,
+    needsVerify: requireVerified(),
   });
   res.cookies.set(SESSION_COOKIE, createSessionToken(id, 0), cookieOptions);
   return res;
