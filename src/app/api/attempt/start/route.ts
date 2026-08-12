@@ -5,6 +5,7 @@ import { getDb } from "@/server/db";
 import { attempts } from "@/server/db/schema";
 import { getCurrentUser } from "@/server/auth/session";
 import { getDailyChallenge } from "@/lib/challenges";
+import { clientIp, enforceRateLimits } from "@/server/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,12 @@ export async function POST(req: Request) {
   if (!user) {
     return NextResponse.json({ ok: false, needsAuth: true }, { status: 401 });
   }
+
+  const limited = await enforceRateLimits([
+    [`attempt:user:${user.id}`, 60, 60_000],
+    [`attempt:ip:${clientIp(req)}`, 120, 60_000],
+  ]);
+  if (limited) return limited;
 
   let body: { slug?: string };
   try {
