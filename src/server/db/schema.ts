@@ -11,8 +11,10 @@ import { sqliteTable, text, integer, unique } from "drizzle-orm/sqlite-core";
 
 export const users = sqliteTable("users", {
   id: text("id").primaryKey(),
-  // Public leaderboard identity; SRN/PRN/email stay private.
+  // Public leaderboard identity; real name / SRN / PRN / email stay private.
   username: text("username").notNull().unique(),
+  // Full name captured at registration. Nullable so existing rows are unaffected.
+  name: text("name"),
   email: text("email").notNull().unique(),
   emailVerified: integer("email_verified", { mode: "boolean" })
     .notNull()

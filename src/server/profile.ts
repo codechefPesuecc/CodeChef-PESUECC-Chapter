@@ -58,15 +58,16 @@ export async function getUserSubmissions(
 
 /** A user's points/rank/solved on the month and all-time boards. */
 export async function getProfileStats(
-  username: string,
+  identity: string,
   submissionCount: number,
 ): Promise<ProfileStats> {
   const [all, month] = await Promise.all([
     aggregateLeaderboard("all"),
     aggregateLeaderboard("month"),
   ]);
-  const a = all.find((r) => r.username === username);
-  const m = month.find((r) => r.username === username);
+  // The boards are keyed by SRN-else-PRN; match on that identity.
+  const a = all.find((r) => r.display === identity);
+  const m = month.find((r) => r.display === identity);
   return {
     allPoints: a?.points ?? 0,
     allRank: a?.rank ?? null,

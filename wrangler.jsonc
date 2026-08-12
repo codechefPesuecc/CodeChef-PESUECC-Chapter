@@ -27,5 +27,13 @@
       "database_id": "8af7b1c8-c467-4401-86fe-8abd429c35de",
       "migrations_dir": "migrations"
     }
-  ]
+  ],
+
+  // Workers Logs: capture request logs + errors (viewable in the dashboard under
+  // the Worker's Observability tab, and via `wrangler tail`). head_sampling_rate
+  // 1 logs every request — fine at this traffic; lower it if volume grows.
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
 }

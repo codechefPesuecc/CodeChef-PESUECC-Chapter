@@ -8,6 +8,13 @@ import { getDailyChallenge } from "@/lib/challenges";
 import { judge } from "@/server/judge";
 import { rateLimit, clientIp } from "@/server/rateLimit";
 import { verifyTurnstile } from "@/server/turnstile";
+import { PISTON_LANGUAGE } from "@/lib/piston";
+import {
+  bodyTooLarge,
+  tooLong,
+  MAX_CODE_CHARS,
+  MAX_FLAGS_BREAKDOWN_CHARS,
+} from "@/server/limits";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +58,9 @@ export async function POST(req: Request) {
     );
   }
 
+  const oversize = bodyTooLarge(req);
+  if (oversize) return oversize;
+
   let body: {
     slug?: string;
     language?: string;
@@ -70,6 +80,15 @@ export async function POST(req: Request) {
   if (!slug || !language || typeof code !== "string") {
     return NextResponse.json(
       { ok: false, error: "slug, language and code are required." },
+      { status: 400 },
+    );
+  }
+
+  const codeTooLong = tooLong(code, MAX_CODE_CHARS, "Code");
+  if (codeTooLong) return codeTooLong;
+  if (!PISTON_LANGUAGE[language]) {
+    return NextResponse.json(
+      { ok: false, error: `Unsupported language: ${language}.` },
       { status: 400 },
     );
   }
@@ -117,6 +136,15 @@ export async function POST(req: Request) {
       console.error("[submit] failed to read attempt start:", error);
     }
 
+    // Client-supplied integrity detail is diagnostic only; drop it if it's
+    // oversized rather than storing an unbounded blob.
+    const rawBreakdown =
+      body.flagsBreakdown != null ? JSON.stringify(body.flagsBreakdown) : null;
+    const flagsBreakdown =
+      rawBreakdown && rawBreakdown.length <= MAX_FLAGS_BREAKDOWN_CHARS
+        ? rawBreakdown
+        : null;
+
     try {
       await db.insert(submissions).values({
         id: crypto.randomUUID(),
@@ -127,7 +155,7 @@ export async function POST(req: Request) {
         status: result.verdict,
         elapsedSeconds,
         flags: typeof body.flags === "number" ? Math.max(0, Math.round(body.flags)) : 0,
-        flagsBreakdown: body.flagsBreakdown ? JSON.stringify(body.flagsBreakdown) : null,
+        flagsBreakdown,
         createdAt: submittedAt,
       });
     } catch (error) {

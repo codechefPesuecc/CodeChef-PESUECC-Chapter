@@ -13,7 +13,9 @@ import { BASE_POINTS, FLAG_LIMIT, pointsForRank } from "@/lib/points";
 
 export interface LeaderRow {
   rank: number | null; // null = flagged (out of the ranked top 10)
-  username: string;
+  // Public board identity: SRN if the student has one, else PRN. The login handle
+  // (username) and email are intentionally not exposed on the board.
+  display: string;
   points: number;
   flagged: boolean;
   solved?: number; // month / all-time
@@ -68,7 +70,8 @@ async function acRows() {
       flags: submissions.flags,
       elapsedSeconds: submissions.elapsedSeconds,
       language: submissions.language,
-      username: users.username,
+      srn: users.srn,
+      prn: users.prn,
     })
     .from(submissions)
     .innerJoin(users, eq(submissions.userId, users.id))
@@ -88,18 +91,19 @@ export async function todayLeaderboard(): Promise<LeaderRow[]> {
       flags: submissions.flags,
       elapsedSeconds: submissions.elapsedSeconds,
       language: submissions.language,
-      username: users.username,
+      srn: users.srn,
+      prn: users.prn,
     })
     .from(submissions)
     .innerJoin(users, eq(submissions.userId, users.id))
     .where(and(eq(submissions.challengeSlug, daily.slug), eq(submissions.status, "AC")));
 
-  const usernameById = new Map(rows.map((r) => [r.userId, r.username]));
+  const displayById = new Map(rows.map((r) => [r.userId, r.srn ?? r.prn]));
   const scored = scoreChallenge(rows);
 
   const out: LeaderRow[] = [...scored.entries()].map(([userId, s]) => ({
     rank: s.rank,
-    username: usernameById.get(userId) ?? "unknown",
+    display: displayById.get(userId) ?? "unknown",
     points: s.points,
     flagged: s.flagged,
     language: s.ac.language,
@@ -115,7 +119,7 @@ export async function todayLeaderboard(): Promise<LeaderRow[]> {
  */
 export async function aggregateLeaderboard(scope: "month" | "all"): Promise<LeaderRow[]> {
   const rows = await acRows();
-  const usernameById = new Map(rows.map((r) => [r.userId, r.username]));
+  const displayById = new Map(rows.map((r) => [r.userId, r.srn ?? r.prn]));
 
   const bySlug = new Map<string, Ac[]>();
   for (const r of rows) {
@@ -146,7 +150,7 @@ export async function aggregateLeaderboard(scope: "month" | "all"): Promise<Lead
 
   const out: LeaderRow[] = [...totals.entries()].map(([userId, t]) => ({
     rank: 0,
-    username: usernameById.get(userId) ?? "unknown",
+    display: displayById.get(userId) ?? "unknown",
     points: t.points,
     solved: t.solved,
     flagged: false,

@@ -48,6 +48,7 @@
   --site-canvas: var(--color-cream);
   --site-backdrop: url("/lightmode.png");
   --l-shape-fill: #FBF6ED;
+  --grid-line: color-mix(in oklab, var(--color-chocolate) 8%, transparent);
 
   /* Code editor / console surface — light IDE in light mode. */
   --ide-bar: #efe9e0;
@@ -76,6 +77,7 @@
   /* deep warm near-black page canvas */
   --site-backdrop: url("/darkmode.png");
   --l-shape-fill: #1C1714;
+  --grid-line: color-mix(in oklab, var(--color-cream) 5%, transparent);
 
   /* Code editor / console surface — warm terminal-dark in dark mode. */
   --ide-bar: #1e1610;
@@ -636,13 +638,18 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background-image:
-    linear-gradient(color-mix(in oklab, var(--color-bronze) 7%, transparent) 1px,
-      transparent 1px),
-    linear-gradient(90deg,
-      color-mix(in oklab, var(--color-bronze) 7%, transparent) 1px,
-      transparent 1px);
+    linear-gradient(
+      var(--grid-line) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      var(--grid-line) 1px,
+      transparent 1px
+    );
   background-size: 46px 46px;
-  opacity: 0.55;
+  background-position: center top;
+  opacity: 1; /* Opacity is handled by the color-mix in var(--grid-line) */
 }
 
 /* 
@@ -784,24 +791,13 @@ body::before {
 }
 
 @layer utilities {
-  .bg-tech-grid-main {
+  .bg-tech-glow-main {
     background-image:
-      radial-gradient(circle at 18% 18%, rgba(166, 124, 82, 0.28), transparent 28%),
-      radial-gradient(circle at 82% 45%, rgba(245, 241, 235, 0.1), transparent 24%),
-      linear-gradient(to right, rgba(245, 241, 235, 0.07) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(245, 241, 235, 0.07) 1px, transparent 1px);
-    background-size: auto, auto, 46px 46px, 46px 46px;
-    background-attachment: scroll, scroll, fixed, fixed;
+      radial-gradient(circle at 18% 18%, rgba(166,124,82,0.28), transparent 28%),
+      radial-gradient(circle at 82% 45%, rgba(245,241,235,0.1), transparent 24%);
   }
-
-  .bg-tech-grid-card {
-    background-image:
-      linear-gradient(110deg, rgba(166, 124, 82, 0.18), transparent 34%),
-      linear-gradient(to right, rgba(245, 241, 235, 0.06) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(245, 241, 235, 0.06) 1px, transparent 1px);
-    background-size: auto, 46px 46px, 46px 46px;
-    background-position: 0 0, center center, center center;
-    background-attachment: scroll, fixed, fixed;
+  .bg-tech-glow-card {
+    background-image: linear-gradient(110deg, rgba(166,124,82,0.18), transparent 34%);
   }
 
   .bg-tech-grid-event {
@@ -809,7 +805,7 @@ body::before {
       linear-gradient(to right, color-mix(in oklab, var(--color-hairline) 58%, transparent) 1px, transparent 1px),
       linear-gradient(to bottom, color-mix(in oklab, var(--color-hairline) 58%, transparent) 1px, transparent 1px);
     background-size: 46px 46px;
-    background-position: center center;
+    background-position: center top;
     background-attachment: fixed;
   }
 }
@@ -832,4 +828,13 @@ body::before {
 
 .animate-card-in {
   animation: card-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ------------------------------------------------------------------ */
+/*  View Transitions (Dark mode pan effect)                           */
+/* ------------------------------------------------------------------ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import { rateLimits } from "@/server/db/schema";
 
@@ -10,9 +10,14 @@ import { rateLimits } from "@/server/db/schema";
  * isolates, so the limit could be trivially bypassed. Keys look like
  * `login:user:alice` or `run:ip:1.2.3.4`.
  *
+ * The count is bumped in a single atomic upsert (INSERT ... ON CONFLICT DO
+ * UPDATE with the arithmetic done DB-side) so concurrent requests to the same
+ * key can't lose an update and slip past the limit. A window whose `resetAt`
+ * has already passed is restarted at 1 in the same statement.
+ *
  * Fails open: if the store errors we allow the request rather than lock users
- * out. Windows are short, so stale rows are simply overwritten on the next hit
- * for the same key (row count is bounded by the number of distinct keys).
+ * out — the limiter is abuse mitigation, not an auth gate, so a transient D1
+ * error shouldn't take login/submit down for everyone.
  */
 
 export interface RateLimitResult {
@@ -28,36 +33,30 @@ export async function rateLimit(
 ): Promise<RateLimitResult> {
   const db = getDb();
   const now = Date.now();
+  const resetAt = now + windowMs;
   try {
+    // Count this request atomically: start a fresh window at 1 if none exists or
+    // the previous one elapsed, else increment. RETURNING gives the resulting
+    // count, so there's no read-modify-write race between concurrent requests.
     const rows = await db
-      .select()
-      .from(rateLimits)
-      .where(eq(rateLimits.key, key))
-      .limit(1);
+      .insert(rateLimits)
+      .values({ key, count: 1, resetAt })
+      .onConflictDoUpdate({
+        target: rateLimits.key,
+        set: {
+          count: sql`case when ${rateLimits.resetAt} <= ${now} then 1 else ${rateLimits.count} + 1 end`,
+          resetAt: sql`case when ${rateLimits.resetAt} <= ${now} then ${resetAt} else ${rateLimits.resetAt} end`,
+        },
+      })
+      .returning({ count: rateLimits.count, resetAt: rateLimits.resetAt });
+
     const row = rows[0];
-
-    // No window yet, or the previous one has elapsed → start a fresh window.
-    if (!row || now >= row.resetAt) {
-      const resetAt = now + windowMs;
-      await db
-        .insert(rateLimits)
-        .values({ key, count: 1, resetAt })
-        .onConflictDoUpdate({
-          target: rateLimits.key,
-          set: { count: 1, resetAt },
-        });
-      return { ok: true, remaining: limit - 1, retryAfterMs: 0 };
+    const count = row?.count ?? 1;
+    const windowEnd = row?.resetAt ?? resetAt;
+    if (count > limit) {
+      return { ok: false, remaining: 0, retryAfterMs: Math.max(0, windowEnd - now) };
     }
-
-    if (row.count >= limit) {
-      return { ok: false, remaining: 0, retryAfterMs: Math.max(0, row.resetAt - now) };
-    }
-
-    await db
-      .update(rateLimits)
-      .set({ count: row.count + 1 })
-      .where(eq(rateLimits.key, key));
-    return { ok: true, remaining: Math.max(0, limit - row.count - 1), retryAfterMs: 0 };
+    return { ok: true, remaining: Math.max(0, limit - count), retryAfterMs: 0 };
   } catch (e) {
     // Availability over strict limiting — don't lock users out on a store hiccup.
     console.error("[rateLimit] store error:", e);
