@@ -15,13 +15,20 @@
  * `@theme inline` because they reference the next/font variables set on <html>.
  */
 @theme {
-  --color-cream: #f5f1eb; /* primary background canvas */
-  --color-brown: #5b4638; /* primary structural elements */
-  --color-chocolate: #3e2f24; /* headers & deep accents */
-  --color-bronze: #a67c52; /* interactive CTAs / buttons */
-  --color-charcoal: #1f1f1f; /* body typography */
-  --color-panel: #ffffff; /* card backgrounds */
-  --color-hairline: #e2e8f0; /* soft borders */
+  --color-cream: #f5f1eb;
+  /* primary background canvas */
+  --color-brown: #5b4638;
+  /* primary structural elements */
+  --color-chocolate: #3e2f24;
+  /* headers & deep accents */
+  --color-bronze: #a67c52;
+  /* interactive CTAs / buttons */
+  --color-charcoal: #1f1f1f;
+  /* body typography */
+  --color-panel: #ffffff;
+  /* card backgrounds */
+  --color-hairline: #e2e8f0;
+  /* soft borders */
 }
 
 @theme inline {
@@ -54,13 +61,20 @@
 }
 
 .dark {
-  --color-brown: #b58a5f; /* lighter warm taupe for text/borders on dark */
-  --color-chocolate: #f7f0e6; /* headings become the lightest ink */
-  --color-bronze: #bd8a4a; /* brighter copper accent, matches darkmode.png */
-  --color-charcoal: #e8dfd2; /* body typography, light on dark */
-  --color-panel: #221a12; /* elevated card surface */
-  --color-hairline: #3a2c20; /* borders & hairline dividers */
-  --site-canvas: #16110c; /* deep warm near-black page canvas */
+  --color-brown: #b58a5f;
+  /* lighter warm taupe for text/borders on dark */
+  --color-chocolate: #f7f0e6;
+  /* headings become the lightest ink */
+  --color-bronze: #bd8a4a;
+  /* brighter copper accent, matches darkmode.png */
+  --color-charcoal: #e8dfd2;
+  /* body typography, light on dark */
+  --color-panel: #221a12;
+  /* elevated card surface */
+  --color-hairline: #3a2c20;
+  /* borders & hairline dividers */
+  --site-canvas: #16110c;
+  /* deep warm near-black page canvas */
   --site-backdrop: url("/darkmode.png");
   --l-shape-fill: #1C1714;
   --grid-line: color-mix(in oklab, var(--color-cream) 5%, transparent);
@@ -94,12 +108,15 @@ html.lenis,
 html.lenis body {
   height: auto;
 }
+
 .lenis.lenis-smooth {
   scroll-behavior: auto !important;
 }
+
 .lenis.lenis-smooth [data-lenis-prevent] {
   overscroll-behavior: contain;
 }
+
 .lenis.lenis-stopped {
   overflow: hidden;
 }
@@ -129,9 +146,11 @@ button:focus-visible,
   color: color-mix(in oklab, var(--color-charcoal) 90%, transparent);
   font-size: 0.95rem;
 }
-.arena-prose > :first-child {
+
+.arena-prose> :first-child {
   margin-top: 0;
 }
+
 .arena-prose h2 {
   font-family: var(--font-display), sans-serif;
   font-weight: 700;
@@ -140,6 +159,7 @@ button:focus-visible,
   letter-spacing: -0.01em;
   margin: 1.75rem 0 0.6rem;
 }
+
 .arena-prose h3 {
   font-family: var(--font-display), sans-serif;
   font-weight: 600;
@@ -147,38 +167,47 @@ button:focus-visible,
   font-size: 0.95rem;
   margin: 1.25rem 0 0.5rem;
 }
+
 .arena-prose p {
   line-height: 1.7;
   margin: 0.75rem 0;
 }
+
 .arena-prose strong {
   color: var(--color-chocolate);
   font-weight: 600;
 }
+
 .arena-prose a {
   color: var(--color-bronze);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+
 .arena-prose ul,
 .arena-prose ol {
   margin: 0.75rem 0;
   padding-left: 1.35rem;
 }
+
 .arena-prose ul {
   list-style: disc;
 }
+
 .arena-prose ol {
   list-style: decimal;
 }
+
 .arena-prose li {
   margin: 0.35rem 0;
   line-height: 1.6;
 }
+
 .arena-prose li::marker {
   color: var(--color-bronze);
 }
-.arena-prose :not(pre) > code {
+
+.arena-prose :not(pre)>code {
   font-family: var(--font-mono), monospace;
   font-size: 0.85em;
   color: var(--color-brown);
@@ -187,6 +216,7 @@ button:focus-visible,
   padding: 0.1em 0.4em;
   border-radius: 6px;
 }
+
 .arena-prose .arena-io-label {
   margin-top: 0.75rem;
   font-family: var(--font-mono), monospace;
@@ -195,9 +225,11 @@ button:focus-visible,
   letter-spacing: 0.06em;
   color: var(--color-brown);
 }
-.arena-prose .arena-io-label + pre {
+
+.arena-prose .arena-io-label+pre {
   margin-top: 0.3rem;
 }
+
 .arena-prose pre {
   margin: 1rem 0;
   padding: 0.9rem 1.1rem;
@@ -213,6 +245,7 @@ button:focus-visible,
   border: 1px solid var(--ide-border);
   color: var(--ide-code);
 }
+
 .arena-prose pre code {
   font-family: var(--font-mono), monospace;
   color: inherit;
@@ -220,6 +253,7 @@ button:focus-visible,
   border: none;
   padding: 0;
 }
+
 /* Screenshot deterrent: don't render the problem when printing / print-to-PDF. */
 @media print {
   .arena-no-print {
@@ -233,12 +267,14 @@ button:focus-visible,
   margin: 1rem 0;
   font-size: 0.9rem;
 }
+
 .arena-prose th,
 .arena-prose td {
   border: 1px solid var(--color-hairline);
   padding: 0.5rem 0.75rem;
   text-align: left;
 }
+
 .arena-prose th {
   color: var(--color-chocolate);
   font-weight: 600;
@@ -249,7 +285,7 @@ button:focus-visible,
  * (text-2xl, hidden, flex, …) applied alongside them still win. */
 @layer components {
 
-/*
+  /*
  * --- Mecha / HUD panels ---
  * Chamfered "tech panel" cards with a double outline. The notched shape is a
  * clip-path octagon; the double line is four nested clip layers whose alternating
@@ -257,294 +293,311 @@ button:focus-visible,
  * shrinks its own chamfer (`--mecha-n`) by how far it is inset, so the diagonals
  * stay concentric. Colours are vars so the whole thing themes in light/dark.
  */
-.mecha {
-  --mecha-n: 14px; /* chamfer size */
-  --mecha-fill: var(--color-panel);
-  --mecha-line: color-mix(in oklab, var(--color-chocolate) 60%, var(--color-bronze));
-  --mecha-clip: polygon(
-    var(--mecha-n) 0,
-    calc(100% - var(--mecha-n)) 0,
-    100% var(--mecha-n),
-    100% calc(100% - var(--mecha-n)),
-    calc(100% - var(--mecha-n)) 100%,
-    var(--mecha-n) 100%,
-    0 calc(100% - var(--mecha-n)),
-    0 var(--mecha-n)
-  );
-  position: relative;
-  clip-path: var(--mecha-clip);
-  background: var(--mecha-line); /* outer line */
-  padding: 1.5px;
-  /* clip-path clips box-shadow, so cast the drop via filter instead. */
-  filter: drop-shadow(0 5px 14px rgb(0 0 0 / 0.1));
-}
-.mecha__gap {
-  --mecha-n: 12.5px; /* 14 - 1.5 inset */
-  clip-path: var(--mecha-clip);
-  background: var(--mecha-fill); /* gap */
-  padding: 4px;
-  height: 100%;
-}
-.mecha__inline {
-  --mecha-n: 8.5px; /* 14 - 5.5 inset */
-  clip-path: var(--mecha-clip);
-  background: var(--mecha-line); /* inner line */
-  padding: 1px;
-  height: 100%;
-}
-.mecha__body {
-  --mecha-n: 7.5px; /* 14 - 6.5 inset */
-  clip-path: var(--mecha-clip);
-  background: var(--mecha-fill);
-  position: relative;
-  height: 100%;
-}
+  .mecha {
+    --mecha-n: 14px;
+    /* chamfer size */
+    --mecha-fill: var(--color-panel);
+    --mecha-line: color-mix(in oklab, var(--color-chocolate) 60%, var(--color-bronze));
+    --mecha-clip: polygon(var(--mecha-n) 0,
+        calc(100% - var(--mecha-n)) 0,
+        100% var(--mecha-n),
+        100% calc(100% - var(--mecha-n)),
+        calc(100% - var(--mecha-n)) 100%,
+        var(--mecha-n) 100%,
+        0 calc(100% - var(--mecha-n)),
+        0 var(--mecha-n));
+    position: relative;
+    clip-path: var(--mecha-clip);
+    background: var(--mecha-line);
+    /* outer line */
+    padding: 1.5px;
+    /* clip-path clips box-shadow, so cast the drop via filter instead. */
+    filter: drop-shadow(0 5px 14px rgb(0 0 0 / 0.1));
+  }
 
-/* Dark-IDE variant: dark fill + warm bronze edge (used for the console). */
-.mecha--ide {
-  --mecha-fill: var(--ide-body);
-  --mecha-line: color-mix(in oklab, var(--color-bronze) 70%, var(--ide-border));
-}
+  .mecha__gap {
+    --mecha-n: 12.5px;
+    /* 14 - 1.5 inset */
+    clip-path: var(--mecha-clip);
+    background: var(--mecha-fill);
+    /* gap */
+    padding: 10px;
+    height: 100%;
+  }
 
-.mecha__telemetry {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  /* Clear the top frame line and the chamfered corners so the label/index
+  .mecha__inline {
+    --mecha-n: 8.5px;
+    /* 14 - 5.5 inset */
+    clip-path: var(--mecha-clip);
+    background: var(--mecha-line);
+    /* inner line */
+    padding: 1px;
+    height: 100%;
+  }
+
+  .mecha__body {
+    --mecha-n: 7.5px;
+    /* 14 - 6.5 inset */
+    clip-path: var(--mecha-clip);
+    background: var(--mecha-fill);
+    position: relative;
+    height: 100%;
+  }
+
+  /* Dark-IDE variant: dark fill + warm bronze edge (used for the console). */
+  .mecha--ide {
+    --mecha-fill: var(--ide-body);
+    --mecha-line: color-mix(in oklab, var(--color-bronze) 70%, var(--ide-border));
+  }
+
+  .mecha__telemetry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    /* Clear the top frame line and the chamfered corners so the label/index
    * never collide with the border. */
-  padding: 0.95rem 1.15rem 0;
-  font-family: var(--font-mono), monospace;
-}
-.mecha__label {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  color: color-mix(in oklab, var(--mecha-line) 88%, transparent);
-  border: 1px solid color-mix(in oklab, var(--mecha-line) 40%, transparent);
-  padding: 0.16rem 0.5rem;
-  white-space: nowrap;
-}
-.mecha__index {
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  color: color-mix(in oklab, var(--mecha-line) 70%, transparent);
-}
+    padding: 0.95rem 1.15rem ;
+    font-family: var(--font-mono), monospace;
+  }
 
-.mecha__tick {
-  position: absolute;
-  width: 7px;
-  height: 7px;
-  pointer-events: none;
-  color: color-mix(in oklab, var(--mecha-line) 55%, transparent);
-}
-.mecha__tick--tl {
-  top: 10px;
-  left: 10px;
-  border-top: 1.5px solid;
-  border-left: 1.5px solid;
-}
-.mecha__tick--tr {
-  top: 10px;
-  right: 10px;
-  border-top: 1.5px solid;
-  border-right: 1.5px solid;
-}
-.mecha__tick--bl {
-  bottom: 10px;
-  left: 10px;
-  border-bottom: 1.5px solid;
-  border-left: 1.5px solid;
-}
-.mecha__tick--br {
-  bottom: 10px;
-  right: 10px;
-  border-bottom: 1.5px solid;
-  border-right: 1.5px solid;
-}
+  .mecha__label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.20em;
+    color: color-mix(in oklab, var(--mecha-line) 88%, transparent);
+    border: 1px solid color-mix(in oklab, var(--mecha-line) 40%, transparent);
+    padding: 0.16rem 0.5rem;
+    white-space: nowrap;
+  }
 
-/*
+  .mecha__index {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: color-mix(in oklab, var(--mecha-line) 70%, transparent);
+  }
+
+  .mecha__tick {
+    position: absolute;
+    width: 7px;
+    height: 7px;
+    pointer-events: none;
+    color: color-mix(in oklab, var(--mecha-line) 55%, transparent);
+  }
+
+  .mecha__tick--tl {
+    top: 10px;
+    left: 10px;
+    border-top: 1.5px solid;
+    border-left: 1.5px solid;
+  }
+
+  .mecha__tick--tr {
+    top: 10px;
+    right: 10px;
+    border-top: 1.5px solid;
+    border-right: 1.5px solid;
+  }
+
+  .mecha__tick--bl {
+    bottom: 10px;
+    left: 10px;
+    border-bottom: 1.5px solid;
+    border-left: 1.5px solid;
+  }
+
+  .mecha__tick--br {
+    bottom: 10px;
+    right: 10px;
+    border-bottom: 1.5px solid;
+    border-right: 1.5px solid;
+  }
+
+  /*
  * --- Mecha buttons ---
  * Chamfered, mono-uppercase controls. Single-element (no border layer) so the
  * classes drop onto a <button> or a <Link> alike. `solid` is the primary CTA;
  * `ghost` is a translucent secondary.
  */
-.mecha-btn {
-  --mb-n: 7px;
-  clip-path: polygon(
-    var(--mb-n) 0,
-    calc(100% - var(--mb-n)) 0,
-    100% var(--mb-n),
-    100% calc(100% - var(--mb-n)),
-    calc(100% - var(--mb-n)) 100%,
-    var(--mb-n) 100%,
-    0 calc(100% - var(--mb-n)),
-    0 var(--mb-n)
-  );
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  font-family: var(--font-mono), monospace;
-  font-size: 0.78rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  padding: 0.62rem 1.15rem;
-  transition:
-    background-color 0.18s ease,
-    color 0.18s ease,
-    transform 0.08s ease;
-}
-.mecha-btn:active:not(:disabled) {
-  transform: translateY(1px);
-}
-.mecha-btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-.mecha-btn--solid {
-  background: var(--color-bronze);
-  color: #fff;
-}
-.mecha-btn--solid:hover:not(:disabled) {
-  background: color-mix(in oklab, var(--color-bronze) 86%, black);
-}
-.mecha-btn--ghost {
-  background: color-mix(in oklab, var(--color-bronze) 14%, transparent);
-  color: var(--color-bronze);
-}
-.mecha-btn--ghost:hover:not(:disabled) {
-  background: color-mix(in oklab, var(--color-bronze) 26%, transparent);
-}
-.mecha-btn--ok {
-  background: #059669;
-  color: #fff;
-}
-.mecha-btn--sm {
-  --mb-n: 5px;
-  font-size: 0.68rem;
-  padding: 0.42rem 0.85rem;
-  letter-spacing: 0.06em;
-}
+  .mecha-btn {
+    --mb-n: 7px;
+    clip-path: polygon(var(--mb-n) 0,
+        calc(100% - var(--mb-n)) 0,
+        100% var(--mb-n),
+        100% calc(100% - var(--mb-n)),
+        calc(100% - var(--mb-n)) 100%,
+        var(--mb-n) 100%,
+        0 calc(100% - var(--mb-n)),
+        0 var(--mb-n));
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono), monospace;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.62rem 1.15rem;
+    transition:
+      background-color 0.18s ease,
+      color 0.18s ease,
+      transform 0.08s ease;
+  }
 
-/*
+  .mecha-btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  .mecha-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .mecha-btn--solid {
+    background: var(--color-bronze);
+    color: #fff;
+  }
+
+  .mecha-btn--solid:hover:not(:disabled) {
+    background: color-mix(in oklab, var(--color-bronze) 86%, black);
+  }
+
+  .mecha-btn--ghost {
+    background: color-mix(in oklab, var(--color-bronze) 14%, transparent);
+    color: var(--color-bronze);
+  }
+
+  .mecha-btn--ghost:hover:not(:disabled) {
+    background: color-mix(in oklab, var(--color-bronze) 26%, transparent);
+  }
+
+  .mecha-btn--ok {
+    background: #059669;
+    color: #fff;
+  }
+
+  .mecha-btn--sm {
+    --mb-n: 5px;
+    font-size: 0.68rem;
+    padding: 0.42rem 0.85rem;
+    letter-spacing: 0.06em;
+  }
+
+  /*
  * --- Mecha chips ---
  * Small chamfered status/tag pills. Colour comes from utility classes
  * (bg-emerald-500/15 text-emerald-600, …); this only sets the shape + mono type.
  */
-.mecha-chip {
-  --mc-n: 4px;
-  clip-path: polygon(
-    var(--mc-n) 0,
-    calc(100% - var(--mc-n)) 0,
-    100% var(--mc-n),
-    100% calc(100% - var(--mc-n)),
-    calc(100% - var(--mc-n)) 100%,
-    var(--mc-n) 100%,
-    0 calc(100% - var(--mc-n)),
-    0 var(--mc-n)
-  );
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-family: var(--font-mono), monospace;
-  font-size: 0.66rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 0.2rem 0.55rem;
-  line-height: 1.1;
-  white-space: nowrap;
-}
+  .mecha-chip {
+    --mc-n: 4px;
+    clip-path: polygon(var(--mc-n) 0,
+        calc(100% - var(--mc-n)) 0,
+        100% var(--mc-n),
+        100% calc(100% - var(--mc-n)),
+        calc(100% - var(--mc-n)) 100%,
+        var(--mc-n) 100%,
+        0 calc(100% - var(--mc-n)),
+        0 var(--mc-n));
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-family: var(--font-mono), monospace;
+    font-size: 0.66rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.2rem 0.55rem;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
 
-/*
+  /*
  * --- Mecha tabs (segmented control) ---
  */
-.mecha-tabs {
-  --mt-n: 7px;
-  display: inline-flex;
-  gap: 3px;
-  padding: 4px;
-  background: var(--color-panel);
-  clip-path: polygon(
-    var(--mt-n) 0,
-    calc(100% - var(--mt-n)) 0,
-    100% var(--mt-n),
-    100% calc(100% - var(--mt-n)),
-    calc(100% - var(--mt-n)) 100%,
-    var(--mt-n) 100%,
-    0 calc(100% - var(--mt-n)),
-    0 var(--mt-n)
-  );
-  filter: drop-shadow(0 3px 8px rgb(0 0 0 / 0.08));
-}
-.mecha-tab {
-  --mt-n: 5px;
-  clip-path: polygon(
-    var(--mt-n) 0,
-    calc(100% - var(--mt-n)) 0,
-    100% var(--mt-n),
-    100% calc(100% - var(--mt-n)),
-    calc(100% - var(--mt-n)) 100%,
-    var(--mt-n) 100%,
-    0 calc(100% - var(--mt-n)),
-    0 var(--mt-n)
-  );
-  font-family: var(--font-mono), monospace;
-  font-size: 0.72rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 0.42rem 0.95rem;
-  color: color-mix(in oklab, var(--color-charcoal) 58%, transparent);
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
-}
-.mecha-tab:hover {
-  color: var(--color-chocolate);
-}
-.mecha-tab--active {
-  background: color-mix(in oklab, var(--color-bronze) 18%, transparent);
-  color: var(--color-chocolate);
-}
+  .mecha-tabs {
+    --mt-n: 7px;
+    display: inline-flex;
+    gap: 3px;
+    padding: 4px;
+    background: var(--color-panel);
+    clip-path: polygon(var(--mt-n) 0,
+        calc(100% - var(--mt-n)) 0,
+        100% var(--mt-n),
+        100% calc(100% - var(--mt-n)),
+        calc(100% - var(--mt-n)) 100%,
+        var(--mt-n) 100%,
+        0 calc(100% - var(--mt-n)),
+        0 var(--mt-n));
+    filter: drop-shadow(0 3px 8px rgb(0 0 0 / 0.08));
+  }
 
-/*
+  .mecha-tab {
+    --mt-n: 5px;
+    clip-path: polygon(var(--mt-n) 0,
+        calc(100% - var(--mt-n)) 0,
+        100% var(--mt-n),
+        100% calc(100% - var(--mt-n)),
+        calc(100% - var(--mt-n)) 100%,
+        var(--mt-n) 100%,
+        0 calc(100% - var(--mt-n)),
+        0 var(--mt-n));
+    font-family: var(--font-mono), monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.42rem 0.95rem;
+    color: color-mix(in oklab, var(--color-charcoal) 58%, transparent);
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .mecha-tab:hover {
+    color: var(--color-chocolate);
+  }
+
+  .mecha-tab--active {
+    background: color-mix(in oklab, var(--color-bronze) 18%, transparent);
+    color: var(--color-chocolate);
+  }
+
+  /*
  * --- Mecha inputs ---
  * Filled, chamfered fields with a bronze left-accent bar that brightens on
  * focus. Single-element, so it drops onto any <input>/<textarea>/<select>.
  */
-.mecha-input {
-  --mi-n: 6px;
-  clip-path: polygon(
-    var(--mi-n) 0,
-    calc(100% - var(--mi-n)) 0,
-    100% var(--mi-n),
-    100% calc(100% - var(--mi-n)),
-    calc(100% - var(--mi-n)) 100%,
-    var(--mi-n) 100%,
-    0 calc(100% - var(--mi-n)),
-    0 var(--mi-n)
-  );
-  width: 100%;
-  background: color-mix(in oklab, var(--color-charcoal) 5%, var(--color-panel));
-  border-left: 2px solid color-mix(in oklab, var(--color-bronze) 55%, transparent);
-  padding: 0.6rem 0.85rem;
-  font-size: 0.875rem;
-  color: var(--color-charcoal);
-  outline: none;
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease;
-}
-.mecha-input::placeholder {
-  color: color-mix(in oklab, var(--color-charcoal) 42%, transparent);
-}
-.mecha-input:focus {
-  background: color-mix(in oklab, var(--color-bronze) 10%, var(--color-panel));
-  border-left-color: var(--color-bronze);
-}
+  .mecha-input {
+    --mi-n: 6px;
+    clip-path: polygon(var(--mi-n) 0,
+        calc(100% - var(--mi-n)) 0,
+        100% var(--mi-n),
+        100% calc(100% - var(--mi-n)),
+        calc(100% - var(--mi-n)) 100%,
+        var(--mi-n) 100%,
+        0 calc(100% - var(--mi-n)),
+        0 var(--mi-n));
+    width: 100%;
+    background: color-mix(in oklab, var(--color-charcoal) 5%, var(--color-panel));
+    border-left: 2px solid color-mix(in oklab, var(--color-bronze) 55%, transparent);
+    padding: 0.6rem 0.85rem;
+    font-size: 0.875rem;
+    color: var(--color-charcoal);
+    outline: none;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease;
+  }
+
+  .mecha-input::placeholder {
+    color: color-mix(in oklab, var(--color-charcoal) 42%, transparent);
+  }
+
+  .mecha-input:focus {
+    background: color-mix(in oklab, var(--color-bronze) 10%, var(--color-panel));
+    border-left-color: var(--color-bronze);
+  }
 
 }
 
@@ -554,21 +607,24 @@ button:focus-visible,
  */
 * {
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in oklab, var(--color-bronze) 45%, transparent)
-    transparent;
+  scrollbar-color: color-mix(in oklab, var(--color-bronze) 45%, transparent) transparent;
 }
+
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: color-mix(in oklab, var(--color-bronze) 42%, transparent);
   background-clip: padding-box;
   border: 2px solid transparent;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: color-mix(in oklab, var(--color-bronze) 68%, transparent);
   background-clip: padding-box;
@@ -605,48 +661,74 @@ body::before {
  */
 
 /* ---- Mobile: Chamfered octagon (no L-notch) ---- */
-.hud-l-outer  { --c: 24px; }
-.hud-l-gap    { --c: 20.5px; }
-.hud-l-inline { --c: 16px; }
-.hud-l-body   { --c: 15px; }
+.hud-l-outer {
+  --c: 24px;
+}
+
+.hud-l-gap {
+  --c: 20.5px;
+}
+
+.hud-l-inline {
+  --c: 16px;
+}
+
+.hud-l-body {
+  --c: 15px;
+}
 
 .hud-l-outer,
 .hud-l-gap,
 .hud-l-inline,
 .hud-l-body {
-  clip-path: polygon(
-    var(--c) 0, calc(100% - var(--c)) 0,
-    100% var(--c), 100% calc(100% - var(--c)),
-    calc(100% - var(--c)) 100%, var(--c) 100%,
-    0 calc(100% - var(--c)), 0 var(--c)
-  );
+  clip-path: polygon(var(--c) 0, calc(100% - var(--c)) 0,
+      100% var(--c), 100% calc(100% - var(--c)),
+      calc(100% - var(--c)) 100%, var(--c) 100%,
+      0 calc(100% - var(--c)), 0 var(--c));
 }
 
 /* ---- Desktop: True L-Shape polygon ---- */
 @media (min-width: 1024px) {
-  .hud-l-outer  { --c: 32px;   --w: 420px;   --h: 480px; }
-  .hud-l-gap    { --c: 28.5px; --w: 416.5px; --h: 476.5px; }
-  .hud-l-inline { --c: 24px;   --w: 412px;   --h: 472px; }
-  .hud-l-body   { --c: 23px;   --w: 411px;   --h: 471px; }
+  .hud-l-outer {
+    --c: 32px;
+    --w: 420px;
+    --h: 480px;
+  }
+
+  .hud-l-gap {
+    --c: 28.5px;
+    --w: 416.5px;
+    --h: 476.5px;
+  }
+
+  .hud-l-inline {
+    --c: 24px;
+    --w: 412px;
+    --h: 472px;
+  }
+
+  .hud-l-body {
+    --c: 23px;
+    --w: 411px;
+    --h: 471px;
+  }
 
   .hud-l-outer,
   .hud-l-gap,
   .hud-l-inline,
   .hud-l-body {
-    clip-path: polygon(
-      var(--c) 0,
-      calc(var(--w) - var(--c)) 0,
-      var(--w) var(--c),
-      var(--w) calc(var(--h) - var(--c)),
-      calc(var(--w) + var(--c)) var(--h),
-      calc(100% - var(--c)) var(--h),
-      100% calc(var(--h) + var(--c)),
-      100% calc(100% - var(--c)),
-      calc(100% - var(--c)) 100%,
-      var(--c) 100%,
-      0 calc(100% - var(--c)),
-      0 var(--c)
-    );
+    clip-path: polygon(var(--c) 0,
+        calc(var(--w) - var(--c)) 0,
+        var(--w) var(--c),
+        var(--w) calc(var(--h) - var(--c)),
+        calc(var(--w) + var(--c)) var(--h),
+        calc(100% - var(--c)) var(--h),
+        100% calc(var(--h) + var(--c)),
+        100% calc(100% - var(--c)),
+        calc(100% - var(--c)) 100%,
+        var(--c) 100%,
+        0 calc(100% - var(--c)),
+        0 var(--c));
   }
 }
 
@@ -658,17 +740,43 @@ body::before {
   pointer-events: none;
   z-index: 5;
 }
-.hud-tick--tl { top: 40px; left: 12px; border-top: 1.5px solid; border-left: 1.5px solid; }
-.hud-tick--bl { bottom: 40px; left: 12px; border-bottom: 1.5px solid; border-left: 1.5px solid; }
-.hud-tick--br { bottom: 40px; right: 12px; border-bottom: 1.5px solid; border-right: 1.5px solid; }
-.hud-tick--tr { top: 40px; right: 12px; border-top: 1.5px solid; border-right: 1.5px solid; }
+
+.hud-tick--tl {
+  top: 40px;
+  left: 12px;
+  border-top: 1.5px solid;
+  border-left: 1.5px solid;
+}
+
+.hud-tick--bl {
+  bottom: 40px;
+  left: 12px;
+  border-bottom: 1.5px solid;
+  border-left: 1.5px solid;
+}
+
+.hud-tick--br {
+  bottom: 40px;
+  right: 12px;
+  border-bottom: 1.5px solid;
+  border-right: 1.5px solid;
+}
+
+.hud-tick--tr {
+  top: 40px;
+  right: 12px;
+  border-top: 1.5px solid;
+  border-right: 1.5px solid;
+}
 
 /* ---- Step-corner accent (where the L turns) ---- */
 @media (min-width: 1024px) {
   .hud-tick--step {
     position: absolute;
-    top: 470px; /* just below the step height (480px) */
-    left: 428px; /* just past the step width (420px) */
+    top: 470px;
+    /* just below the step height (480px) */
+    left: 428px;
+    /* just past the step width (420px) */
     width: 10px;
     height: 10px;
     border-top: 1.5px solid;
@@ -684,13 +792,14 @@ body::before {
 
 @layer utilities {
   .bg-tech-glow-main {
-    background-image: 
+    background-image:
       radial-gradient(circle at 18% 18%, rgba(166,124,82,0.28), transparent 28%),
       radial-gradient(circle at 82% 45%, rgba(245,241,235,0.1), transparent 24%);
   }
   .bg-tech-glow-card {
     background-image: linear-gradient(110deg, rgba(166,124,82,0.18), transparent 34%);
   }
+
   .bg-tech-grid-event {
     background-image:
       linear-gradient(to right, color-mix(in oklab, var(--color-hairline) 58%, transparent) 1px, transparent 1px),
@@ -710,6 +819,7 @@ body::before {
     opacity: 0;
     transform: translateY(24px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
