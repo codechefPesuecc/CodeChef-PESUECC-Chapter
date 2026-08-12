@@ -1,0 +1,188 @@
+{
+  "years": [
+    "2026",
+    "2025"
+  ],
+  "byYear": {
+    "2025": {
+      "year": "2025",
+      "coordinators": [
+        {
+          "name": "Ruby Dinakar",
+          "role": "Club Coordinator",
+          "bio": "Leading the CodeChef PESUECC Chapter. Passionate about building a competitive programming culture on campus.",
+          "linkedin": "https://www.linkedin.com/in/ruby-d-6027b08a/",
+          "github": "",
+          "instagram": "",
+          "photo": "/team/2025/coordinator/Ruby_Dinakar/photo.png"
+        }
+      ],
+      "core": [
+        {
+          "name": "Sneha Murthy",
+          "role": "Core Team — Events Lead",
+          "bio": "Organised the inaugural AlgoHunt and LeetCode 101 bootcamp series.",
+          "linkedin": "https://linkedin.com/in/snehamurthy",
+          "github": "",
+          "instagram": "https://instagram.com/snehamurthy",
+          "photo": "/team/2025/core/sneha-murthy/photo.svg"
+        },
+        {
+          "name": "Vaibhav Tulsian",
+          "role": "Core Team — SMM-Lead",
+          "bio": "Built the first version of the chapter website and contest infrastructure.",
+          "linkedin": "https://www.linkedin.com/in/vaibhav-tulsian-144213334/",
+          "github": "https://github.com/vaibhavtulsian",
+          "instagram": "",
+          "photo": "/team/2025/core/test/photo.png"
+        }
+      ],
+      "members": [
+        {
+          "name": "Arjun Nair",
+          "role": "Member — Problem Setter",
+          "bio": "Contributed 50+ problems to the CP Arena during the founding year.",
+          "linkedin": "https://linkedin.com/in/arjunnair",
+          "github": "https://github.com/arjunnair",
+          "instagram": "",
+          "photo": "/team/2025/members/arjun-nair/photo.svg"
+        },
+        {
+          "name": "Meera Joshi",
+          "role": "Member — Content Writer",
+          "bio": "Wrote editorials and documentation for the chapter's learning resources.",
+          "linkedin": "https://linkedin.com/in/meerajoshi",
+          "github": "",
+          "instagram": "https://instagram.com/meerajoshi",
+          "photo": "/team/2025/members/meera-joshi/photo.svg"
+        }
+      ]
+    },
+    "2026": {
+      "year": "2026",
+      "coordinators": [
+        {
+          "name": "Ruby Dinakar",
+          "role": "Club Coordinator",
+          "bio": "Leading the CodeChef PESUECC Chapter. Passionate about building a competitive programming culture on campus.",
+          "linkedin": "https://www.linkedin.com/in/ruby-d-6027b08a/",
+          "github": "",
+          "instagram": "",
+          "photo": "/team/2026/coordinator/Ruby_Dinakar/photo.png"
+        }
+      ],
+      "core": [
+        {
+          "name": "Aditya Raj",
+          "role": "Core Team — CP Lead",
+          "bio": "Optimizing logic, empowering the team.",
+          "linkedin": "https://www.linkedin.com/in/aditya-raj-04adi/",
+          "github": "https://github.com/hagemaruwu",
+          "instagram": "https://www.instagram.com/raj.aditya04/",
+          "photo": "/team/2026/core/PES2UG24CS033/photo.png"
+        },
+        {
+          "name": "Aniket Barun",
+          "role": "Core Team — Club Head",
+          "bio": "Choices of Consequences",
+          "linkedin": "https://www.linkedin.com/in/barunaniket",
+          "github": "https://github.com/barunaniket",
+          "instagram": "https://www.instagram.com/barun_aniket1/",
+          "photo": "/team/2026/core/PES2UG24AM019/photo.png"
+        },
+        {
+          "name": "Navya Kishore Dash",
+          "role": "Core Team — Vice Club Head",
+          "bio": "A competitive programmer who loves solving problems and building cool stuff",
+          "linkedin": "https://www.linkedin.com/in/navyakishore-dash-8813b7333/",
+          "github": "https://github.com/NavyakishoreDash",
+          "instagram": "https://www.instagram.com/navyakishore_d/",
+          "photo": "/team/2026/core/PES2UG24CS307/photo.png"
+        },
+        {
+          "name": "Sejal Sisodia",
+          "role": "Core Team — Sponsorship Lead",
+          "bio": "Building strategic partnerships today to fund our greatest innovations tomorrow.",
+          "linkedin": "https://www.linkedin.com/in/sejalsisodia08",
+          "github": "https://github.com/SEJAL-SISODIA08",
+          "instagram": "https://www.instagram.com/sejal_sisodia08/",
+          "photo": "/team/2026/core/PES2UG24EC103/photo.png"
+        },
+        {
+          "name": "Shivansh Sharma",
+          "role": "Core Team — Events Lead",
+          "bio": "I'm driven by the belief that the best solutions come from unexpected intersections.",
+          "linkedin": "https://linkedin.com/in/shivansh-sharma-386377352",
+          "github": "https://github.com/shivanshpap",
+          "instagram": "https://www.instagram.com/shivansh.2509/",
+          "photo": "/team/2026/core/PES2UG24CS474/photo.png"
+        },
+        {
+          "name": "Vaibhav Tulsian",
+          "role": "Core Team — SMM Lead",
+          "bio": "Great marketing doesn't just chase trends it engineers the moments",
+          "linkedin": "https://www.linkedin.com/in/vaibhav-tulsian-144213334/",
+          "github": "https://github.com/vaibhavtulsian",
+          "instagram": "https://www.instagram.com/vaibhav_tulsian?igsh=bWo0Zm00eGpuNmRp",
+          "photo": "/team/2026/core/PES2UG24AM176/photo.png"
+        }
+      ],
+      "members": [
+        {
+          "name": "Eve Rao",
+          "role": "Member — Problem Setter",
+          "bio": "Sets weekly competitive programming problems and maintains the editorial archive.",
+          "linkedin": "https://linkedin.com/in/everao",
+          "github": "https://github.com/everao",
+          "instagram": "",
+          "photo": "/team/2026/members/eve-rao/photo.svg"
+        },
+        {
+          "name": "Frank Iyer",
+          "role": "Member — Backend Developer",
+          "bio": "Works on the CP Arena backend and Cloudflare D1 integrations.",
+          "linkedin": "",
+          "github": "https://github.com/frankiyer",
+          "instagram": "",
+          "photo": "/team/2026/members/frank-iyer/photo.svg"
+        },
+        {
+          "name": "Grace Menon",
+          "role": "Member — Content & Outreach",
+          "bio": "Manages social media and event promotion for the chapter.",
+          "linkedin": "https://linkedin.com/in/gracemenon",
+          "github": "",
+          "instagram": "https://instagram.com/gracemenon",
+          "photo": "/team/2026/members/grace-menon/photo.svg"
+        },
+        {
+          "name": "Henry Gupta",
+          "role": "Member — Frontend Developer",
+          "bio": "Builds interactive UI components for the chapter's web platforms.",
+          "linkedin": "https://linkedin.com/in/henrygupta",
+          "github": "https://github.com/henrygupta",
+          "instagram": "",
+          "photo": "/team/2026/members/henry-gupta/photo.svg"
+        },
+        {
+          "name": "Iris Das",
+          "role": "Member — Problem Setter",
+          "bio": "Specialises in graph theory and dynamic programming problem design.",
+          "linkedin": "https://linkedin.com/in/irisdas",
+          "github": "https://github.com/irisdas",
+          "instagram": "",
+          "photo": "/team/2026/members/iris-das/photo.svg"
+        },
+        {
+          "name": "Jay Thomas",
+          "role": "Member — Operations",
+          "bio": "Handles logistics, scheduling, and venue coordination for all chapter events.",
+          "linkedin": "https://linkedin.com/in/jaythomas",
+          "github": "",
+          "instagram": "https://instagram.com/jaythomas",
+          "photo": "/team/2026/members/jay-thomas/photo.svg"
+        }
+      ]
+    }
+  }
+}

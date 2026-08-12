@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getDailyChallenge } from "@/lib/challenges";
+import { getCurrentUser } from "@/server/auth/session";
 import ProblemStatement from "@/components/cp-arena/ProblemStatement";
 import ArenaWorkspace from "@/components/cp-arena/ArenaWorkspace";
 import ArenaRules from "@/components/cp-arena/ArenaRules";
@@ -33,7 +34,37 @@ const DIFFICULTY_STYLES: Record<string, string> = {
   Hard: "bg-red-500/15 text-red-700 dark:text-red-400",
 };
 
-export default function CpArenaPage() {
+export default async function CpArenaPage() {
+  // The Problem of the Day is members-only — gate viewing (not just submitting)
+  // behind login.
+  const user = await getCurrentUser();
+  if (!user) {
+    return (
+      <main className="flex flex-1 items-center justify-center px-6 py-32 text-center">
+        <div className="max-w-md">
+          <h1 className="font-display text-2xl font-bold text-chocolate">
+            Log in to enter the Arena
+          </h1>
+          <p className="mt-3 text-charcoal/70">
+            The Problem of the Day is for registered members. Log in or create an
+            account to view today&apos;s problem and climb the leaderboard.
+          </p>
+          <div className="mt-6 flex items-center justify-center gap-3">
+            <Link
+              href="/login"
+              className="rounded-lg bg-bronze px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-bronze/90"
+            >
+              Log in
+            </Link>
+            <Link href="/register" className="mecha-btn mecha-btn--ghost">
+              Create account
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   const challenge = getDailyChallenge();
 
   if (!challenge) {
