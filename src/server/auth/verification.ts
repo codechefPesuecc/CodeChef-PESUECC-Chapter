@@ -4,6 +4,7 @@ import { getDb } from "@/server/db";
 import { emailVerifications, users } from "@/server/db/schema";
 import { hashPassword, verifyPassword } from "@/server/auth/password";
 import { sendEmail, canRevealSecretInResponse } from "@/server/email";
+import { otpEmailHtml } from "@/server/emailTemplates";
 
 /**
  * Email OTP verification. Codes are 6 digits, hashed at rest (scrypt, same as
@@ -66,8 +67,9 @@ export async function createAndSendOtp(
 
   const sent = await sendEmail({
     to: email,
-    subject: "Your PESUECC Arena verification code",
-    text: `Your verification code is ${code}. It expires in 10 minutes.\n\nIf you didn't request this, you can ignore this email.`,
+    subject: "Your CodeChef PESUECC Arena verification code",
+    text: `Your verification code is ${code}. It expires in 10 minutes.\n\nIf you didn't request this, you can ignore this email.\n\n— CodeChef PESUECC Chapter`,
+    html: otpEmailHtml(code),
   });
   if (!sent.ok) {
     return { ok: false, error: sent.error ?? "Could not send the email." };

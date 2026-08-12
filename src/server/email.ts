@@ -87,16 +87,41 @@ export async function sendEmail(
       }
 
       const from = process.env.EMAIL_FROM ?? "CodeChef PESUECC <noreply@gmail.com>";
-      const emailLines = [
+      const headers = [
         `From: ${from}`,
         `To: ${msg.to}`,
         `Subject: =?utf-8?B?${encodeBase64Url(msg.subject)}?=`,
         "MIME-Version: 1.0",
-        msg.html ? "Content-Type: text/html; charset=utf-8" : "Content-Type: text/plain; charset=utf-8",
-        "",
-        msg.html || msg.text,
       ];
-      const rawEmail = emailLines.join("\r\n");
+      // When HTML is present, send multipart/alternative (plain-text fallback +
+      // branded HTML) — better rendering coverage and deliverability than
+      // HTML-only. Otherwise a simple text/plain message.
+      let rawEmail: string;
+      if (msg.html) {
+        const boundary = "=_arena_alt_7c1f2a";
+        rawEmail = [
+          ...headers,
+          `Content-Type: multipart/alternative; boundary="${boundary}"`,
+          "",
+          `--${boundary}`,
+          "Content-Type: text/plain; charset=utf-8",
+          "",
+          msg.text,
+          `--${boundary}`,
+          "Content-Type: text/html; charset=utf-8",
+          "",
+          msg.html,
+          `--${boundary}--`,
+          "",
+        ].join("\r\n");
+      } else {
+        rawEmail = [
+          ...headers,
+          "Content-Type: text/plain; charset=utf-8",
+          "",
+          msg.text,
+        ].join("\r\n");
+      }
       const base64UrlEmail = encodeBase64Url(rawEmail);
 
       const res = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {

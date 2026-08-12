@@ -4,6 +4,7 @@ import { getDb } from "@/server/db";
 import { passwordResets, users } from "@/server/db/schema";
 import { hashPassword } from "@/server/auth/password";
 import { sendEmail, canRevealSecretInResponse } from "@/server/email";
+import { resetEmailHtml } from "@/server/emailTemplates";
 
 /**
  * Password reset via a single-use emailed link. The token is a 256-bit random
@@ -54,8 +55,9 @@ export async function createPasswordReset(
   const link = `${origin}/reset?token=${token}`;
   await sendEmail({
     to: email,
-    subject: "Reset your PESUECC Arena password",
-    text: `Reset your password with this link (valid for 30 minutes):\n\n${link}\n\nIf you didn't request this, you can safely ignore this email.`,
+    subject: "Reset your CodeChef PESUECC Arena password",
+    text: `Reset your password with this link (valid for 30 minutes):\n\n${link}\n\nIf you didn't request this, you can safely ignore this email.\n\n— CodeChef PESUECC Chapter`,
+    html: resetEmailHtml(link),
   });
 
   return { ok: true, devLink: canRevealSecretInResponse() ? link : undefined };
