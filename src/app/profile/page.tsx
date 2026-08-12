@@ -43,7 +43,7 @@ export default async function ProfilePage() {
   if (!user) redirect("/login");
 
   const subs = await getUserSubmissions(user.id);
-  const stats = await getProfileStats(user.username, subs.length);
+  const stats = await getProfileStats(user.srn ?? user.prn, subs.length);
 
   return (
     <main className="flex-1">

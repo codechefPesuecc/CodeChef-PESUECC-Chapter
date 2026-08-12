@@ -67,7 +67,7 @@ export default function LeaderboardView() {
           <LeaderboardTable
             rows={rows}
             scope={scope}
-            currentUsername={user?.username}
+            currentIdentity={user ? user.srn ?? user.prn : undefined}
           />
         )}
       </MechaPanel>

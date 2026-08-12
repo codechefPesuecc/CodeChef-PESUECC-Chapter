@@ -456,7 +456,7 @@ export default function ArenaWorkspace({
           // The server now owns the standings — read our real rank/points back.
           const rows = await fetchBoardRows();
           setBoard(rows);
-          const me = rows.find((r) => r.username === user.username);
+          const me = rows.find((r) => r.display === (user.srn ?? user.prn));
           const rank = me?.rank ?? null;
           const points = me?.points ?? (flagsNow > FLAG_LIMIT ? BASE_POINTS : null);
           const flagged = me?.flagged ?? flagsNow > FLAG_LIMIT;
@@ -856,7 +856,7 @@ export default function ArenaWorkspace({
               <LeaderboardTable
                 rows={board}
                 scope="today"
-                currentUsername={user?.username}
+                currentIdentity={user ? user.srn ?? user.prn : undefined}
               />
             )}
           </MechaPanel>
