@@ -36,6 +36,17 @@
     }
   ],
 
+  // --- Object storage: R2 (user avatars) ---
+  // src/server/avatars.ts reads this `AVATARS` binding per request. One-time
+  // setup (after enabling R2 in the dashboard):
+  //   npx wrangler r2 bucket create pesuecc-arena-avatars
+  "r2_buckets": [
+    {
+      "binding": "AVATARS",
+      "bucket_name": "pesuecc-arena-avatars"
+    }
+  ],
+
   // Workers Logs: capture request logs + errors (viewable in the dashboard under
   // the Worker's Observability tab, and via `wrangler tail`). head_sampling_rate
   // 1 logs every request — fine at this traffic; lower it if volume grows.

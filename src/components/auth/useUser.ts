@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 export interface AuthUser {
   id: string;
   username: string;
+  name: string | null;
+  avatar: string | null;
   email: string;
   emailVerified: boolean;
   srn: string | null;

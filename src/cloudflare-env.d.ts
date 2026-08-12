@@ -7,5 +7,7 @@ declare global {
   interface CloudflareEnv {
     /** Cloudflare D1 database binding (see wrangler.jsonc `d1_databases`). */
     DB: import("@cloudflare/workers-types").D1Database;
+    /** R2 bucket for user avatar images (see wrangler.jsonc `r2_buckets`). */
+    AVATARS: import("@cloudflare/workers-types").R2Bucket;
   }
 }

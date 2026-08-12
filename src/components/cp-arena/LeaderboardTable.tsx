@@ -8,6 +8,8 @@ export interface LeaderRow {
   rank: number | null;
   /** Public board identity: SRN if present, else PRN (never the username/email). */
   display: string;
+  /** R2 object key of the solver's avatar, or null → render initials. */
+  avatar: string | null;
   points: number;
   flagged: boolean;
   solved?: number;
@@ -74,13 +76,24 @@ export default function LeaderboardTable({
                 </td>
                 <td className="px-3 py-3">
                   <div className="flex items-center gap-3">
-                    <span
-                      className={`flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-bold ${
-                        you ? "bg-bronze text-white" : "bg-bronze/15 text-bronze"
-                      }`}
-                    >
-                      {r.display.slice(0, 2).toUpperCase()}
-                    </span>
+                    {r.avatar ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={`/api/avatars/${encodeURIComponent(r.avatar)}`}
+                        alt=""
+                        className={`h-8 w-8 rounded-full object-cover ${
+                          you ? "ring-2 ring-bronze" : ""
+                        }`}
+                      />
+                    ) : (
+                      <span
+                        className={`flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-bold ${
+                          you ? "bg-bronze text-white" : "bg-bronze/15 text-bronze"
+                        }`}
+                      >
+                        {r.display.slice(0, 2).toUpperCase()}
+                      </span>
+                    )}
                     <span className="flex items-center gap-2 font-semibold text-chocolate">
                       {r.display}
                       {r.flagged && (

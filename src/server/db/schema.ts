@@ -15,6 +15,8 @@ export const users = sqliteTable("users", {
   username: text("username").notNull().unique(),
   // Full name captured at registration. Nullable so existing rows are unaffected.
   name: text("name"),
+  // R2 object key of the user's profile picture (null → show initials instead).
+  avatar: text("avatar"),
   email: text("email").notNull().unique(),
   emailVerified: integer("email_verified", { mode: "boolean" })
     .notNull()

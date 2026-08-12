@@ -16,6 +16,8 @@ export interface LeaderRow {
   // Public board identity: SRN if the student has one, else PRN. The login handle
   // (username) and email are intentionally not exposed on the board.
   display: string;
+  /** R2 object key of the solver's avatar, or null → render initials. */
+  avatar: string | null;
   points: number;
   flagged: boolean;
   solved?: number; // month / all-time
@@ -72,6 +74,7 @@ async function acRows() {
       language: submissions.language,
       srn: users.srn,
       prn: users.prn,
+      avatar: users.avatar,
     })
     .from(submissions)
     .innerJoin(users, eq(submissions.userId, users.id))
@@ -93,17 +96,20 @@ export async function todayLeaderboard(): Promise<LeaderRow[]> {
       language: submissions.language,
       srn: users.srn,
       prn: users.prn,
+      avatar: users.avatar,
     })
     .from(submissions)
     .innerJoin(users, eq(submissions.userId, users.id))
     .where(and(eq(submissions.challengeSlug, daily.slug), eq(submissions.status, "AC")));
 
   const displayById = new Map(rows.map((r) => [r.userId, r.srn ?? r.prn]));
+  const avatarById = new Map(rows.map((r) => [r.userId, r.avatar]));
   const scored = scoreChallenge(rows);
 
   const out: LeaderRow[] = [...scored.entries()].map(([userId, s]) => ({
     rank: s.rank,
     display: displayById.get(userId) ?? "unknown",
+    avatar: avatarById.get(userId) ?? null,
     points: s.points,
     flagged: s.flagged,
     language: s.ac.language,
@@ -120,6 +126,7 @@ export async function todayLeaderboard(): Promise<LeaderRow[]> {
 export async function aggregateLeaderboard(scope: "month" | "all"): Promise<LeaderRow[]> {
   const rows = await acRows();
   const displayById = new Map(rows.map((r) => [r.userId, r.srn ?? r.prn]));
+  const avatarById = new Map(rows.map((r) => [r.userId, r.avatar]));
 
   const bySlug = new Map<string, Ac[]>();
   for (const r of rows) {
@@ -151,6 +158,7 @@ export async function aggregateLeaderboard(scope: "month" | "all"): Promise<Lead
   const out: LeaderRow[] = [...totals.entries()].map(([userId, t]) => ({
     rank: 0,
     display: displayById.get(userId) ?? "unknown",
+    avatar: avatarById.get(userId) ?? null,
     points: t.points,
     solved: t.solved,
     flagged: false,

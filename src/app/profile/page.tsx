@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/server/auth/session";
 import { getUserSubmissions, getProfileStats } from "@/server/profile";
 import { FLAG_LIMIT, ordinal } from "@/lib/points";
 import MechaPanel from "@/components/cp-arena/MechaPanel";
+import ProfileEditor from "./ProfileEditor";
 
 export const metadata: Metadata = {
   title: "Your profile",
@@ -50,9 +51,18 @@ export default async function ProfilePage() {
       <section className="mx-auto max-w-4xl px-6 pt-6 pb-24">
         {/* Identity header */}
         <div className="flex flex-wrap items-center gap-4">
-          <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-bronze/15 font-display text-2xl font-bold text-bronze">
-            {user.username.charAt(0).toUpperCase()}
-          </span>
+          {user.avatar ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={`/api/avatars/${encodeURIComponent(user.avatar)}`}
+              alt=""
+              className="h-16 w-16 rounded-2xl object-cover"
+            />
+          ) : (
+            <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-bronze/15 font-display text-2xl font-bold text-bronze">
+              {(user.name ?? user.username).charAt(0).toUpperCase()}
+            </span>
+          )}
           <div>
             <h1 className="font-display text-2xl font-bold tracking-tight text-chocolate sm:text-3xl">
               @{user.username}
@@ -97,6 +107,12 @@ export default async function ProfilePage() {
           </DetailRow>
           </div>
         </MechaPanel>
+
+        <ProfileEditor
+          initialName={user.name ?? ""}
+          initialUsername={user.username}
+          initialAvatar={user.avatar}
+        />
 
         {/* Stats */}
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">

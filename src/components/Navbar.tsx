@@ -145,9 +145,19 @@ export default function Navbar() {
               <Link
                 href="/profile"
                 title={`@${user.username} · your profile`}
-                className="hidden max-w-[10rem] truncate rounded-full bg-bronze/10 px-3.5 py-2 text-sm font-semibold text-bronze sm:block"
+                aria-label="Your profile"
+                className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-hairline bg-bronze/10 text-sm font-bold text-bronze shadow-sm transition-shadow hover:shadow-md"
               >
-                @{user.username}
+                {user.avatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={`/api/avatars/${encodeURIComponent(user.avatar)}`}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  (user.name ?? user.username).charAt(0).toUpperCase()
+                )}
               </Link>
               <button
                 type="button"

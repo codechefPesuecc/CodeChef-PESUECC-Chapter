@@ -119,6 +119,7 @@ export async function POST(req: Request) {
     id,
     username,
     name,
+    avatar: null,
     email,
     emailVerified: false,
     srn,
