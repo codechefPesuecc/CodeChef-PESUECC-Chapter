@@ -18,8 +18,11 @@ import {
 
 export const dynamic = "force-dynamic";
 
-// Turn on once an email provider is configured (see AUTH docs).
-const REQUIRE_VERIFIED = process.env.REQUIRE_EMAIL_VERIFICATION === "true";
+// Read per-request, not at import: on Workers env vars/secrets are only reliably
+// in process.env within a request scope (see auth/token.ts).
+function requireVerified(): boolean {
+  return process.env.REQUIRE_EMAIL_VERIFICATION === "true";
+}
 
 // Per-user submission cap — the FIFO judge queue bounds throughput, this bounds
 // spam per account before it ever reaches the queue.
@@ -39,7 +42,7 @@ export async function POST(req: Request) {
       { status: 401 },
     );
   }
-  if (REQUIRE_VERIFIED && !user.emailVerified) {
+  if (requireVerified() && !user.emailVerified) {
     return NextResponse.json(
       { ok: false, error: "Verify your email before submitting.", needsVerify: true },
       { status: 403 },
