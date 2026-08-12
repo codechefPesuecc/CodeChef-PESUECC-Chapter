@@ -29,6 +29,13 @@
       "when": 1786396701103,
       "tag": "0003_special_wolfsbane",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1786535870931,
+      "tag": "0004_add_user_name",
+      "breakpoints": true
     }
   ]
 }

@@ -23,6 +23,7 @@ export { SESSION_MAX_AGE, createSessionToken, readSessionToken };
 export interface SessionUser {
   id: string;
   username: string;
+  name: string | null;
   email: string;
   emailVerified: boolean;
   srn: string | null;
@@ -51,6 +52,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   return {
     id: user.id,
     username: user.username,
+    name: user.name,
     email: user.email,
     emailVerified: user.emailVerified,
     srn: user.srn,

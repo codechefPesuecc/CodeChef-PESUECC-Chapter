@@ -43,6 +43,7 @@ export async function POST(req: Request) {
   if (limited) return limited;
 
   const username = String(body.username ?? "").trim().toLowerCase();
+  const name = String(body.name ?? "").trim();
   const email = String(body.email ?? "").trim().toLowerCase();
   const prn = String(body.prn ?? "").trim().toUpperCase();
   const srn = body.srn ? String(body.srn).trim().toUpperCase() : null;
@@ -51,6 +52,12 @@ export async function POST(req: Request) {
   if (!USERNAME_RE.test(username)) {
     return NextResponse.json(
       { ok: false, error: "Username must be 3–20 characters: letters, numbers, underscore." },
+      { status: 400 },
+    );
+  }
+  if (name.length < 1 || name.length > 80) {
+    return NextResponse.json(
+      { ok: false, error: "Enter your name (up to 80 characters)." },
       { status: 400 },
     );
   }
@@ -90,6 +97,7 @@ export async function POST(req: Request) {
     await db.insert(users).values({
       id,
       username,
+      name,
       email,
       srn,
       prn,
@@ -106,6 +114,7 @@ export async function POST(req: Request) {
   const user: SessionUser = {
     id,
     username,
+    name,
     email,
     emailVerified: false,
     srn,
