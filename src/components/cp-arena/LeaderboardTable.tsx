@@ -6,7 +6,8 @@ export type LeaderScope = "today" | "month" | "all";
 
 export interface LeaderRow {
   rank: number | null;
-  username: string;
+  /** Public board identity: SRN if present, else PRN (never the username/email). */
+  display: string;
   points: number;
   flagged: boolean;
   solved?: number;
@@ -17,11 +18,11 @@ export interface LeaderRow {
 export default function LeaderboardTable({
   rows,
   scope,
-  currentUsername,
+  currentIdentity,
 }: {
   rows: LeaderRow[];
   scope: LeaderScope;
-  currentUsername?: string | null;
+  currentIdentity?: string | null;
 }) {
   const isToday = scope === "today";
 
@@ -54,10 +55,10 @@ export default function LeaderboardTable({
         </thead>
         <tbody>
           {rows.map((r, i) => {
-            const you = !!currentUsername && r.username === currentUsername;
+            const you = !!currentIdentity && r.display === currentIdentity;
             return (
               <tr
-                key={r.username}
+                key={r.display}
                 className={`border-t border-hairline ${
                   you
                     ? "bg-bronze/10"
@@ -78,10 +79,10 @@ export default function LeaderboardTable({
                         you ? "bg-bronze text-white" : "bg-bronze/15 text-bronze"
                       }`}
                     >
-                      {r.username.slice(0, 2).toUpperCase()}
+                      {r.display.slice(0, 2).toUpperCase()}
                     </span>
                     <span className="flex items-center gap-2 font-semibold text-chocolate">
-                      @{r.username}
+                      {r.display}
                       {r.flagged && (
                         <span className="mecha-chip bg-red-500/15 text-red-600 dark:text-red-400">
                           Flagged
