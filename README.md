@@ -8,10 +8,10 @@ This repository houses a modern, edge-optimized application engineered using **N
 
 ## 🏗️ Technical Architecture & Stack
 
-* **Frontend Framework:** Next.js (App Router) optimized for Edge runtimes.
-* **Hosting & CI/CD:** **Cloudflare Pages** integrated directly with GitHub. Every commit to `main` instantly builds and updates globally via Wrangler pipelines.
+* **Frontend Framework:** Next.js (App Router) built for Cloudflare Workers via the OpenNext adapter (`@opennextjs/cloudflare`).
+* **Hosting & Deploy:** **Cloudflare Workers**. Builds run through the OpenNext adapter and deploy with Wrangler (see `DEPLOY.md`).
 * **Database (Edge Storage):** **Cloudflare D1** (Serverless, ultra-low latency SQLite database running natively on Cloudflare's global edge network).
-* **Content Pipeline (GitOps):** Markdown (`.md`) files with YAML Frontmatter for challenge orchestration.
+* **Content Pipeline (GitOps):** One **JSON** file per problem in `/challenges`, bundled into the app at build time (Workers have no filesystem, so problems ride in the bundle).
 * **Code Judge Sandbox:** A self-hosted instance of the **Piston Engine / AlgoHunt Base** running on an isolated **Oracle Cloud Infrastructure (OCI) Always Free Ampere A1 Compute Instance** (Configured at 2 OCPUs / 12 GB RAM).
 
 ---
@@ -19,7 +19,7 @@ This repository houses a modern, edge-optimized application engineered using **N
 ## 📂 Repository Directory Tree
 
 ```text
-├── .github/workflows/       # CI/CD pipelines (Auto-sync challenges to D1)
+├── .github/workflows/       # CI: typecheck, lint, test, build; validate challenge JSON
 ├── src/
 │   ├── app/                 # Next.js App Router (Pages & Edge API Routes)
 │   │   ├── api/             # Edge backends (/api/submit, /api/leaderboard)
@@ -28,9 +28,9 @@ This repository houses a modern, edge-optimized application engineered using **N
 │   │   └── team/            # Core and Alumni registry pages
 │   ├── components/          # Reusable UI modules (CodeChef Brand System)
 │   └── styles/              # Global layout design variables
-├── challenges/              # GitOps directory: Active challenge Markdown records
+├── challenges/              # GitOps directory: one JSON file per problem
 ├── migrations/              # Cloudflare D1 SQLite database schemas
-├── wrangler.toml             # Cloudflare Pages & D1 binding configurations
+├── wrangler.jsonc            # Cloudflare Workers & D1 binding configuration
 └── README.md
 ```
 
@@ -51,44 +51,37 @@ The interface utilizes the formal, premium CodeChef corporate visual palette to 
 
 ## 📝 Problem Setters' Workflow (GitOps)
 
-Problem setters do not access databases or administrative visual panels directly. To push a new problem to the live site, they utilize standard version-controlled Markdown files inside the `/challenges/` directory.
+Problem setters do not access databases or admin panels directly. To add a problem they commit one **JSON** file to the `/challenges/` directory via a version-controlled Pull Request.
 
-### Challenge Schema File Format (`/challenges/YYYY-MM-DD-slug.md`)
+### Challenge file format (`/challenges/YYYY-MM-DD-slug.json`)
 
-````markdown
----
-title: "Minimize the Maximum Difference"
-difficulty: "Medium"
-points: 100
-tags: ["Arrays", "Binary Search", "Greedy"]
-date: "2026-07-20"
----
+Each problem is a single JSON object. The authoritative shape is enforced by `scripts/validate-challenges.ts` (run in CI); see `challenges/README.md` and the committed example for the full field list. In brief:
 
-# Minimize the Maximum Difference
-
-Given an integer array `nums` and an integer `p`, find `p` pairs of indices such that the maximum difference between the paired elements is minimized.
-
-## Input Format
-- The first line contains the array size and `p`.
-- The second line contains the array elements.
-
-## Sample Input
-```text
-4 1
-10 1 2 7
+```json
+{
+  "title": "Minimize the Maximum Difference",
+  "difficulty": "Medium",
+  "date": "2026-07-20",
+  "tags": ["Arrays", "Binary Search", "Greedy"],
+  "timeLimit": "1s",
+  "memoryLimit": "256 MB",
+  "statement": "Given an integer array nums and an integer p, ...",
+  "inputFormat": "The first line contains the array size and p, ...",
+  "outputFormat": "A single integer ...",
+  "constraints": "1 <= n <= 1e5",
+  "checker": "token",
+  "samples": [{ "input": "4 1\n10 1 2 7", "output": "1" }],
+  "tests":   [{ "input": "...", "output": "..." }]
+}
 ```
 
-## Sample Output
-```text
-1
-```
-````
+`samples` are shown to users; `tests` are the hidden judged cases and are **server-side only** — they're stripped before the problem is sent to the client. Keep the repo private so the hidden tests stay hidden.
 
-### Automated Sync Mechanics
+### How a problem goes live
 
-1. A problem setter pushes a new `.md` file via a GitHub Pull Request (PR).
-2. The core team reviews the formatting, hidden edge cases, and constraints before merging to `main`.
-3. Upon merge, a **GitHub Action** executes a custom parser script that reads the YAML Frontmatter header, converts the markdown body into standard text/HTML format, and invokes the `wrangler d1 execute` command to instantly sync the problem parameters into the live Cloudflare D1 database.
+1. A setter opens a PR adding a `YYYY-MM-DD-slug.json` file; CI validates it (`npm run challenges:validate`).
+2. The core team reviews formatting, constraints, and hidden tests, then merges to `main`.
+3. `scripts/build-challenges.mjs` bundles every challenge into `src/lib/challenges.manifest.json` at build time, so **publishing a problem is a redeploy** — there is no runtime D1 sync. The Problem of the Day is the most recent challenge whose `date` is on or before today.
 
 ---
 
@@ -115,8 +108,8 @@ To prevent execution vulnerabilities (Infinite loops, file-system intrusions, fo
 1. **Clone the codebase:**
 
    ```bash
-   git clone https://github.com/your-username/codechef-pesuecc-site.git
-   cd codechef-pesuecc-site
+   git clone https://github.com/codechefPesuecc/CodeChef-PESUECC-Chapter.git
+   cd CodeChef-PESUECC-Chapter
    ```
 
 2. **Install project node components:**
@@ -125,17 +118,13 @@ To prevent execution vulnerabilities (Infinite loops, file-system intrusions, fo
    npm install
    ```
 
-3. **Initialize the local Cloudflare D1 SQLite test database instance:**
-
-   ```bash
-   wrangler d1 migrations apply codechef_db --local
-   ```
-
-4. **Boot up the local Next.js edge simulation server environment:**
+3. **Run the app** — no database setup needed. `npm run dev` uses a local SQLite file (`./data/arena.db`) and auto-applies the migrations in `/migrations` on startup:
 
    ```bash
    npm run dev
    ```
+
+   For the code judge (Run / Submit), start the Piston sandbox — see `docs/backend.md`. Deploying to Cloudflare (the `pesuecc-arena` D1 database + secrets) is covered in `DEPLOY.md`.
 
 Open `http://localhost:3000` inside your browser to see your local instance.
 
