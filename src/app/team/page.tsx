@@ -11,8 +11,8 @@ export const metadata: Metadata = {
 /**
  * `/team` — Server Component entry point.
  *
- * Reads the filesystem at request time to discover years and member data,
- * then hands everything to the interactive client shell.
+ * Reads the build-time team manifest (see src/app/team/lib.ts) for years and
+ * member data, then hands everything to the interactive client shell.
  */
 export default function TeamPage() {
   const data = getAllTeamData();
