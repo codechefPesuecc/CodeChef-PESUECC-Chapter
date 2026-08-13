@@ -300,7 +300,8 @@ export default function Home() {
           <MechaPanel
             style={
               {
-                "--mecha-fill": "#1e1610",
+                // Fill intentionally left to the theme default (--color-panel) so
+                // the CTA flips light/dark with the rest of the site.
                 "--mecha-line": "var(--color-bronze)",
               } as CSSProperties
             }
@@ -315,10 +316,10 @@ export default function Home() {
               className="pointer-events-none absolute -bottom-20 -left-10 h-64 w-64 rounded-full bg-brown/40 blur-3xl"
             />
             <div className="relative">
-              <h2 className="text-balance font-display text-3xl font-bold tracking-tight text-cream sm:text-4xl">
+              <h2 className="text-balance font-display text-3xl font-bold tracking-tight text-chocolate sm:text-4xl">
                 Ready to compete?
               </h2>
-              <p className="mx-auto mt-4 max-w-xl text-pretty text-cream/70">
+              <p className="mx-auto mt-4 max-w-xl text-pretty text-charcoal/75">
                 Solve the daily Problem of the Day, climb the campus leaderboard, and
                 earn your share of the monthly bounty.
               </p>
