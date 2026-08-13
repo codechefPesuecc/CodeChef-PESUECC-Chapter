@@ -52,7 +52,7 @@ function EventBlueprintCard({
   const cover = event.gallery[0];
 
   return (
-    <article className="relative w-full isolate group">
+    <article id={event.id} className="relative w-full isolate group scroll-mt-24">
       {/* ═══════════════════════════════════════════════
        *  1. THE PIXEL-PERFECT POLYGON BORDER (User Design)
        *  Outer shape (border color) + Inner shape (fill color)
