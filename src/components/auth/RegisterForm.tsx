@@ -6,7 +6,7 @@ import MechaPanel from "@/components/cp-arena/MechaPanel";
 
 const inputCls = "mecha-input";
 
-const empty = { username: "", email: "", prn: "", srn: "", password: "", confirm: "" };
+const empty = { name: "", username: "", email: "", prn: "", srn: "", password: "", confirm: "" };
 
 export default function RegisterForm() {
   const [form, setForm] = useState(empty);
@@ -35,6 +35,7 @@ export default function RegisterForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          name: form.name,
           username: form.username,
           email: form.email,
           prn: form.prn,
@@ -65,7 +66,16 @@ export default function RegisterForm() {
           Join the Arena and climb the daily leaderboard.
         </p>
         <form onSubmit={submit} className="mt-6 space-y-4">
-          <Field label="Username" hint="Your public name on the leaderboard.">
+          <Field label="Name" hint="Your full name.">
+            <input
+              className={inputCls}
+              value={form.name}
+              onChange={set("name")}
+              autoComplete="name"
+              required
+            />
+          </Field>
+          <Field label="Username" hint="Your public handle on the leaderboard.">
             <input
               className={inputCls}
               value={form.username}

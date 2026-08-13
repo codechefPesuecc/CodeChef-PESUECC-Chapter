@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import { users } from "@/server/db/schema";
-import { verifyPassword } from "@/server/auth/password";
+import { hashPassword, verifyPassword } from "@/server/auth/password";
 import { clientIp, enforceRateLimits } from "@/server/rateLimit";
 import {
   SESSION_COOKIE,
@@ -19,6 +19,16 @@ const cookieOptions = {
   path: "/",
   maxAge: SESSION_MAX_AGE,
 };
+
+// A dummy hash (computed once, lazily within a request) so the "no such user"
+// path still spends scrypt time. Without it, a missing username returns faster
+// than a wrong password, leaking which usernames exist — defense-in-depth on top
+// of the login rate limit.
+let dummyHash: string | null = null;
+function timingEqualizer(): string {
+  if (!dummyHash) dummyHash = hashPassword("timing-equalizer-not-a-real-account");
+  return dummyHash;
+}
 
 export async function POST(req: Request) {
   let body: Record<string, unknown>;
@@ -47,7 +57,10 @@ export async function POST(req: Request) {
   const db = getDb();
   const rows = await db.select().from(users).where(eq(users.username, username)).limit(1);
   const user = rows[0];
-  if (!user || !verifyPassword(password, user.passwordHash)) {
+  // Always run verifyPassword (against the dummy hash when the user is missing)
+  // so response timing doesn't reveal whether the username is registered.
+  const passwordOk = verifyPassword(password, user?.passwordHash ?? timingEqualizer());
+  if (!user || !passwordOk) {
     return NextResponse.json(
       { ok: false, error: "Invalid username or password." },
       { status: 401 },

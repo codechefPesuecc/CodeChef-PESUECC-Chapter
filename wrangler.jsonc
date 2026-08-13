@@ -13,6 +13,13 @@
     "binding": "ASSETS"
   },
 
+  // Plain-text runtime config. Require email verification (6-digit OTP) before a
+  // user can submit — the register flow sends the code and routes to /verify.
+  // Safe here because the Gmail secrets are configured (see DEPLOY.md §5).
+  "vars": {
+    "REQUIRE_EMAIL_VERIFICATION": "true"
+  },
+
   // --- Database: Cloudflare D1 ---
   // src/server/db reads this `DB` binding per request (drizzle-orm/d1 +
   // getCloudflareContext). One-time setup:
@@ -27,5 +34,13 @@
       "database_id": "8af7b1c8-c467-4401-86fe-8abd429c35de",
       "migrations_dir": "migrations"
     }
-  ]
+  ],
+
+  // Workers Logs: capture request logs + errors (viewable in the dashboard under
+  // the Worker's Observability tab, and via `wrangler tail`). head_sampling_rate
+  // 1 logs every request — fine at this traffic; lower it if volume grows.
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
 }

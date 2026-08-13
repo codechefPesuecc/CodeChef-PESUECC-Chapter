@@ -15,8 +15,12 @@ import {
 export const dynamic = "force-dynamic";
 
 // Turn on once an email provider is configured (see AUTH docs). The first OTP is
-// sent by the /verify page on load, not here.
-const REQUIRE_VERIFIED = process.env.REQUIRE_EMAIL_VERIFICATION === "true";
+// sent by the /verify page on load, not here. Read per-request, not at import:
+// on Workers env vars/secrets are only reliably in process.env within a request
+// scope (see auth/token.ts), so an import-time capture would silently stay false.
+function requireVerified(): boolean {
+  return process.env.REQUIRE_EMAIL_VERIFICATION === "true";
+}
 
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -43,6 +47,7 @@ export async function POST(req: Request) {
   if (limited) return limited;
 
   const username = String(body.username ?? "").trim().toLowerCase();
+  const name = String(body.name ?? "").trim();
   const email = String(body.email ?? "").trim().toLowerCase();
   const prn = String(body.prn ?? "").trim().toUpperCase();
   const srn = body.srn ? String(body.srn).trim().toUpperCase() : null;
@@ -51,6 +56,12 @@ export async function POST(req: Request) {
   if (!USERNAME_RE.test(username)) {
     return NextResponse.json(
       { ok: false, error: "Username must be 3–20 characters: letters, numbers, underscore." },
+      { status: 400 },
+    );
+  }
+  if (name.length < 1 || name.length > 80) {
+    return NextResponse.json(
+      { ok: false, error: "Enter your name (up to 80 characters)." },
       { status: 400 },
     );
   }
@@ -90,6 +101,7 @@ export async function POST(req: Request) {
     await db.insert(users).values({
       id,
       username,
+      name,
       email,
       srn,
       prn,
@@ -106,6 +118,7 @@ export async function POST(req: Request) {
   const user: SessionUser = {
     id,
     username,
+    name,
     email,
     emailVerified: false,
     srn,
@@ -115,7 +128,7 @@ export async function POST(req: Request) {
   const res = NextResponse.json({
     ok: true,
     user,
-    needsVerify: REQUIRE_VERIFIED,
+    needsVerify: requireVerified(),
   });
   res.cookies.set(SESSION_COOKIE, createSessionToken(id, 0), cookieOptions);
   return res;

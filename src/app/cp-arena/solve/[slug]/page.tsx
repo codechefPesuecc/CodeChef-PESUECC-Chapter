@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import {
   getChallengeBySlug,
   getDailyChallenge,
 } from "@/lib/challenges";
+import { getCurrentUser } from "@/server/auth/session";
 import ProblemStatement from "@/components/cp-arena/ProblemStatement";
 import ArenaWorkspace from "@/components/cp-arena/ArenaWorkspace";
+import ArenaRules from "@/components/cp-arena/ArenaRules";
+import NextProblemCountdown from "@/components/cp-arena/NextProblemCountdown";
 
 // The released set and today's daily are date-dependent — resolve per request.
 export const dynamic = "force-dynamic";
@@ -36,11 +39,14 @@ export async function generateMetadata({
   const { slug } = await params;
   const challenge = getChallengeBySlug(slug);
   return {
-    title: challenge ? `${challenge.title} · Practice` : "Practice",
+    title: challenge ? `${challenge.title} · Arena` : "Arena",
+    description: challenge
+      ? `Solve "${challenge.title}" — the Problem of the Day in the CodeChef PESUECC Arena.`
+      : "The daily competitive programming arena.",
   };
 }
 
-export default async function ArchiveProblemPage({
+export default async function SolveProblemPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
@@ -48,12 +54,45 @@ export default async function ArchiveProblemPage({
   const { slug } = await params;
   const challenge = getChallengeBySlug(slug);
 
-  // Unreleased or unknown slugs don't resolve — no early leak of a future set.
+  // Unknown or unreleased slugs don't resolve.
   if (!challenge) notFound();
 
-  // Today's live problem is always solved ranked at /cp-arena/solve/[slug], never as practice.
+  // If this isn't today's live problem, it should be solved as practice via
+  // the archive route, not the ranked solve route.
   const daily = getDailyChallenge();
-  if (daily?.slug === slug) redirect(`/cp-arena/solve/${slug}`);
+  const isLive = daily?.slug === slug;
+
+  // Today's ranked Problem of the Day is members-only — gate viewing behind
+  // login. Past problems (isLive === false) stay open as practice.
+  if (isLive) {
+    const user = await getCurrentUser();
+    if (!user) {
+      return (
+        <main className="flex flex-1 items-center justify-center px-6 py-32 text-center">
+          <div className="max-w-md">
+            <h1 className="font-display text-2xl font-bold text-chocolate">
+              Log in to enter the Arena
+            </h1>
+            <p className="mt-3 text-charcoal/70">
+              The Problem of the Day is for registered members. Log in or create
+              an account to view today&apos;s problem and climb the leaderboard.
+            </p>
+            <div className="mt-6 flex items-center justify-center gap-3">
+              <Link
+                href="/login"
+                className="rounded-lg bg-bronze px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-bronze/90"
+              >
+                Log in
+              </Link>
+              <Link href="/register" className="mecha-btn mecha-btn--ghost">
+                Create account
+              </Link>
+            </div>
+          </div>
+        </main>
+      );
+    }
+  }
 
   const difficultyStyle =
     DIFFICULTY_STYLES[challenge.difficulty] ?? "bg-bronze/15 text-bronze";
@@ -72,10 +111,16 @@ export default async function ArchiveProblemPage({
           </Link>
           <span className="text-charcoal/40">·</span>
           <span className="font-semibold uppercase tracking-wider text-bronze">
-            Practice
+            {isLive ? "Problem of the Day" : "Practice"}
           </span>
           <span className="text-charcoal/40">·</span>
           <span className="text-charcoal/60">{formatDate(challenge.date)}</span>
+          {isLive && (
+            <>
+              <span className="text-charcoal/40">·</span>
+              <NextProblemCountdown />
+            </>
+          )}
         </div>
 
         <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
@@ -112,12 +157,14 @@ export default async function ArchiveProblemPage({
           </p>
         )}
 
+        {isLive && <ArenaRules />}
+
         <ArenaWorkspace
           slug={challenge.slug}
           problem={<ProblemStatement challenge={challenge} />}
           sampleInput={sample?.input ?? ""}
           sampleOutput={sample?.output ?? ""}
-          practice
+          {...(!isLive && { practice: true })}
         />
       </section>
     </main>

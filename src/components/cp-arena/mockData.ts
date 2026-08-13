@@ -1,7 +1,8 @@
 /**
- * Frontend-only fixtures for the Arena. Starter templates seed the editor and
- * the standings seed the live board so the speed-bounty flow can be demonstrated
- * before the real judge (README: Piston sandbox) and Cloudflare D1 are wired up.
+ * Editor configuration for the Arena workspace: the supported languages, their
+ * starter templates, and small formatting helpers. The judge (Piston) and the
+ * D1-backed leaderboard are live — the standings come from /api/leaderboard, so
+ * there are no mock solvers here.
  */
 
 export type LanguageId =
@@ -152,41 +153,6 @@ pub fn main() !void {
 }
 `,
 };
-
-export interface Solver {
-  name: string;
-  handle: string;
-  initials: string;
-  language: string;
-  /** Solve duration in seconds — faster solves rank higher (the speed bounty). */
-  timeSeconds: number;
-  isYou?: boolean;
-}
-
-/** Solvers who have already cracked today's problem, by solve duration. */
-export const INITIAL_STANDINGS: Solver[] = [
-  {
-    name: "Aarav Sharma",
-    handle: "aarav_cp",
-    initials: "AS",
-    language: "C++",
-    timeSeconds: 4 * 60 + 12,
-  },
-  {
-    name: "Diya Rao",
-    handle: "diya01",
-    initials: "DR",
-    language: "Python",
-    timeSeconds: 6 * 60 + 38,
-  },
-  {
-    name: "Karthik Nair",
-    handle: "k_nair",
-    initials: "KN",
-    language: "C++",
-    timeSeconds: 8 * 60 + 51,
-  },
-];
 
 /** mm:ss for a duration in seconds. */
 export function formatClock(totalSeconds: number): string {

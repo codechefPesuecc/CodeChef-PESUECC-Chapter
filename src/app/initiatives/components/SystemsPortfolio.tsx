@@ -8,7 +8,7 @@ export function SystemsPortfolio() {
       <div className="absolute inset-0 bg-chocolate dark:bg-[#0f0b07]" />
       <div
         aria-hidden
-        className="absolute inset-0 bg-tech-grid-main"
+        className="absolute inset-0 bg-tech-glow-main"
       />
       <div className="relative z-10 mx-auto max-w-6xl px-6">
         <div className="grid gap-8 lg:grid-cols-[0.42fr_0.58fr] lg:items-end">
@@ -65,7 +65,7 @@ function SystemPanel({
       >
         <div
           aria-hidden
-          className="absolute inset-0 bg-tech-grid-card opacity-80"
+          className="absolute inset-0 bg-tech-glow-card opacity-80"
         />
         <div className="relative grid gap-0 lg:grid-cols-[0.38fr_0.62fr]">
           <div className="p-6 sm:p-8">

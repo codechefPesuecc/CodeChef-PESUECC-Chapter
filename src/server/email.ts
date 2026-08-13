@@ -15,10 +15,10 @@ export interface EmailMessage {
   html?: string;
 }
 
-export type EmailTransport = "resend" | "console";
+export type EmailTransport = "gmail" | "console";
 
 export function emailTransport(): EmailTransport {
-  return process.env.RESEND_API_KEY ? "resend" : "console";
+  return process.env.GMAIL_REFRESH_TOKEN ? "gmail" : "console";
 }
 
 /** True when emails are only logged instead of sent (no provider configured). */
@@ -37,33 +37,110 @@ export function canRevealSecretInResponse(): boolean {
   return isConsoleTransport() && process.env.NODE_ENV !== "production";
 }
 
+function encodeBase64Url(str: string): string {
+  if (typeof btoa !== "undefined") {
+    // Browser / Edge / Node polyfill
+    const b64 = btoa(unescape(encodeURIComponent(str)));
+    return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+  // Fallback for native Node if needed
+  return Buffer.from(str, "utf-8").toString("base64url");
+}
+
+async function getGmailAccessToken(): Promise<string | null> {
+  const tokenUrl = "https://oauth2.googleapis.com/token";
+  const params = new URLSearchParams({
+    client_id: process.env.GMAIL_CLIENT_ID || "",
+    client_secret: process.env.GMAIL_CLIENT_SECRET || "",
+    refresh_token: process.env.GMAIL_REFRESH_TOKEN || "",
+    grant_type: "refresh_token",
+  });
+
+  try {
+    const res = await fetch(tokenUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params.toString(),
+    });
+
+    if (!res.ok) {
+      console.error("[email] Failed to refresh Gmail token:", res.status, await res.text());
+      return null;
+    }
+
+    const data = await res.json() as { access_token: string };
+    return data.access_token;
+  } catch (err) {
+    console.error("[email] Error refreshing Gmail token:", err);
+    return null;
+  }
+}
+
 export async function sendEmail(
   msg: EmailMessage,
 ): Promise<{ ok: boolean; error?: string }> {
-  if (emailTransport() === "resend") {
+  if (emailTransport() === "gmail") {
     try {
-      const res = await fetch("https://api.resend.com/emails", {
+      const accessToken = await getGmailAccessToken();
+      if (!accessToken) {
+        return { ok: false, error: "Authentication with email provider failed." };
+      }
+
+      const from = process.env.EMAIL_FROM ?? "CodeChef PESUECC <noreply@gmail.com>";
+      const headers = [
+        `From: ${from}`,
+        `To: ${msg.to}`,
+        `Subject: =?utf-8?B?${encodeBase64Url(msg.subject)}?=`,
+        "MIME-Version: 1.0",
+      ];
+      // When HTML is present, send multipart/alternative (plain-text fallback +
+      // branded HTML) — better rendering coverage and deliverability than
+      // HTML-only. Otherwise a simple text/plain message.
+      let rawEmail: string;
+      if (msg.html) {
+        const boundary = "=_arena_alt_7c1f2a";
+        rawEmail = [
+          ...headers,
+          `Content-Type: multipart/alternative; boundary="${boundary}"`,
+          "",
+          `--${boundary}`,
+          "Content-Type: text/plain; charset=utf-8",
+          "",
+          msg.text,
+          `--${boundary}`,
+          "Content-Type: text/html; charset=utf-8",
+          "",
+          msg.html,
+          `--${boundary}--`,
+          "",
+        ].join("\r\n");
+      } else {
+        rawEmail = [
+          ...headers,
+          "Content-Type: text/plain; charset=utf-8",
+          "",
+          msg.text,
+        ].join("\r\n");
+      }
+      const base64UrlEmail = encodeBase64Url(rawEmail);
+
+      const res = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+          Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          from: process.env.EMAIL_FROM ?? "Arena <onboarding@resend.dev>",
-          to: msg.to,
-          subject: msg.subject,
-          text: msg.text,
-          html: msg.html,
-        }),
+        body: JSON.stringify({ raw: base64UrlEmail }),
       });
+
       if (!res.ok) {
         const detail = await res.text().catch(() => "");
-        console.error("[email] resend failed:", res.status, detail);
+        console.error("[email] gmail api failed:", res.status, detail);
         return { ok: false, error: `Email provider returned ${res.status}.` };
       }
       return { ok: true };
     } catch (e) {
-      console.error("[email] resend error:", e);
+      console.error("[email] gmail api error:", e);
       return { ok: false, error: "Could not reach the email provider." };
     }
   }
