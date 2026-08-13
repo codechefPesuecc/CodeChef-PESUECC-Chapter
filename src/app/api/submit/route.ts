@@ -123,6 +123,7 @@ export async function POST(req: Request) {
   let elapsedSeconds: number | null = null;
 
   // Record every ranked judged submission (audit trail + leaderboard source).
+  let persistFailed = false;
   if (ranked) {
     const db = getDb();
     try {
@@ -163,8 +164,34 @@ export async function POST(req: Request) {
       });
     } catch (error) {
       console.error("[submit] failed to record submission:", error);
+      persistFailed = true;
+    }
+
+    // For a ranked AC whose insert succeeded, read back the user's authoritative
+    // rank/points from the DB state that just recorded the submission — the
+    // client can use this directly instead of relying on a potentially-stale
+    // board re-fetch (D1 read-after-write lag).
+    if (result.verdict === "AC" && !persistFailed) {
+      try {
+        const { todayLeaderboard } = await import("@/server/leaderboard");
+        const board = await todayLeaderboard();
+        const me = board.find((r) => r.display === (user.srn ?? user.prn));
+        return NextResponse.json({
+          ok: true,
+          practice: false,
+          ...result,
+          elapsedSeconds,
+          persistFailed,
+          rank: me?.rank ?? null,
+          points: me?.points ?? null,
+          flagged: me?.flagged ?? false,
+        });
+      } catch (error) {
+        console.error("[submit] failed to compute post-AC standings:", error);
+        // Fall through to the generic response — client will use board fetch.
+      }
     }
   }
 
-  return NextResponse.json({ ok: true, practice: !ranked, ...result, elapsedSeconds });
+  return NextResponse.json({ ok: true, practice: !ranked, ...result, elapsedSeconds, ...(ranked ? { persistFailed } : {}) });
 }

@@ -60,6 +60,7 @@ type Judgement = {
   passed?: number; // submit: tests passed before failure
   total?: number; // submit: total tests
   failedOn?: number; // submit: 1-based failing test index
+  warning?: string; // soft warning (e.g. persist failure on an AC)
 } | null;
 
 interface Submission {
@@ -453,16 +454,38 @@ export default function ArenaWorkspace({
           // Past problem: judged for feedback, but no rank/points/board.
           addHistory("AC", formatClock(official), "Practice");
         } else {
-          // The server now owns the standings — read our real rank/points back.
+          // Prefer the server-computed rank/points (immune to read-after-write lag).
+          let rank: number | null = data.rank ?? null;
+          let points: number | null = data.points ?? null;
+          let flagged: boolean = data.flagged ?? flagsNow > FLAG_LIMIT;
+
+          // Still refresh the board for display, but don't use it for self-identity
+          // unless the server didn't return rank/points (older API or compute failure).
           const rows = await fetchBoardRows();
           setBoard(rows);
-          const me = rows.find((r) => r.display === (user.srn ?? user.prn));
-          const rank = me?.rank ?? null;
-          const points = me?.points ?? (flagsNow > FLAG_LIMIT ? BASE_POINTS : null);
-          const flagged = me?.flagged ?? flagsNow > FLAG_LIMIT;
+
+          if (rank == null && points == null) {
+            const me = rows.find((r) => r.display === (user.srn ?? user.prn));
+            rank = me?.rank ?? null;
+            points = me?.points ?? (flagsNow > FLAG_LIMIT ? BASE_POINTS : null);
+            flagged = me?.flagged ?? flagsNow > FLAG_LIMIT;
+          }
+
           setMyRank(rank);
           setMyPoints(points);
           setMyFlaggedSolve(flagged);
+
+          // Surface a soft warning if the server recorded the AC verdict but
+          // failed to persist the submission row (leaderboard won't reflect it).
+          if (data.persistFailed) {
+            setJudgement({
+              mode: "submit",
+              status: "AC",
+              total: data.total,
+              warning:
+                "Accepted, but recording to the leaderboard failed. Try re-submitting or contact staff.",
+            });
+          }
 
           const detail = flagged
             ? `Flagged · +${points ?? BASE_POINTS} pts`
@@ -1004,6 +1027,11 @@ function SubmitResult({
             <span className="font-semibold text-emerald-600 dark:text-emerald-400">
               +{myPoints} pts
             </span>
+          </p>
+        )}
+        {judgement.warning && (
+          <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
+            ⚠ {judgement.warning}
           </p>
         )}
       </div>
