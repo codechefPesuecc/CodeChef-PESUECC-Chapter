@@ -35,11 +35,11 @@ export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="relative mt-auto overflow-hidden bg-chocolate text-cream/80 dark:bg-[#0f0b07]">
+    <footer className="relative mt-auto overflow-hidden bg-[#efe9e0] text-charcoal/80 dark:bg-[#0f0b07] dark:text-cream/80">
       {/* Depth: vertical gradient + soft bronze glow at the top edge */}
       <div
         aria-hidden
-        className="absolute inset-0 bg-gradient-to-b from-chocolate to-[#2a1f18] dark:from-[#0f0b07] dark:to-[#181109]"
+        className="absolute inset-0 bg-gradient-to-b from-[#efe9e0] to-[#e6ddcf] dark:from-[#0f0b07] dark:to-[#181109]"
       />
       <div
         aria-hidden
@@ -48,7 +48,7 @@ export default function Footer() {
       {/* Oversized watermark wordmark */}
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 select-none text-center font-display text-[15vw] font-bold leading-none tracking-tight text-cream/[0.05]"
+        className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 select-none text-center font-display text-[15vw] font-bold leading-none tracking-tight text-chocolate/[0.05]"
       >
         CODECHEF
       </span>
@@ -69,7 +69,7 @@ export default function Footer() {
                 />
               </span>
               <div className="font-display leading-none">
-                <p className="text-lg font-bold tracking-tight text-cream">
+                <p className="text-lg font-bold tracking-tight text-chocolate">
                   CodeChef
                 </p>
                 <p className="mt-0.5 text-xs font-semibold tracking-[0.2em] text-bronze">
@@ -77,7 +77,7 @@ export default function Footer() {
                 </p>
               </div>
             </div>
-            <p className="mt-5 max-w-xs text-sm leading-6 text-cream/60">
+            <p className="mt-5 max-w-xs text-sm leading-6 text-charcoal/70">
               Building a campus competitive programming culture at PES University,
               ECC — a daily arena, technical initiatives, and platforms
               engineered in the open.
@@ -86,13 +86,13 @@ export default function Footer() {
 
           {/* Explore */}
           <div>
-            <h3 className="text-base font-semibold text-cream">Explore</h3>
+            <h3 className="text-base font-semibold text-chocolate">Explore</h3>
             <ul className="mt-4 space-y-3 text-sm">
               {explore.map((link) => (
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-cream/60 transition-colors hover:text-cream"
+                    className="text-charcoal/70 transition-colors hover:text-chocolate"
                   >
                     {link.label}
                   </Link>
@@ -103,13 +103,13 @@ export default function Footer() {
 
           {/* Initiatives */}
           <div>
-            <h3 className="text-base font-semibold text-cream">Initiatives</h3>
+            <h3 className="text-base font-semibold text-chocolate">Initiatives</h3>
             <ul className="mt-4 space-y-3 text-sm">
               {initiatives.map((link) => (
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-cream/60 transition-colors hover:text-cream"
+                    className="text-charcoal/70 transition-colors hover:text-chocolate"
                   >
                     {link.label}
                   </Link>
@@ -120,7 +120,7 @@ export default function Footer() {
 
           {/* Get in Touch */}
           <div>
-            <h3 className="text-base font-semibold text-cream">Get in Touch</h3>
+            <h3 className="text-base font-semibold text-chocolate">Get in Touch</h3>
             <ul className="mt-4 space-y-4 text-sm">
               <li className="flex items-start gap-3">
                 <span className="mt-0.5 text-bronze">
@@ -128,7 +128,7 @@ export default function Footer() {
                 </span>
                 <a
                   href="mailto:codechef@pesu.pes.edu"
-                  className="text-cream/70 transition-colors hover:text-cream"
+                  className="text-charcoal/75 transition-colors hover:text-chocolate"
                 >
                   codechef@pesu.pes.edu
                 </a>
@@ -137,7 +137,7 @@ export default function Footer() {
                 <span className="mt-0.5 text-bronze">
                   <PinIcon />
                 </span>
-                <span className="text-cream/70">
+                <span className="text-charcoal/75">
                   PES University, Electronic City Campus,
                   <br />
                   Hosur Road, Bengaluru 560100
@@ -153,7 +153,7 @@ export default function Footer() {
                   aria-label={social.label}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-cream/20 text-cream/70 transition-colors hover:border-bronze hover:bg-cream/5 hover:text-cream"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-chocolate/20 text-charcoal/70 transition-colors hover:border-bronze hover:bg-bronze/10 hover:text-chocolate"
                 >
                   {social.icon}
                 </a>
@@ -163,12 +163,12 @@ export default function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-14 border-t border-cream/10 pt-6">
+        <div className="mt-14 border-t border-chocolate/12 pt-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="font-mono text-xs text-cream/50">
+            <p className="font-mono text-xs text-charcoal/55">
               © {year} CodeChef PESUECC Chapter. All rights reserved.
             </p>
-            <p className="font-display text-sm font-semibold text-cream/70">
+            <p className="font-display text-sm font-semibold text-charcoal/70">
               Built in the open.
             </p>
           </div>
