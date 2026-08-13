@@ -26,6 +26,8 @@ export const users = sqliteTable("users", {
   // rejected once it changes, so a reset (or recovery from a compromise) logs out
   // every existing session.
   sessionEpoch: integer("session_epoch").notNull().default(0),
+  // Persistent resend guard for OTPs; survives verification row deletion.
+  lastOtpSentAt: integer("last_otp_sent_at").notNull().default(0),
   createdAt: integer("created_at").notNull(),
 });
 
