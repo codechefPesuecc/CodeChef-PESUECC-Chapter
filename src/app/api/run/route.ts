@@ -157,8 +157,12 @@ export async function POST(req: Request) {
       timeLimitMs: runTimeoutMs,
     });
   } catch (error) {
+    console.error("[api/run] execution failed:", error);
     return NextResponse.json(
-      { ok: false, error: `Execution failed: ${String(error)}` },
+      {
+        ok: false,
+        error: "Code execution failed. Please try again later.",
+      },
       { status: 502 },
     );
   }

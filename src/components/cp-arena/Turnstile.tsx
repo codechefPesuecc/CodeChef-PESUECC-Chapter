@@ -45,6 +45,8 @@ export default function Turnstile({
   useEffect(() => {
     if (!SITE_KEY) return;
     let cancelled = false;
+    let script: HTMLScriptElement | null = null;
+    let handleLoad: (() => void) | null = null;
 
     const render = () => {
       if (cancelled || !ref.current || !window.turnstile || widgetId.current) {
@@ -61,7 +63,7 @@ export default function Turnstile({
     if (window.turnstile) {
       render();
     } else {
-      let script = document.querySelector<HTMLScriptElement>(
+      script = document.querySelector<HTMLScriptElement>(
         "script[data-turnstile]",
       );
       if (!script) {
@@ -72,11 +74,15 @@ export default function Turnstile({
         script.dataset.turnstile = "1";
         document.head.appendChild(script);
       }
-      script.addEventListener("load", render);
+      handleLoad = render;
+      script.addEventListener("load", handleLoad);
     }
 
     return () => {
       cancelled = true;
+      if (script && handleLoad) {
+        script.removeEventListener("load", handleLoad);
+      }
       const api = window.turnstile;
       if (api && widgetId.current) {
         api.remove(widgetId.current);
