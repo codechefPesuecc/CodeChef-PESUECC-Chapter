@@ -22,17 +22,11 @@ export function useUser() {
   useEffect(() => {
     let alive = true;
     fetch("/api/auth/me")
-      .then(async (r): Promise<{ user?: AuthUser | null }> => {
-        if (!r.ok) {
-          throw new Error(`GET /api/auth/me failed with ${r.status}`);
-        }
-        return r.json();
-      })
+      .then((r) => r.json())
       .then((d) => {
         if (alive) setUser(d.user ?? null);
       })
-      .catch((error) => {
-        console.error("[useUser] failed to fetch current user:", error);
+      .catch(() => {
         if (alive) setUser(null);
       });
     return () => {

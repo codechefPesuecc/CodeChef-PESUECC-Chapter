@@ -10,11 +10,11 @@ const explore = [
 ];
 
 const initiatives = [
-  { href: "/initiatives#leetcode-101", label: "LeetCode 101" },
-  { href: "/initiatives#algohunt", label: "AlgoHunt" },
-  { href: "/initiatives#praxis", label: "Praxis Hackathon" },
-  { href: "/initiatives#eclipse", label: "Eclipse" },
-  { href: "/initiatives#algohunt-base", label: "AlgoHunt Base" },
+  { href: "/initiatives", label: "LeetCode 101" },
+  { href: "/initiatives", label: "AlgoHunt" },
+  { href: "/initiatives", label: "Praxis Hackathon" },
+  { href: "/initiatives", label: "Eclipse" },
+  { href: "/initiatives", label: "AlgoHunt Base" },
 ];
 
 const socials = [

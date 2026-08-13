@@ -1,1 +1,0 @@
-ALTER TABLE `users` ADD `last_otp_sent_at` integer DEFAULT 0 NOT NULL;
