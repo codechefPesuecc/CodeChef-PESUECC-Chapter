@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability (private)
+    url: https://github.com/codechefPesuecc/CodeChef-PESUECC-Chapter/security/policy
+    about: Please report security issues privately - do NOT open a public issue.
+  - name: Question or help
+    url: mailto:codechef.ecc@pes.edu
+    about: Not sure if it's a bug? Ask the core team by email.
+  - name: Contributing guide
+    url: https://github.com/codechefPesuecc/CodeChef-PESUECC-Chapter/blob/main/CONTRIBUTING.md
+    about: How to set up, branch, and open a pull request.

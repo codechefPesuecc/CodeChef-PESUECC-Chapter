@@ -1,0 +1,61 @@
+name: Problem proposal
+description: Propose a new problem (challenge) for the CP Arena.
+title: "[Problem]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Want to set a problem? Great. This issue is for **proposing and discussing** the idea.
+        The actual problem is added by committing a JSON file to `/challenges/` via a pull request -
+        see the [Adding a problem](https://github.com/codechefPesuecc/CodeChef-PESUECC-Chapter/blob/main/CONTRIBUTING.md#9-adding-a-problem-gitops)
+        guide.
+
+        **Do not paste hidden test cases here** - this issue is public.
+  - type: input
+    id: title
+    attributes:
+      label: Problem title
+      placeholder: Minimize the Maximum Difference
+    validations:
+      required: true
+  - type: dropdown
+    id: difficulty
+    attributes:
+      label: Difficulty
+      options:
+        - Easy
+        - Medium
+        - Hard
+    validations:
+      required: true
+  - type: input
+    id: tags
+    attributes:
+      label: Tags / topics
+      placeholder: Arrays, Binary Search, Greedy
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Problem idea (summary)
+      description: A short description of the problem. Keep the full statement for the PR.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Setter notes
+      description: Intended solution approach, tricky edge cases, expected complexity. (Reviewers only - still public, so keep the full solution vague if you like.)
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I did NOT include hidden test cases in this public issue.
+          required: true
+        - label: This problem is original or I have the right to use it.
+          required: true

@@ -1,0 +1,56 @@
+name: Feature request
+description: Suggest a new feature or an improvement to the platform.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea! Features that push the platform toward the goals in
+        [VISION.md](https://github.com/codechefPesuecc/CodeChef-PESUECC-Chapter/blob/main/VISION.md)
+        are especially welcome.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: What is frustrating or missing today? Describe the need, not just the solution.
+      placeholder: As a member, I want ... so that ...
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What would you like to see happen?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any other approaches you thought about, and why you prefer this one.
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part of the platform?
+      options:
+        - CP Arena / judge
+        - Leaderboard
+        - Contests
+        - Profiles
+        - Newsroom
+        - Team page
+        - Auth / accounts
+        - Design / UX
+        - Other
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and this is not a duplicate.
+          required: true

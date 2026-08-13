@@ -1,0 +1,83 @@
+name: Bug report
+description: Something on the platform is broken or behaving unexpectedly.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! The more detail you give, the faster we can fix it.
+
+        If this is a **security vulnerability**, please do **not** file it here - report it privately
+        (see our [Security Policy](https://github.com/codechefPesuecc/CodeChef-PESUECC-Chapter/security/policy)).
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug - what you expected vs. what actually happened.
+      placeholder: I expected X, but Y happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: As precise as you can. A reliable repro is the single most useful thing in a bug report.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. See error
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: Affected page / URL
+      description: Where did this happen?
+      placeholder: https://codechef.pesuecc.workers.dev/cp-arena
+    validations:
+      required: false
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Where did you see this?
+      options:
+        - Live site (codechef.pesuecc.workers.dev)
+        - Local development
+        - Both
+    validations:
+      required: true
+  - type: dropdown
+    id: theme
+    attributes:
+      label: Theme (if a visual bug)
+      options:
+        - Not applicable
+        - Light mode
+        - Dark mode
+        - Both
+    validations:
+      required: false
+  - type: input
+    id: browser
+    attributes:
+      label: Browser / OS / device
+      placeholder: Chrome 120 on Windows 11 / Safari on iPhone
+    validations:
+      required: false
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshots, console output, or error messages
+      description: Paste any relevant errors or drag in screenshots. Code and logs are rendered automatically.
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and this is not a duplicate.
+          required: true
+        - label: This is not a security vulnerability (those are reported privately).
+          required: true
