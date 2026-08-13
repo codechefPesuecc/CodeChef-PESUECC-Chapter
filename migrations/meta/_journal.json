@@ -36,13 +36,6 @@
       "when": 1786535870931,
       "tag": "0004_add_user_name",
       "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "6",
-      "when": 1786588800000,
-      "tag": "0004_radiant_verification",
-      "breakpoints": true
     }
   ]
 }

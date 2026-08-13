@@ -37,21 +37,16 @@ export async function createAndSendOtp(
   const now = Date.now();
   const db = getDb();
 
-  const [user] = await db
+  const existing = await db
     .select()
-    .from(users)
-    .where(eq(users.id, userId))
+    .from(emailVerifications)
+    .where(eq(emailVerifications.userId, userId))
     .limit(1);
-  if (!user) {
-    return { ok: false, error: "User not found." };
-  }
-
-  const cooldownElapsed = now - (user.lastOtpSentAt ?? 0);
-  if (cooldownElapsed < RESEND_COOLDOWN_MS) {
+  if (existing[0] && now - existing[0].createdAt < RESEND_COOLDOWN_MS) {
     return {
       ok: false,
       error: "Please wait a moment before requesting another code.",
-      cooldownMs: RESEND_COOLDOWN_MS - cooldownElapsed,
+      cooldownMs: RESEND_COOLDOWN_MS - (now - existing[0].createdAt),
     };
   }
 
@@ -77,13 +72,8 @@ export async function createAndSendOtp(
     html: otpEmailHtml(code),
   });
   if (!sent.ok) {
-    await db
-      .delete(emailVerifications)
-      .where(eq(emailVerifications.userId, userId));
     return { ok: false, error: sent.error ?? "Could not send the email." };
   }
-
-  await db.update(users).set({ lastOtpSentAt: now }).where(eq(users.id, userId));
 
   return { ok: true, devCode: canRevealSecretInResponse() ? code : undefined };
 }
