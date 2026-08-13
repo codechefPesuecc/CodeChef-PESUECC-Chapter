@@ -124,7 +124,7 @@ export default function Home() {
 
             <Reveal delay={0.15}>
               <MechaPanel label="Dev Team" index="01 / 01">
-                <div className="relative aspect-[3/2] w-full overflow-hidden">
+                <div className="relative aspect-[3/2] w-fu`ll overflow-hidden">
                   <Image
                     src="/dev-team.jpg"
                     alt="The CodeChef PESUECC Chapter development team on stage"
