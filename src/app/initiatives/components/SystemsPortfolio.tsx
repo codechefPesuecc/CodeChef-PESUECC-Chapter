@@ -59,7 +59,7 @@ function SystemPanel({
 }) {
   return (
     <Reveal delay={delay} className="h-full">
-      <article className="relative overflow-hidden rounded-3xl border border-cream/10 bg-black/60 shadow-2xl backdrop-blur">
+      <article id={system.id} className="relative overflow-hidden rounded-3xl border border-cream/10 bg-black/60 shadow-2xl backdrop-blur scroll-mt-24">
         <div
           aria-hidden
           className="absolute inset-0 bg-tech-glow-card opacity-80"
