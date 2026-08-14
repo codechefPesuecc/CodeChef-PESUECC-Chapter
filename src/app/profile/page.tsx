@@ -65,7 +65,7 @@ export default async function ProfilePage() {
             href="/cp-arena"
             className="mecha-btn mecha-btn--solid mecha-btn--sm ml-auto"
           >
-            Today&apos;s problem →
+            Today&apos;s problem 
           </Link>
         </div>
 
@@ -83,7 +83,7 @@ export default async function ProfilePage() {
                 href="/verify"
                 className="mecha-chip ml-2 bg-amber-500/15 text-amber-700 hover:underline dark:text-amber-400"
               >
-                verify →
+                verify 
               </Link>
             )}
           </DetailRow>
@@ -132,7 +132,7 @@ export default async function ProfilePage() {
                 href="/cp-arena"
                 className="mt-3 inline-block text-sm font-semibold text-bronze hover:underline"
               >
-                Solve today&apos;s Problem of the Day →
+                Solve today&apos;s Problem of the Day 
               </Link>
             </div>
           </MechaPanel>

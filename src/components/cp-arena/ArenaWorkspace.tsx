@@ -856,7 +856,7 @@ export default function ArenaWorkspace({
               href="/cp-arena"
               className="mt-3 inline-block text-sm font-semibold text-bronze hover:underline"
             >
-              Go to today&apos;s Problem of the Day →
+              Go to today&apos;s Problem of the Day
             </Link>
           </div>
         </MechaPanel>

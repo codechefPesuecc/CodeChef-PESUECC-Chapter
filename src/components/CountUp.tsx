@@ -41,7 +41,7 @@ export default function CountUp({
   }, [inView, value, durationMs]);
 
   return (
-    <span ref={ref} className={className}>
+    <span ref={ref} className={`${className || ""} tabular-nums`} suppressHydrationWarning>
       {prefix}
       {display.toLocaleString()}
       {suffix}

@@ -112,8 +112,8 @@ export default function Home() {
                   className="group mecha-btn mecha-btn--solid"
                 >
                   Enter the Arena
-                  <span className="transition-transform group-hover:translate-x-0.5">
-                    →
+                  <span className="mecha-btn-arrow">→
+                    
                   </span>
                 </Link>
                 <Link href="/team" className="mecha-btn mecha-btn--ghost">
@@ -329,8 +329,8 @@ export default function Home() {
                   className="group mecha-btn mecha-btn--solid"
                 >
                   Enter the Arena
-                  <span className="transition-transform group-hover:translate-x-0.5">
-                    →
+                  <span className="mecha-btn-arrow">→
+                    
                   </span>
                 </Link>
                 <Link href="/initiatives" className="mecha-btn mecha-btn--ghost">

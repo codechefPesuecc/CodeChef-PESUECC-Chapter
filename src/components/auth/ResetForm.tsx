@@ -74,7 +74,7 @@ export default function ResetForm() {
             </p>
             <Link
               href="/forgot"
-              className="mt-5 inline-block rounded-lg bg-bronze px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-bronze/90"
+              className="mecha-btn mecha-btn--solid mt-5 w-full"
             >
               Request a new link
             </Link>

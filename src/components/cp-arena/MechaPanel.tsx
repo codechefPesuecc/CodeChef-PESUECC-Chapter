@@ -29,33 +29,35 @@ export default function MechaPanel({
 }) {
   const hasHeader = label != null || index != null;
   return (
-    <div className={`mecha ${className}`} style={style}>
-      <div className="mecha__gap">
-        <div className="mecha__inline">
-          <div className={`mecha__body ${bodyClassName}`}>
-            {hasHeader && (
-              <div className="mecha__telemetry">
-                {label != null ? (
-                  <span className="mecha__label">{label}</span>
-                ) : (
-                  <span />
-                )}
-                {index != null ? (
-                  <span className="mecha__index">{index}</span>
-                ) : (
-                  <span />
-                )}
-              </div>
-            )}
-            {ticks && (
-              <>
-                <span aria-hidden className="mecha__tick mecha__tick--tl" />
-                <span aria-hidden className="mecha__tick mecha__tick--tr" />
-                <span aria-hidden className="mecha__tick mecha__tick--bl" />
-                <span aria-hidden className="mecha__tick mecha__tick--br" />
-              </>
-            )}
-            {children}
+    <div className={`mecha-wrapper ${className}`}>
+      <div className="mecha" style={style}>
+        <div className="mecha__gap">
+          <div className="mecha__inline">
+            <div className={`mecha__body ${bodyClassName}`}>
+              {hasHeader && (
+                <div className="mecha__telemetry">
+                  {label != null ? (
+                    <span className="mecha__label">{label}</span>
+                  ) : (
+                    <span />
+                  )}
+                  {index != null ? (
+                    <span className="mecha__index">{index}</span>
+                  ) : (
+                    <span />
+                  )}
+                </div>
+              )}
+              {ticks && (
+                <>
+                  <span aria-hidden className="mecha__tick mecha__tick--tl" />
+                  <span aria-hidden className="mecha__tick mecha__tick--tr" />
+                  <span aria-hidden className="mecha__tick mecha__tick--bl" />
+                  <span aria-hidden className="mecha__tick mecha__tick--br" />
+                </>
+              )}
+              {children}
+            </div>
           </div>
         </div>
       </div>

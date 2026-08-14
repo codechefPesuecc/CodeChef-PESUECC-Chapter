@@ -256,8 +256,8 @@ export default async function EventDetailPage({ params }: PageProps) {
                   className="group mecha-btn mecha-btn--solid"
                 >
                   All Events
-                  <span className="transition-transform group-hover:translate-x-0.5">
-                    →
+                  <span className="mecha-btn-arrow">→
+                    
                   </span>
                 </Link>
                 <Link href="/cp-arena" className="mecha-btn mecha-btn--ghost">

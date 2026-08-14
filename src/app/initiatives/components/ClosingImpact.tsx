@@ -24,7 +24,7 @@ export function ClosingImpact() {
 
               <Link
                 href="/team"
-                className="inline-flex items-center gap-2 rounded-lg border border-brown px-5 py-3 text-sm font-semibold text-brown transition-colors hover:bg-brown hover:text-white dark:hover:text-[#16110c]"
+                className="mecha-btn mecha-btn--ghost"
               >
                 Meet the Team
               </Link>

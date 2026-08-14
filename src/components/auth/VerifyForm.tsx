@@ -92,7 +92,7 @@ export default function VerifyForm() {
             </p>
             <Link
               href="/login"
-              className="mt-5 inline-block rounded-lg bg-bronze px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-bronze/90"
+              className="mecha-btn mecha-btn--solid mt-5 w-full"
             >
               Log in
             </Link>
@@ -107,9 +107,9 @@ export default function VerifyForm() {
             </p>
             <Link
               href="/cp-arena"
-              className="mt-5 inline-block rounded-lg bg-bronze px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-bronze/90"
+              className="mecha-btn mecha-btn--solid mt-5 w-full"
             >
-              Go to the Arena →
+              Go to the Arena
             </Link>
           </>
         ) : done ? (

@@ -1,154 +1,106 @@
 import type { Metadata } from "next";
-import Image from "next/image";
-import Link from "next/link";
-import { events } from "@/lib/events";
+import { sortedPosts } from "@/lib/events";
 import Reveal from "@/components/Reveal";
+import CountUp from "@/components/CountUp";
 import MechaPanel from "@/components/cp-arena/MechaPanel";
+import { TechnicalBackdrop } from "@/app/initiatives/components/Shared";
+import NewsroomClient from "./NewsroomClient";
 
 export const metadata: Metadata = {
   title: "Newsroom",
   description:
-    "Announcements, event recaps, contest results, and stories from the CodeChef PESUECC Chapter.",
+    "Announcements, event recaps, member spotlights, tech news, and stories from the CodeChef PESUECC Chapter.",
 };
 
+const metrics = [
+  { prefix: "", value: 9, suffix: "+", label: "Published Posts" },
+  { prefix: "", value: 3, suffix: "", label: "Event Recaps" },
+  { prefix: "", value: 5, suffix: "", label: "Post Types" },
+];
+
 export default function NewsroomPage() {
+  const pinnedPost = sortedPosts.find((p) => p.pinned);
+
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-16 sm:py-20">
-      <Reveal>
-        <span className="font-mono text-xs font-semibold uppercase tracking-wider text-bronze">
-          Newsroom
-        </span>
-        <h1 className="mt-3 text-balance font-display text-4xl font-bold tracking-tight text-chocolate sm:text-5xl">
-          Latest from the chapter
-        </h1>
-        <p className="mt-4 max-w-2xl text-pretty text-lg leading-8 text-charcoal/80">
-          Announcements, event recaps, contest results, and stories from the
-          CodeChef PESUECC community.
-        </p>
-      </Reveal>
+    <main className="flex-1 w-full">
+      {/* Hero Header */}
+      <section className="relative -mt-24 overflow-hidden pt-24">
+        <TechnicalBackdrop />
+        
+        {/* Decorative Background SVG */}
+        <svg className="absolute top-24 right-6 w-[300px] h-[300px] opacity-[0.12] dark:opacity-[0.12] pointer-events-none z-0 text-[#8B7A5E] dark:text-[#D98A53]" viewBox="0 0 400 400" fill="none">
+          <path d="M400 50 H200 L150 100 V300" stroke="currentColor" strokeWidth="1.5" />
+          <circle cx="200" cy="50" r="3" fill="currentColor" />
+          <circle cx="150" cy="100" r="3" fill="currentColor" />
+          <circle cx="150" cy="300" r="3" fill="currentColor" />
+          <path d="M400 80 H280 L230 130 V350" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
 
-      {/* Events Grid */}
-      <div className="mt-14 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-        {events.map((event, i) => (
-          <Reveal key={event.slug} delay={i * 0.1} className="h-full">
-            <Link href={`/newsroom/${event.slug}`} className="group block h-full">
-              <MechaPanel
-                ticks
-                className="h-full transition-transform duration-300 group-hover:-translate-y-2"
-                bodyClassName="flex h-full flex-col"
-              >
-                {/* Event Image */}
-                <div className="relative aspect-[3/2] w-full overflow-hidden">
-                  <Image
-                    src={event.image}
-                    alt={event.title}
-                    fill
-                    sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <div
-                    aria-hidden
-                    className="absolute inset-0 bg-gradient-to-t from-chocolate/70 via-transparent to-transparent dark:from-[#0d0906]/80"
-                  />
-                  {/* Event type chip */}
-                  <div className="absolute left-3 top-3">
-                    <span className="mecha-chip bg-bronze/90 text-white backdrop-blur">
-                      {event.type}
-                    </span>
-                  </div>
-                  {/* Status badge */}
-                  <div className="absolute right-3 top-3">
-                    <span
-                      className={`mecha-chip backdrop-blur ${
-                        event.status === "completed"
-                          ? "bg-emerald-500/20 text-emerald-300"
-                          : "bg-amber-500/20 text-amber-300"
-                      }`}
-                    >
-                      <span
-                        className={`h-1.5 w-1.5 rounded-full ${
-                          event.status === "completed"
-                            ? "bg-emerald-400"
-                            : "bg-amber-400 animate-pulse"
-                        }`}
+        <div className="relative z-10 mx-auto max-w-6xl px-6 pt-10 pb-32 sm:pt-14 sm:pb-40">
+          <div className="grid items-center gap-12 lg:grid-cols-[1fr_auto]">
+            <Reveal>
+              <span className="inline-flex items-center rounded-full border border-bronze/25 bg-panel/75 px-3 py-1 font-mono text-xs font-semibold uppercase tracking-wider text-bronze shadow-sm backdrop-blur">
+                Press · Updates · Media
+              </span>
+              <h1 className="mt-5 text-balance font-display text-5xl font-bold leading-[1.02] tracking-tight text-chocolate sm:text-6xl lg:text-7xl">
+                The chapter&apos;s voice
+              </h1>
+              <p className="mt-6 max-w-xl text-pretty text-lg leading-8 text-charcoal/80">
+                Announcements, event recaps, member spotlights, and a curated pulse on
+                what&apos;s happening in tech — the permanent record of everything the
+                CodeChef PESUECC community builds, ships, and celebrates.
+              </p>
+            </Reveal>
+
+            {/* Live Stats Ledger for Desktop (hidden on mobile, shown on lg+) */}
+            <Reveal delay={0.15} className="hidden lg:block">
+              <MechaPanel ticks>
+                <div className="grid gap-px bg-hairline">
+                  {metrics.map((metric) => (
+                    <div key={metric.label} className="bg-panel px-6 py-6 text-center">
+                      <CountUp
+                        value={metric.value}
+                        prefix={metric.prefix}
+                        suffix={metric.suffix}
+                        className="font-display text-3xl font-bold text-brown"
                       />
-                      {event.status === "completed" ? "Completed" : "Upcoming"}
-                    </span>
-                  </div>
-                  {/* Date overlay */}
-                  <div className="absolute bottom-3 left-3 inline-flex items-center gap-2 rounded-full bg-chocolate/70 px-3 py-1 backdrop-blur dark:bg-[#0d0906]/70">
-                    <CalendarIcon />
-                    <span className="font-mono text-xs text-cream">
-                      {event.date}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Event Info */}
-                <div className="flex flex-1 flex-col p-6">
-                  <h2 className="font-display text-xl font-bold text-chocolate transition-colors group-hover:text-bronze">
-                    {event.title}
-                  </h2>
-                  <p className="mt-1 font-mono text-xs font-semibold uppercase tracking-wider text-bronze/80">
-                    {event.tagline}
-                  </p>
-                  <p className="mt-3 flex-1 text-sm leading-6 text-charcoal/75">
-                    {event.summary}
-                  </p>
-
-                  {/* Quick stats */}
-                  <div className="mt-4 grid grid-cols-2 gap-2">
-                    {event.highlights.slice(0, 2).map((h) => (
-                      <div
-                        key={h.label}
-                        className="rounded-lg bg-bronze/5 px-3 py-2 text-center"
-                      >
-                        <div className="font-display text-lg font-bold text-bronze">
-                          {h.value}
-                        </div>
-                        <div className="text-[10px] font-medium uppercase tracking-wide text-charcoal/50">
-                          {h.label}
-                        </div>
+                      <div className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-charcoal/70">
+                        {metric.label}
                       </div>
-                    ))}
-                  </div>
-
-                  {/* Read more */}
-                  <div className="mt-5 flex items-center gap-2 font-mono text-xs font-semibold uppercase tracking-wider text-bronze transition-colors group-hover:text-chocolate">
-                    Read More
-                    <span className="transition-transform group-hover:translate-x-1">
-                      →
-                    </span>
-                  </div>
+                    </div>
+                  ))}
                 </div>
               </MechaPanel>
-            </Link>
-          </Reveal>
-        ))}
-      </div>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
+      {/* Live Stats Ledger for Mobile (floats over hero edge) */}
+      <section className="relative z-20 mx-auto -mt-20 max-w-6xl px-6 sm:-mt-24 lg:hidden">
+        <Reveal>
+          <MechaPanel>
+            <div className="grid gap-px bg-hairline grid-cols-3">
+              {metrics.map((metric) => (
+                <div key={metric.label} className="bg-panel px-4 py-6 text-center">
+                  <CountUp
+                    value={metric.value}
+                    prefix={metric.prefix}
+                    suffix={metric.suffix}
+                    className="font-display text-2xl font-bold text-brown sm:text-3xl"
+                  />
+                  <div className="mt-1 text-[9px] font-semibold uppercase tracking-wider text-charcoal/70 sm:text-[10px]">
+                    {metric.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </MechaPanel>
+        </Reveal>
+      </section>
+
+      {/* Client-rendered sections: featured post, filters, grid, tech pulse, CTA */}
+      <NewsroomClient posts={sortedPosts} pinnedPost={pinnedPost} />
     </main>
-  );
-}
-
-/* --- Icons --- */
-
-function CalendarIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="text-cream/80"
-    >
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-      <line x1="16" y1="2" x2="16" y2="6" />
-      <line x1="8" y1="2" x2="8" y2="6" />
-      <line x1="3" y1="10" x2="21" y2="10" />
-    </svg>
   );
 }
