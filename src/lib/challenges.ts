@@ -123,10 +123,18 @@ export function getAllChallenges(): Challenge[] {
     .sort((a, b) => b.date.localeCompare(a.date));
 }
 
-/** Today's date as YYYY-MM-DD (server local time). */
+/** IST is UTC+5:30 and never observes DST, so a fixed offset is exact. */
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+
+/**
+ * Today's date as YYYY-MM-DD in IST — the chapter runs on India time, so the
+ * Problem of the Day rolls over at IST midnight (not UTC midnight). Derived from
+ * the epoch plus a fixed offset and read with getUTC*, so it's independent of the
+ * server's own timezone (Cloudflare Workers run in UTC).
+ */
 function todayStr(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const ist = new Date(Date.now() + IST_OFFSET_MS);
+  return `${ist.getUTCFullYear()}-${String(ist.getUTCMonth() + 1).padStart(2, "0")}-${String(ist.getUTCDate()).padStart(2, "0")}`;
 }
 
 /** A challenge is live once its date has arrived — future-dated problems (and

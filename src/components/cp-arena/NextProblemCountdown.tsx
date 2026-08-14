@@ -2,14 +2,21 @@
 
 import { useEffect, useState } from "react";
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+
+/**
+ * Milliseconds until the next IST midnight, when the Problem of the Day rotates
+ * in. Uses the epoch (not the viewer's local clock) so it matches the server's
+ * IST rollover regardless of the visitor's own timezone.
+ */
 function msToNextMidnight(): number {
-  const now = new Date();
-  const next = new Date(now);
-  next.setHours(24, 0, 0, 0); // start of tomorrow, local time
-  return next.getTime() - now.getTime();
+  const istNow = Date.now() + IST_OFFSET_MS;
+  const sinceIstMidnight = ((istNow % DAY_MS) + DAY_MS) % DAY_MS;
+  return DAY_MS - sinceIstMidnight;
 }
 
-/** Counts down to when the next daily problem rotates in (local midnight). */
+/** Counts down to when the next daily problem rotates in (IST midnight). */
 export default function NextProblemCountdown() {
   const [ms, setMs] = useState<number | null>(null);
 
