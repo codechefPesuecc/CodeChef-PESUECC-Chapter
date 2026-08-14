@@ -135,7 +135,7 @@ export default function CpArenaPage() {
 
                 {/* Solve CTA */}
                 <span className="mecha-btn mecha-btn--solid mt-1 shrink-0 transition-transform group-hover:translate-x-0.5">
-                  Solve →
+                  Solve 
                 </span>
               </div>
             </MechaPanel>
@@ -180,7 +180,7 @@ export default function CpArenaPage() {
                         {c.difficulty}
                       </span>
                       <span className="ml-auto font-mono text-xs text-charcoal/40 transition-transform group-hover:translate-x-0.5">
-                        Practice →
+                        Practice 
                       </span>
                     </MechaPanel>
                   </Link>

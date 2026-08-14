@@ -293,6 +293,24 @@ button:focus-visible,
  * shrinks its own chamfer (`--mecha-n`) by how far it is inset, so the diagonals
  * stay concentric. Colours are vars so the whole thing themes in light/dark.
  */
+  .mecha-wrapper {
+    position: relative;
+    filter: drop-shadow(0 5px 14px rgb(0 0 0 / 0.1));
+    transition: filter 500ms ease;
+  }
+
+  .dark .mecha-wrapper {
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+  }
+
+  .mecha-wrapper:hover, .group:hover .mecha-wrapper {
+    filter: drop-shadow(0 12px 32px rgba(40,28,16,0.2));
+  }
+
+  .dark .mecha-wrapper:hover, .dark .group:hover .mecha-wrapper {
+    filter: drop-shadow(0 12px 32px rgba(0,0,0,0.6));
+  }
+
   .mecha {
     --mecha-n: 14px;
     /* chamfer size */
@@ -311,8 +329,34 @@ button:focus-visible,
     background: var(--mecha-line);
     /* outer line */
     padding: 1.5px;
-    /* clip-path clips box-shadow, so cast the drop via filter instead. */
-    filter: drop-shadow(0 5px 14px rgb(0 0 0 / 0.1));
+    width: 100%;
+    height: 100%;
+  }
+
+  .initiative-btn {
+    @apply inline-flex items-center justify-center gap-3 border-[1.5px] border-[#221E1A] dark:border-[#D98A53] bg-transparent px-8 py-3.5 font-mono text-[11px] font-bold tracking-[0.15em] text-[#221E1A] dark:text-[#D98A53] uppercase transition-all duration-300 hover:bg-[#221E1A] dark:hover:bg-[#D98A53] hover:text-[#FBF6ED] dark:hover:text-[#1C1714];
+  }
+
+  .initiative-btn::after {
+    content: "→";
+    display: inline-block;
+    transition: transform 300ms ease-out;
+    margin-left: 4px;
+  }
+
+  .initiative-btn:hover::after,
+  .group:hover .initiative-btn::after {
+    transform: translate(6px, -2px);
+  }
+
+  .mecha-btn-arrow {
+    @apply inline-block transition-transform duration-300 ease-out;
+    margin-left: 4px;
+  }
+
+  .group:hover .mecha-btn-arrow,
+  .mecha-btn:hover .mecha-btn-arrow {
+    transform: translate(6px, -2px);
   }
 
   .mecha__gap {
@@ -322,6 +366,7 @@ button:focus-visible,
     background: var(--mecha-fill);
     /* gap */
     padding: 10px;
+    width: 100%;
     height: 100%;
   }
 
@@ -332,6 +377,7 @@ button:focus-visible,
     background: var(--mecha-line);
     /* inner line */
     padding: 1px;
+    width: 100%;
     height: 100%;
   }
 
@@ -341,6 +387,7 @@ button:focus-visible,
     clip-path: var(--mecha-clip);
     background: var(--mecha-fill);
     position: relative;
+    width: 100%;
     height: 100%;
   }
 
@@ -420,56 +467,17 @@ button:focus-visible,
  * `ghost` is a translucent secondary.
  */
   .mecha-btn {
-    --mb-n: 7px;
-    clip-path: polygon(var(--mb-n) 0,
-        calc(100% - var(--mb-n)) 0,
-        100% var(--mb-n),
-        100% calc(100% - var(--mb-n)),
-        calc(100% - var(--mb-n)) 100%,
-        var(--mb-n) 100%,
-        0 calc(100% - var(--mb-n)),
-        0 var(--mb-n));
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    font-family: var(--font-mono), monospace;
-    font-size: 0.78rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    padding: 0.62rem 1.15rem;
-    transition:
-      background-color 0.18s ease,
-      color 0.18s ease,
-      transform 0.08s ease;
-  }
-
-  .mecha-btn:active:not(:disabled) {
-    transform: translateY(1px);
-  }
-
-  .mecha-btn:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-  }
-
-  .mecha-btn--solid {
-    background: var(--color-bronze);
-    color: #fff;
-  }
-
-  .mecha-btn--solid:hover:not(:disabled) {
-    background: color-mix(in oklab, var(--color-bronze) 86%, black);
+    @apply inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors duration-200;
+    padding: 0.62rem 1.25rem;
+    font-size: 0.875rem;
   }
 
   .mecha-btn--ghost {
-    background: color-mix(in oklab, var(--color-bronze) 14%, transparent);
-    color: var(--color-bronze);
+    @apply border border-brown text-brown hover:bg-brown hover:text-white dark:hover:text-[#16110c];
   }
 
-  .mecha-btn--ghost:hover:not(:disabled) {
-    background: color-mix(in oklab, var(--color-bronze) 26%, transparent);
+  .mecha-btn--solid {
+    @apply bg-brown text-cream shadow-sm hover:bg-chocolate;
   }
 
   .mecha-btn--ok {

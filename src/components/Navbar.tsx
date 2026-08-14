@@ -153,7 +153,7 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={logout}
-                className="rounded-full border border-hairline bg-white/70 px-4 py-2 text-sm font-medium text-chocolate shadow-sm backdrop-blur transition-colors hover:text-bronze dark:bg-panel/70"
+                className="mecha-btn mecha-btn--ghost"
               >
                 Log out
               </button>
@@ -161,7 +161,7 @@ export default function Navbar() {
           ) : (
             <Link
               href="/login"
-              className="rounded-full bg-chocolate px-5 py-2.5 text-sm font-semibold text-cream shadow-[0_4px_20px_-2px_rgba(166,124,82,0.55)] ring-1 ring-bronze/50 transition-shadow hover:shadow-[0_6px_28px_0_rgba(166,124,82,0.75)] dark:bg-[#241a12]"
+              className="mecha-btn mecha-btn--solid"
             >
               Log in
             </Link>
