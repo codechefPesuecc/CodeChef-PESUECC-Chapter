@@ -664,9 +664,11 @@ function PostCard({ post, index }: { post: NewsPost; index: number }) {
             </p>
 
             <div className="mt-5 flex flex-wrap items-center gap-4 border-t border-hairline pt-4">
-              <span className="font-mono text-[10px] uppercase tracking-wider text-charcoal/50">
-                By {post.author}
-              </span>
+              {post.author && (
+                <span className="font-mono text-[10px] uppercase tracking-wider text-charcoal/50">
+                   By {post.author}
+                </span>
+              )}
               {post.readTime && (
                 <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-charcoal/50">
                   <ClockIcon />
