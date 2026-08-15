@@ -80,7 +80,7 @@ async function acRows() {
 
 /** Today's problem: finish-order standings with the speed-bounty points. */
 export async function todayLeaderboard(): Promise<LeaderRow[]> {
-  const daily = getDailyChallenge();
+  const daily = await getDailyChallenge();
   if (!daily) return [];
 
   const db = getDb();

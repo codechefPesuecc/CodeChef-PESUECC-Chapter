@@ -108,7 +108,7 @@ export async function POST(req: Request) {
   // Only the current Problem of the Day is ranked. Past problems are practice:
   // they're judged for AC/WA feedback but not recorded, so re-solving an old
   // problem at leisure can't mint fresh speed-bounty points or move the boards.
-  const daily = getDailyChallenge();
+  const daily = await getDailyChallenge();
   const ranked = daily?.slug === slug;
 
   const result = await judge({ slug, language, code });

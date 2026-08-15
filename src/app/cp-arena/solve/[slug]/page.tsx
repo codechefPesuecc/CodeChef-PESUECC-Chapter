@@ -37,7 +37,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const challenge = getChallengeBySlug(slug);
+  const challenge = await getChallengeBySlug(slug);
   return {
     title: challenge ? `${challenge.title} · Arena` : "Arena",
     description: challenge
@@ -52,14 +52,14 @@ export default async function SolveProblemPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const challenge = getChallengeBySlug(slug);
+  const challenge = await getChallengeBySlug(slug);
 
   // Unknown or unreleased slugs don't resolve.
   if (!challenge) notFound();
 
   // If this isn't today's live problem, it should be solved as practice via
   // the archive route, not the ranked solve route.
-  const daily = getDailyChallenge();
+  const daily = await getDailyChallenge();
   const isLive = daily?.slug === slug;
 
   // Today's ranked Problem of the Day is members-only — gate viewing behind

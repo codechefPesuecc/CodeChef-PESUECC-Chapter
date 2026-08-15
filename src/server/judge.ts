@@ -94,7 +94,7 @@ export async function judge(params: {
     return { verdict: "ERR", passed: 0, total: 0, message: `Unsupported language: ${language}.` };
   }
 
-  const challenge = getChallengeBySlug(slug);
+  const challenge = await getChallengeBySlug(slug);
   const tests = challenge?.tests ?? [];
   if (tests.length === 0) {
     return { verdict: "NO_TESTS", passed: 0, total: 0, message: "No hidden tests for this problem yet." };

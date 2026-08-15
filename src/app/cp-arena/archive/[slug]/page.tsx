@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import {
   getChallengeBySlug,
   getDailyChallenge,
+  toPublicContent,
 } from "@/lib/challenges";
 import ProblemStatement from "@/components/cp-arena/ProblemStatement";
 import ArenaWorkspace from "@/components/cp-arena/ArenaWorkspace";
@@ -34,7 +35,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const challenge = getChallengeBySlug(slug);
+  const challenge = await getChallengeBySlug(slug);
   return {
     title: challenge ? `${challenge.title} · Practice` : "Practice",
   };
@@ -46,13 +47,13 @@ export default async function ArchiveProblemPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const challenge = getChallengeBySlug(slug);
+  const challenge = await getChallengeBySlug(slug);
 
   // Unreleased or unknown slugs don't resolve — no early leak of a future set.
   if (!challenge) notFound();
 
   // Today's live problem is always solved ranked at /cp-arena/solve/[slug], never as practice.
-  const daily = getDailyChallenge();
+  const daily = await getDailyChallenge();
   if (daily?.slug === slug) redirect(`/cp-arena/solve/${slug}`);
 
   const difficultyStyle =
@@ -114,7 +115,7 @@ export default async function ArchiveProblemPage({
 
         <ArenaWorkspace
           slug={challenge.slug}
-          problem={<ProblemStatement challenge={challenge} />}
+          problem={<ProblemStatement challenge={toPublicContent(challenge)} />}
           sampleInput={sample?.input ?? ""}
           sampleOutput={sample?.output ?? ""}
           practice
