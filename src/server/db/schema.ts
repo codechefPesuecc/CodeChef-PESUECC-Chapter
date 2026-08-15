@@ -1,10 +1,10 @@
 import { sqliteTable, text, integer, unique } from "drizzle-orm/sqlite-core";
 
 /**
- * Arena persistence (SQLite via libSQL / Drizzle).
+ * Arena persistence (SQLite via libSQL in dev, Cloudflare D1 in prod / Drizzle).
  *
- * Challenges live as GitOps JSON; the DB holds accounts and the dynamic state —
- * who solved what, when, and how. Timestamps are unix epoch milliseconds recorded
+ * The DB holds the problems (challenges), accounts, and the dynamic state — who
+ * solved what, when, and how. Timestamps are unix epoch milliseconds recorded
  * server-side, so solve ordering can't be spoofed by the client. Sessions are
  * stateless signed cookies, so there's no sessions table.
  */
@@ -71,6 +71,11 @@ export const submissions = sqliteTable("submissions", {
   // Integrity signals captured client-side for review.
   flags: integer("flags").notNull().default(0),
   flagsBreakdown: text("flags_breakdown"),
+  // True for a live Problem-of-the-Day solve (speed-bounty eligible); false for a
+  // past/practice solve (flat base points, never shifts anyone's speed rank).
+  // Existing rows predate practice recording and were all live, so the ADD COLUMN
+  // backfills them to true.
+  ranked: integer("ranked", { mode: "boolean" }).notNull().default(true),
   // Authoritative server receive time.
   createdAt: integer("created_at").notNull(),
 });
@@ -103,6 +108,34 @@ export const rateLimits = sqliteTable("rate_limits", {
   resetAt: integer("reset_at").notNull(),
 });
 
+// Problems live in the DB (not the git repo) — one row per challenge, so a new
+// problem is published by an insert, not a redeploy. The hidden `tests` and
+// `checker` are SECRET (judge-only): never selected for listings and never sent
+// to the client — only `toPublicContent` fields are public. A problem is
+// "released" once its `date` (IST, YYYY-MM-DD) has arrived. Prose fields hold
+// Markdown, rendered to sanitized HTML server-side. Arrays/objects (tags,
+// samples, tests, checker) are stored as JSON text.
+export const challenges = sqliteTable("challenges", {
+  slug: text("slug").primaryKey(),
+  title: text("title").notNull(),
+  difficulty: text("difficulty").notNull().default("Unrated"),
+  tags: text("tags").notNull().default("[]"), // JSON string[]
+  date: text("date").notNull(), // YYYY-MM-DD (IST) — the release key
+  timeLimit: text("time_limit"),
+  memoryLimit: text("memory_limit"),
+  author: text("author"),
+  statement: text("statement").notNull(), // Markdown
+  inputFormat: text("input_format"),
+  outputFormat: text("output_format"),
+  constraints: text("constraints"),
+  samples: text("samples").notNull().default("[]"), // JSON Sample[] (public)
+  tests: text("tests").notNull().default("[]"), // JSON TestCase[] — SECRET, judge only
+  checker: text("checker").notNull().default('{"type":"token"}'), // JSON { type, epsilon? }
+  schemaVersion: integer("schema_version").notNull().default(1),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Attempt = typeof attempts.$inferSelect;
@@ -110,3 +143,6 @@ export type Submission = typeof submissions.$inferSelect;
 export type NewSubmission = typeof submissions.$inferInsert;
 export type EmailVerification = typeof emailVerifications.$inferSelect;
 export type PasswordReset = typeof passwordResets.$inferSelect;
+// Named *Row to avoid clashing with the domain `Challenge` type in @/lib/challenges.
+export type ChallengeRow = typeof challenges.$inferSelect;
+export type NewChallengeRow = typeof challenges.$inferInsert;
