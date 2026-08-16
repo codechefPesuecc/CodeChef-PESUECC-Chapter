@@ -20,14 +20,13 @@ const cookieOptions = {
   maxAge: SESSION_MAX_AGE,
 };
 
-// A dummy hash (computed once, lazily within a request) so the "no such user"
-// path still spends scrypt time. Without it, a missing username returns faster
-// than a wrong password, leaking which usernames exist — defense-in-depth on top
-// of the login rate limit.
-let dummyHash: string | null = null;
-function timingEqualizer(): string {
-  if (!dummyHash) dummyHash = hashPassword("timing-equalizer-not-a-real-account");
-  return dummyHash;
+// A dummy hash (computed once, then cached) so the "no such user" path still spends
+// the same PBKDF2 time as a real verify. Without it, a missing username returns
+// faster than a wrong password, leaking which usernames exist — defense-in-depth on
+// top of the login rate limit. Caches the promise so the derivation runs only once.
+let dummyHashPromise: Promise<string> | null = null;
+function timingEqualizer(): Promise<string> {
+  return (dummyHashPromise ??= hashPassword("timing-equalizer-not-a-real-account"));
 }
 
 export async function POST(req: Request) {
@@ -59,12 +58,23 @@ export async function POST(req: Request) {
   const user = rows[0];
   // Always run verifyPassword (against the dummy hash when the user is missing)
   // so response timing doesn't reveal whether the username is registered.
-  const passwordOk = verifyPassword(password, user?.passwordHash ?? timingEqualizer());
+  const stored = user?.passwordHash ?? (await timingEqualizer());
+  const { ok: passwordOk, needsRehash } = await verifyPassword(password, stored);
   if (!user || !passwordOk) {
     return NextResponse.json(
       { ok: false, error: "Invalid username or password." },
       { status: 401 },
     );
+  }
+
+  // Transparently upgrade an older/weaker hash (legacy scrypt) now that we have the
+  // plaintext. This is a silent rehash, not a credential change, so — unlike a
+  // password reset — it must NOT bump sessionEpoch and invalidate the user's other sessions.
+  if (needsRehash) {
+    await db
+      .update(users)
+      .set({ passwordHash: await hashPassword(password) })
+      .where(eq(users.id, user.id));
   }
 
   const res = NextResponse.json({

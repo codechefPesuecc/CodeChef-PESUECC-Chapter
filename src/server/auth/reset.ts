@@ -96,10 +96,11 @@ export async function resetPassword(
 
   // Set the new password AND bump the session epoch in one statement, so every
   // session issued before this reset is immediately invalidated.
+  const passwordHash = await hashPassword(password);
   await db
     .update(users)
     .set({
-      passwordHash: hashPassword(password),
+      passwordHash,
       sessionEpoch: sql`${users.sessionEpoch} + 1`,
     })
     .where(eq(users.id, row.userId));

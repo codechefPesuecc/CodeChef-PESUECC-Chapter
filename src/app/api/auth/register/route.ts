@@ -97,6 +97,7 @@ export async function POST(req: Request) {
 
   const id = crypto.randomUUID();
   const createdAt = Date.now();
+  const passwordHash = await hashPassword(password);
   try {
     await db.insert(users).values({
       id,
@@ -105,7 +106,7 @@ export async function POST(req: Request) {
       email,
       srn,
       prn,
-      passwordHash: hashPassword(password),
+      passwordHash,
       createdAt,
     });
   } catch {

@@ -2,15 +2,16 @@ import crypto from "node:crypto";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import { emailVerifications, users } from "@/server/db/schema";
-import { hashPassword, verifyPassword } from "@/server/auth/password";
 import { sendEmail, canRevealSecretInResponse } from "@/server/email";
 import { otpEmailHtml } from "@/server/emailTemplates";
 
 /**
- * Email OTP verification. Codes are 6 digits, hashed at rest (scrypt, same as
- * passwords), single active row per user, expiring in 10 minutes with a capped
- * number of attempts and a resend cooldown. Enforcement of "verified before you
- * can submit" is gated elsewhere by REQUIRE_EMAIL_VERIFICATION.
+ * Email OTP verification. Codes are 6 digits, hashed at rest with a fast salted
+ * SHA-256 (stored as `sha256$<salt>$<hash>`), single active row per user, expiring
+ * in 10 minutes with a capped number of attempts and a resend cooldown. A short-lived,
+ * attempt-limited 6-digit code doesn't warrant a slow password KDF — the rate limit and
+ * expiry are the real defense. Enforcement of "verified before you can submit" is gated
+ * elsewhere by REQUIRE_EMAIL_VERIFICATION.
  */
 
 const OTP_TTL_MS = 10 * 60 * 1000; // 10 minutes
@@ -19,6 +20,24 @@ const RESEND_COOLDOWN_MS = 60 * 1000; // 1 minute between sends
 
 function sixDigitCode(): string {
   return String(crypto.randomInt(0, 1_000_000)).padStart(6, "0");
+}
+
+// OTP hashing: salted SHA-256, stored as `sha256$<saltHex>$<hashHex>`. Fast (no KDF)
+// because the code space is tiny and short-lived; the resend cooldown + attempt cap
+// are the guard, not hash slowness. Verification is constant-time.
+function hashOtp(code: string): string {
+  const salt = crypto.randomBytes(16);
+  const hash = crypto.createHash("sha256").update(salt).update(code, "utf8").digest();
+  return `sha256$${salt.toString("hex")}$${hash.toString("hex")}`;
+}
+
+function verifyOtpHash(code: string, stored: string): boolean {
+  const parts = stored.split("$");
+  if (parts.length !== 3 || parts[0] !== "sha256") return false;
+  const salt = Buffer.from(parts[1], "hex");
+  const expected = Buffer.from(parts[2], "hex");
+  const test = crypto.createHash("sha256").update(salt).update(code, "utf8").digest();
+  return expected.length === test.length && crypto.timingSafeEqual(expected, test);
 }
 
 export interface CreateOtpResult {
@@ -59,7 +78,7 @@ export async function createAndSendOtp(
     id: crypto.randomUUID(),
     userId,
     email,
-    codeHash: hashPassword(code),
+    codeHash: hashOtp(code),
     expiresAt: now + OTP_TTL_MS,
     attempts: 0,
     createdAt: now,
@@ -111,7 +130,16 @@ export async function verifyOtp(
     return { ok: false, error: "Too many attempts — request a new code." };
   }
 
-  if (!verifyPassword(code, row.codeHash)) {
+  // A row hashed by the previous scheme (pre-PBKDF2 deploy) can't match the new
+  // verifier — expire it instead of burning an attempt on it.
+  if (!row.codeHash.startsWith("sha256$")) {
+    await db
+      .delete(emailVerifications)
+      .where(eq(emailVerifications.userId, userId));
+    return { ok: false, error: "That code has expired — request a new one." };
+  }
+
+  if (!verifyOtpHash(code, row.codeHash)) {
     await db
       .update(emailVerifications)
       .set({ attempts: row.attempts + 1 })

@@ -1,23 +1,97 @@
 import crypto from "node:crypto";
 
 /**
- * Password hashing with Node's built-in scrypt — no third-party dependency.
- * Stored as `salt:hash` (both hex). Verification is constant-time.
+ * Password hashing with WebCrypto PBKDF2-HMAC-SHA256.
+ *
+ * New hashes are stored as `pbkdf2$<iterations>$<saltHex>$<hashHex>`. PBKDF2 via
+ * `crypto.subtle` runs natively on the Workers runtime and — unlike scrypt — needs
+ * no large scratch buffer, so it doesn't push the isolate toward its memory limit.
+ *
+ * Legacy hashes (the old scrypt `saltHex:hashHex` form) still verify, and
+ * `verifyPassword` reports `needsRehash` so the login route can transparently
+ * upgrade them to PBKDF2 on the next successful sign-in. Verification is
+ * constant-time.
  */
-const KEYLEN = 64;
 
-export function hashPassword(password: string): string {
-  const salt = crypto.randomBytes(16).toString("hex");
-  const hash = crypto.scryptSync(password, salt, KEYLEN).toString("hex");
-  return `${salt}:${hash}`;
+// PBKDF2-HMAC-SHA256, 210k iterations, 32-byte (one SHA-256 block) output. Chosen
+// for CPU parity with the previous scrypt cost while eliminating scrypt's ~16 MB
+// scratch allocation. Deriving beyond one block multiplies the defender's cost per
+// byte without helping an attacker, so the output stays at one block.
+const PBKDF2_ITERATIONS = 210_000;
+const PBKDF2_KEYLEN = 32;
+const SALT_BYTES = 16;
+// Key length the old scrypt hashes were derived with — needed to verify them.
+const LEGACY_SCRYPT_KEYLEN = 64;
+
+async function pbkdf2(
+  password: string,
+  salt: Uint8Array,
+  iterations: number,
+): Promise<Buffer> {
+  const key = await globalThis.crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(password),
+    { name: "PBKDF2" },
+    false,
+    ["deriveBits"],
+  );
+  const bits = await globalThis.crypto.subtle.deriveBits(
+    // Copy into a fresh ArrayBuffer-backed view so the type is BufferSource (a
+    // plain Uint8Array is generic over ArrayBufferLike, which includes SharedArrayBuffer).
+    { name: "PBKDF2", hash: "SHA-256", salt: new Uint8Array(salt), iterations },
+    key,
+    PBKDF2_KEYLEN * 8,
+  );
+  return Buffer.from(bits);
 }
 
-export function verifyPassword(password: string, stored: string): boolean {
+export async function hashPassword(password: string): Promise<string> {
+  const salt = crypto.randomBytes(SALT_BYTES);
+  const hash = await pbkdf2(password, salt, PBKDF2_ITERATIONS);
+  return `pbkdf2$${PBKDF2_ITERATIONS}$${salt.toString("hex")}$${hash.toString("hex")}`;
+}
+
+export interface VerifyResult {
+  /** Whether the password matched the stored hash. */
+  ok: boolean;
+  /**
+   * True when `ok` and the stored hash is an older/weaker form (legacy scrypt, or
+   * PBKDF2 below the current iteration count) — the caller should re-hash and persist.
+   */
+  needsRehash: boolean;
+}
+
+export async function verifyPassword(
+  password: string,
+  stored: string,
+): Promise<VerifyResult> {
+  if (stored.startsWith("pbkdf2$")) {
+    const parts = stored.split("$");
+    if (parts.length !== 4) return { ok: false, needsRehash: false };
+    const iterations = Number(parts[1]);
+    const salt = Buffer.from(parts[2], "hex");
+    const expected = Buffer.from(parts[3], "hex");
+    if (
+      !Number.isInteger(iterations) ||
+      iterations <= 0 ||
+      salt.length === 0 ||
+      expected.length === 0
+    ) {
+      return { ok: false, needsRehash: false };
+    }
+    const test = await pbkdf2(password, salt, iterations);
+    const ok =
+      expected.length === test.length && crypto.timingSafeEqual(expected, test);
+    return { ok, needsRehash: ok && iterations < PBKDF2_ITERATIONS };
+  }
+
+  // Legacy scrypt: `saltHex:hashHex`. Verify with the original parameters, then
+  // signal a rehash so the next successful login upgrades the row to PBKDF2.
   const [salt, hash] = stored.split(":");
-  if (!salt || !hash) return false;
-  const test = crypto.scryptSync(password, salt, KEYLEN);
+  if (!salt || !hash) return { ok: false, needsRehash: false };
+  const test = crypto.scryptSync(password, salt, LEGACY_SCRYPT_KEYLEN);
   const expected = Buffer.from(hash, "hex");
-  return (
-    expected.length === test.length && crypto.timingSafeEqual(expected, test)
-  );
+  const ok =
+    expected.length === test.length && crypto.timingSafeEqual(expected, test);
+  return { ok, needsRehash: ok };
 }
