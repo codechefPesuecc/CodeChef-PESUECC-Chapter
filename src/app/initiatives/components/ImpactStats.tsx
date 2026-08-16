@@ -11,7 +11,7 @@ export function ImpactStats() {
             <div className="font-display text-3xl font-bold text-brown">4</div>
             <div className="mt-2 flex items-center justify-between font-mono text-[11px] font-semibold uppercase tracking-wider text-charcoal/55">
               Core Initiatives
-              <span className="text-bronze opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100">
+              <span className="text-bronze lg:opacity-0 transition-all duration-300 group-hover:translate-x-1 lg:group-hover:opacity-100">
                 <ArrowIcon />
               </span>
             </div>
@@ -21,7 +21,7 @@ export function ImpactStats() {
             <div className="font-display text-3xl font-bold text-brown">2</div>
             <div className="mt-2 flex items-center justify-between font-mono text-[11px] font-semibold uppercase tracking-wider text-charcoal/55">
               Engineered Events
-              <span className="text-bronze opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100">
+              <span className="text-bronze lg:opacity-0 transition-all duration-300 group-hover:translate-x-1 lg:group-hover:opacity-100">
                 <ArrowIcon />
               </span>
             </div>

@@ -7,6 +7,7 @@ import HudFrame from "@/components/HudFrame";
 import SmoothScroll from "@/components/SmoothScroll";
 import ScrollProgress from "@/components/ScrollProgress";
 import MotionProvider from "@/components/MotionProvider";
+import { ScrollToTop } from "@/components/ui/ScrollToTop";
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
@@ -63,6 +64,7 @@ export default function RootLayout({
           <HudFrame />
           <div className="flex flex-1 flex-col pt-24">{children}</div>
           <Footer />
+          <ScrollToTop />
         </MotionProvider>
       </body>
     </html>
