@@ -84,14 +84,18 @@ export async function todayLeaderboard(): Promise<LeaderRow[]> {
   return out;
 }
 
-/**
- * Month / all-time: sum of each user's per-challenge award. Live solvers get their
- * speed-bounty points; late (practice) solvers get the flat base score. Month uses
- * each challenge's own IST date, compared against the current IST month.
- */
-export async function aggregateLeaderboard(scope: "month" | "all"): Promise<LeaderRow[]> {
+// Cached snapshot of every accepted submission joined to its challenge date and the
+// user's board identity. The month and all-time boards — and every profile page —
+// derive from this same set, so it's fetched once per isolate per TTL instead of
+// re-scanning D1 on every request (the scan grows with submission volume). A global
+// board tolerates brief staleness; today's live board is computed separately and is
+// never cached. `caches.default` isn't available under `next dev`, so a plain
+// module-level cache is used (per-isolate, which is sufficient here).
+const AGGREGATE_TTL_MS = 30_000;
+
+function fetchAggregateRows() {
   const db = getDb();
-  const rows = await db
+  return db
     .select({
       userId: submissions.userId,
       challengeSlug: submissions.challengeSlug,
@@ -106,6 +110,29 @@ export async function aggregateLeaderboard(scope: "month" | "all"): Promise<Lead
     .innerJoin(users, eq(submissions.userId, users.id))
     .innerJoin(challenges, eq(submissions.challengeSlug, challenges.slug))
     .where(eq(submissions.status, "AC"));
+}
+
+type AggregateRow = Awaited<ReturnType<typeof fetchAggregateRows>>[number];
+let aggregateCache: { rows: AggregateRow[]; at: number } | null = null;
+
+async function getAggregateRows(): Promise<AggregateRow[]> {
+  const now = Date.now();
+  if (aggregateCache && now - aggregateCache.at < AGGREGATE_TTL_MS) {
+    return aggregateCache.rows;
+  }
+  const rows = await fetchAggregateRows();
+  aggregateCache = { rows, at: now };
+  return rows;
+}
+
+/**
+ * Month / all-time: sum of each user's per-challenge award. Live solvers get their
+ * speed-bounty points; late (practice) solvers get the flat base score. Month uses
+ * each challenge's own IST date, compared against the current IST month. Derived from
+ * a short-lived cached snapshot of accepted submissions (see getAggregateRows).
+ */
+export async function aggregateLeaderboard(scope: "month" | "all"): Promise<LeaderRow[]> {
+  const rows = await getAggregateRows();
 
   const displayById = new Map(rows.map((r) => [r.userId, r.srn ?? r.prn]));
 
