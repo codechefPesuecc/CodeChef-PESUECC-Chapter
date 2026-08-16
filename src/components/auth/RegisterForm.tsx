@@ -103,7 +103,7 @@ export default function RegisterForm() {
                 required
               />
             </Field>
-            <Field label="SRN" hint="Optional — add later.">
+            <Field label="SRN" hint="Optional">
               <input className={inputCls} value={form.srn} onChange={set("srn")} />
             </Field>
           </div>
@@ -174,7 +174,7 @@ function Field({
     <div>
       <label className="mb-1 block text-xs font-medium text-charcoal/70">
         {label}
-        {hint && <span className="ml-1 font-normal text-charcoal/45">· {hint}</span>}
+        {hint && <span className="ml-2 font-normal text-charcoal/45">({hint})</span>}
       </label>
       {children}
     </div>
