@@ -55,7 +55,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="flex min-h-full flex-col font-sans">
+      <body className="flex min-h-screen flex-col font-sans">
         <MotionProvider>
           <SmoothScroll />
           <ScrollProgress />

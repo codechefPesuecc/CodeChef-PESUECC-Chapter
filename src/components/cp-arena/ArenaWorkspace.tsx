@@ -560,7 +560,7 @@ export default function ArenaWorkspace({
               // `data-lenis-prevent` lets this panel scroll natively instead of
               // Lenis hijacking the wheel for the whole page.
               data-lenis-prevent
-              className={`arena-no-print max-h-[560px] overflow-y-auto overscroll-contain px-6 py-6 lg:max-h-[720px] ${
+              className={`arena-no-print max-h-[560px] overflow-y-auto px-6 py-6 lg:max-h-[720px] ${
                 practice ? "" : "select-none"
               }`}
               onCopyCapture={
