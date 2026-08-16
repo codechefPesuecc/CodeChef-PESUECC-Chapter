@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -49,13 +50,15 @@ export default function RootLayout({
          * the wrong mode on load. Runs synchronously during HTML parsing and
          * sets `.dark` on <html>; the Navbar toggle keeps it in sync afterwards.
          */}
-        <script
+        <Script
+          id="theme-script"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `(function(){try{if(localStorage.getItem("theme")==="dark")document.documentElement.classList.add("dark")}catch(e){}})()`,
           }}
         />
       </head>
-      <body className="flex min-h-full flex-col font-sans">
+      <body className="flex min-h-screen flex-col font-sans">
         <MotionProvider>
           <SmoothScroll />
           <ScrollProgress />
