@@ -36,6 +36,10 @@
 *.db-*
 *.sqlite
 
+# challenge authoring source — problems (incl. hidden tests) live in the database,
+# not the repo. Kept locally to seed with `npm run challenges:seed`; not committed.
+/challenges/*.json
+
 # misc
 .DS_Store
 .AppleDouble

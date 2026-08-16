@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getReleasedChallenges, getDailyChallenge } from "@/lib/challenges";
+import { getReleasedSummaries } from "@/lib/challenges";
 import MechaPanel from "@/components/cp-arena/MechaPanel";
 import NextProblemCountdown from "@/components/cp-arena/NextProblemCountdown";
 
@@ -40,14 +40,12 @@ const DIFFICULTY_STYLES: Record<string, string> = {
   Hard: "bg-red-500/15 text-red-700 dark:text-red-400",
 };
 
-export default function CpArenaPage() {
-  const daily = getDailyChallenge();
-  const allReleased = getReleasedChallenges();
-
-  // Past questions = everything except today's live problem.
-  const pastChallenges = daily
-    ? allReleased.filter((c) => c.slug !== daily.slug)
-    : allReleased;
+export default async function CpArenaPage() {
+  // Summaries only — the listing never needs (or selects) hidden test data.
+  const released = await getReleasedSummaries();
+  // The most recent released problem is today's; the rest are past practice.
+  const daily = released[0] ?? null;
+  const pastChallenges = released.slice(1);
 
   return (
     <main className="flex-1">
@@ -66,8 +64,8 @@ export default function CpArenaPage() {
         </h1>
         <p className="mt-3 max-w-2xl text-charcoal/70">
           Sharpen your skills with the daily Problem of the Day, or practice any
-          past challenge. Practice solves are judged against hidden tests for
-          real feedback, but they don&apos;t affect the speed-bounty leaderboard.
+          past challenge. A practice solve earns a flat 100 points toward your
+          all-time total — the speed bounty is reserved for the live problem.
         </p>
 
         {/* ━━━━━━━━━━━━━━━━━━ Problem of the Day ━━━━━━━━━━━━━━━━━━ */}

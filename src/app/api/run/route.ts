@@ -89,7 +89,7 @@ export async function POST(req: Request) {
   let runTimeoutMs = DEFAULT_RUN_MS;
   let memLimitBytes = DEFAULT_MEM_BYTES;
   if (typeof slug === "string") {
-    const challenge = getChallengeBySlug(slug);
+    const challenge = await getChallengeBySlug(slug);
     if (challenge) {
       runTimeoutMs = parseTimeLimitMs(challenge.timeLimit, DEFAULT_RUN_MS);
       memLimitBytes = parseMemoryLimitBytes(challenge.memoryLimit, DEFAULT_MEM_BYTES);

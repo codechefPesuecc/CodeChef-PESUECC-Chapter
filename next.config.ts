@@ -1,13 +1,10 @@
 import type { NextConfig } from "next";
-import { buildChallengesManifest } from "./scripts/build-challenges.mjs";
 import { buildTeamManifest } from "./scripts/build-team.mjs";
 
-// Bundle filesystem-backed content into manifests before the build/dev server
-// reads it — Cloudflare Workers have no filesystem, so the GitOps challenge JSON
-// (see src/lib/challenges.ts) and the team roster (see src/app/team/lib.ts) ship
-// in the bundle. Runs for `next dev`, `next build`, and `opennextjs-cloudflare
-// build` (which invokes next build).
-buildChallengesManifest();
+// Bundle the filesystem-backed team roster into a manifest before the build/dev
+// server reads it — Cloudflare Workers have no filesystem (see src/app/team/lib.ts).
+// Challenges are NOT bundled: they live in the database (see src/lib/challenges.ts)
+// and are published with `npm run challenges:seed`, no redeploy required.
 buildTeamManifest();
 
 const isDev = process.env.NODE_ENV !== "production";

@@ -1,9 +1,11 @@
 /**
- * Daily Arena — speed bounty scoring.
+ * Arena scoring.
  *
- * Points are awarded by finish order for the Problem of the Day: the faster you
- * submit an accepted solution, the more you earn. Everyone who solves after the
- * top five still earns the base reward, so consistency is always worth points.
+ * The Problem of the Day is a speed bounty: points by finish order, the faster
+ * your accepted solution the more you earn, with everyone past the top nine still
+ * earning the base reward. A past problem solved for practice earns a flat base
+ * reward (`BASE_POINTS`) — never a speed bounty. See `@/lib/scoring` for how the
+ * two combine into a user's total.
  */
 export const SPEED_BOUNTY = [
   1000, 800, 600, 500, 400, 300, 250, 200, 150,

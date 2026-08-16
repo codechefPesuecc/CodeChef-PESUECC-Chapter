@@ -24,7 +24,7 @@ abide by the Code of Conduct.
 6. [The pull request process](#6-the-pull-request-process)
 7. [What CI checks](#7-what-ci-checks)
 8. [Code style](#8-code-style)
-9. [Adding a problem (GitOps)](#9-adding-a-problem-gitops)
+9. [Adding a problem](#9-adding-a-problem)
 10. [Database migrations](#10-database-migrations)
 11. [Secrets and environment](#11-secrets-and-environment)
 12. [Reporting bugs](#12-reporting-bugs)
@@ -39,7 +39,7 @@ You do **not** need to be a competitive programming god or a Next.js expert to h
 contributions include:
 
 - **Code** — features, bug fixes, refactors, tests, accessibility and performance improvements.
-- **Problems** — author challenges for the arena via the GitOps flow (see section 9).
+- **Problems** — author challenges for the arena and seed them into the database (see section 9).
 - **Editorials** — write up clean explanations of past problems so juniors can learn from them.
 - **Design / UX** — improve layouts, responsiveness, and adherence to the brand system.
 - **Docs** — improve this guide, the README, or in-code comments.
@@ -137,7 +137,7 @@ almost always the cause.
 ## 4. Project structure
 
 ```text
-├── .github/workflows/   # CI: typecheck, lint, test, build; validate challenge JSON
+├── .github/workflows/   # CI: typecheck, lint, test, build
 ├── src/
 │   ├── app/             # Next.js App Router (pages + edge API routes)
 │   │   ├── api/         # Edge backends (/api/submit, /api/leaderboard, /api/auth/*, ...)
@@ -148,7 +148,7 @@ almost always the cause.
 │   ├── components/      # Reusable UI (CodeChef brand system)
 │   ├── server/          # Server-only logic: auth, db, rate limiting, leaderboard, email
 │   └── lib/             # Shared helpers, challenge loading, events data
-├── challenges/          # GitOps: one JSON file per problem
+├── challenges/          # Problem authoring source (JSON) — seeded into D1, not committed
 ├── migrations/          # Cloudflare D1 (SQLite) migrations
 ├── scripts/             # Build/validate scripts (challenges, team, etc.)
 └── wrangler.jsonc       # Cloudflare Workers & D1 binding configuration
@@ -266,23 +266,21 @@ If that passes on Node 22, your PR's `verify` job will almost certainly pass too
 
 ---
 
-## 9. Adding a problem (GitOps)
+## 9. Adding a problem
 
-Problem setters never touch the database or an admin panel. You add a problem by committing **one JSON
-file** to `/challenges/` via a pull request.
+Problems live in the database. You author each one as **one JSON file**, validate it, and load it into
+D1 with the seed script — publishing is a database write, not a redeploy. (An in-browser admin
+dashboard is planned; until then, the seed script is the publish path.)
 
-1. Create `challenges/YYYY-MM-DD-slug.json` following the exact shape documented in
-   `challenges/README.md` and the committed example. In brief: title, difficulty, date, tags, limits,
-   statement, I/O format, constraints, checker, `samples` (shown to users), and `tests` (the hidden
-   judged cases).
-2. **`tests` are server-side only** — they are stripped before a problem is sent to the browser.
-   **Keep this repository private** so the hidden tests stay hidden.
-3. Validate locally: `npm run challenges:validate`. CI runs this too.
-4. Open a PR. The core team reviews formatting, constraints, and the strength of the hidden tests,
-   then merges.
-5. On the next deploy, `scripts/build-challenges.mjs` bundles it into the app. **Publishing a problem
-   is a redeploy** — the Problem of the Day is the most recent challenge whose `date` is on or before
-   today.
+1. Create `challenges/YYYY-MM-DD-slug.json` following the shape documented in `challenges/README.md`.
+   In brief: title, difficulty, date, tags, limits, statement, I/O format, constraints, checker,
+   `samples` (shown to solvers), and `tests` (the hidden judged cases).
+2. **`tests` are server-side only** — never sent to the browser, and never committed: the authoring
+   JSON is git-ignored so hidden tests stay out of the repo.
+3. Validate: `npm run challenges:validate`.
+4. Seed it: `npm run challenges:seed` (local dev DB) or `npm run challenges:seed -- --target remote`
+   (production D1). It releases automatically once its `date` (IST) is on or before today — the
+   Problem of the Day is the most recent released problem.
 
 When authoring: write clear statements, include tricky edge cases in the hidden tests (empty input,
 maximum constraints, ties), and make sure the sample matches the stated I/O format exactly.

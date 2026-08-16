@@ -12,7 +12,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "challenges:validate": "tsx scripts/validate-challenges.ts",
-    "challenges:build": "node scripts/build-challenges.mjs",
+    "challenges:seed": "tsx scripts/seed-challenges.ts",
     "team:build": "node scripts/build-team.mjs",
     "cf:build": "opennextjs-cloudflare build",
     "cf:deploy": "opennextjs-cloudflare build && wrangler deploy",
@@ -39,8 +39,12 @@
     "next": "^16.2.12",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1"
+    "rehype-sanitize": "^6.0.0",
+    "rehype-stringify": "^10.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
+    "unified": "^11.0.5"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260810.1",

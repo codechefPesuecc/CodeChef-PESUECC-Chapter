@@ -2,7 +2,7 @@
 
 The official web platform and high-performance competitive programming ecosystem for the **CodeChef PESUECC Chapter**.
 
-This repository houses a modern, edge-optimized application engineered using **Next.js**, **Cloudflare Pages**, and **Cloudflare D1**. It powers our landing page, dynamic student portfolios, a GitOps-driven challenge track, and a live daily contest leaderboard backed by a secure, self-hosted sandboxed code execution microservice.
+This repository houses a modern, edge-optimized application engineered using **Next.js**, **Cloudflare Pages**, and **Cloudflare D1**. It powers our landing page, dynamic student portfolios, a database-backed challenge track, and a live daily contest leaderboard backed by a secure, self-hosted sandboxed code execution microservice.
 
 ---
 
@@ -11,7 +11,7 @@ This repository houses a modern, edge-optimized application engineered using **N
 * **Frontend Framework:** Next.js (App Router) built for Cloudflare Workers via the OpenNext adapter (`@opennextjs/cloudflare`).
 * **Hosting & Deploy:** **Cloudflare Workers**. Builds run through the OpenNext adapter and deploy with Wrangler (see `DEPLOY.md`).
 * **Database (Edge Storage):** **Cloudflare D1** (Serverless, ultra-low latency SQLite database running natively on Cloudflare's global edge network).
-* **Content Pipeline (GitOps):** One **JSON** file per problem in `/challenges`, bundled into the app at build time (Workers have no filesystem, so problems ride in the bundle).
+* **Content Pipeline:** Problems live in **Cloudflare D1** — authored as JSON, validated, and loaded with `npm run challenges:seed`, so publishing a problem needs no redeploy. Hidden tests never enter the repo.
 * **Code Judge Sandbox:** A self-hosted instance of the **Piston Engine / AlgoHunt Base** running on an isolated **Oracle Cloud Infrastructure (OCI) Always Free Ampere A1 Compute Instance** (Configured at 2 OCPUs / 12 GB RAM).
 
 ---
@@ -19,7 +19,7 @@ This repository houses a modern, edge-optimized application engineered using **N
 ## 📂 Repository Directory Tree
 
 ```text
-├── .github/workflows/       # CI: typecheck, lint, test, build; validate challenge JSON
+├── .github/workflows/       # CI: typecheck, lint, test, build
 ├── src/
 │   ├── app/                 # Next.js App Router (Pages & Edge API Routes)
 │   │   ├── api/             # Edge backends (/api/submit, /api/leaderboard)
@@ -28,7 +28,7 @@ This repository houses a modern, edge-optimized application engineered using **N
 │   │   └── team/            # Core and Alumni registry pages
 │   ├── components/          # Reusable UI modules (CodeChef Brand System)
 │   └── styles/              # Global layout design variables
-├── challenges/              # GitOps directory: one JSON file per problem
+├── challenges/              # Problem authoring source (JSON) — seeded into D1, not committed
 ├── migrations/              # Cloudflare D1 SQLite database schemas
 ├── wrangler.jsonc            # Cloudflare Workers & D1 binding configuration
 └── README.md
@@ -49,13 +49,13 @@ The interface utilizes the formal, premium CodeChef corporate visual palette to 
 
 ---
 
-## 📝 Problem Setters' Workflow (GitOps)
+## 📝 Problem Setters' Workflow
 
-Problem setters do not access databases or admin panels directly. To add a problem they commit one **JSON** file to the `/challenges/` directory via a version-controlled Pull Request.
+Problems live in the database, not the repo. A problem is authored as one **JSON** file, validated, then loaded into D1 with the seed script — **publishing is a database write, not a redeploy** — and hidden tests never enter the public repository. (An in-browser admin dashboard for authoring is planned; until then, the seed script is the publish path.)
 
-### Challenge file format (`/challenges/YYYY-MM-DD-slug.json`)
+### Challenge file format (`YYYY-MM-DD-slug.json`)
 
-Each problem is a single JSON object. The authoritative shape is enforced by `scripts/validate-challenges.ts` (run in CI); see `challenges/README.md` and the committed example for the full field list. In brief:
+Each problem is a single JSON object. The authoritative shape is enforced by the shared schema in `scripts/challenge-schema.ts` (used by both the validator and the seeder); see `challenges/README.md` for the full field list. In brief:
 
 ```json
 {
@@ -75,13 +75,13 @@ Each problem is a single JSON object. The authoritative shape is enforced by `sc
 }
 ```
 
-`samples` are shown to users; `tests` are the hidden judged cases and are **server-side only** — they're stripped before the problem is sent to the client. Keep the repo private so the hidden tests stay hidden.
+`samples` are shown to solvers; `tests` are the hidden judged cases — server-side only, never sent to the client, and never committed to the repo (the authoring JSON is git-ignored).
 
 ### How a problem goes live
 
-1. A setter opens a PR adding a `YYYY-MM-DD-slug.json` file; CI validates it (`npm run challenges:validate`).
-2. The core team reviews formatting, constraints, and hidden tests, then merges to `main`.
-3. `scripts/build-challenges.mjs` bundles every challenge into `src/lib/challenges.manifest.json` at build time, so **publishing a problem is a redeploy** — there is no runtime D1 sync. The Problem of the Day is the most recent challenge whose `date` is on or before today.
+1. Author `YYYY-MM-DD-slug.json` and validate it: `npm run challenges:validate`.
+2. Seed it into the database — local dev: `npm run challenges:seed`; production D1: `npm run challenges:seed -- --target remote`.
+3. It's live immediately: the Problem of the Day is the most recent released challenge whose `date` (IST) is on or before today. No deploy required.
 
 ---
 

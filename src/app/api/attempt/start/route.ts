@@ -45,7 +45,7 @@ export async function POST(req: Request) {
 
   // Only the current, ranked Problem of the Day starts a clock. Anything else
   // (a past problem opened for practice) is intentionally not tracked.
-  const daily = getDailyChallenge();
+  const daily = await getDailyChallenge();
   if (daily?.slug !== slug) {
     return NextResponse.json({ ok: true, ranked: false, startedAt: null });
   }

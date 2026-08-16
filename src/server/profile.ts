@@ -1,14 +1,14 @@
 import { desc, eq } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import { submissions } from "@/server/db/schema";
-import { getChallengeBySlug } from "@/lib/challenges";
+import { getChallengeTitles } from "@/lib/challenges";
 import { aggregateLeaderboard } from "@/server/leaderboard";
 
 /**
- * Profile data for a signed-in user: their recorded (ranked) submission history
- * plus their standing on the aggregate boards. Only the current daily is ever
- * recorded, so this is the history of ranked attempts — practice solves on the
- * archive are intentionally not persisted.
+ * Profile data for a signed-in user: their recorded submission history plus their
+ * standing on the aggregate boards. Ranked (live Problem-of-the-Day) submissions
+ * are recorded in full; accepted practice solves on past problems are also kept
+ * (they earn the flat base score).
  */
 
 export interface ProfileSubmission {
@@ -50,9 +50,11 @@ export async function getUserSubmissions(
     .where(eq(submissions.userId, userId))
     .orderBy(desc(submissions.createdAt));
 
+  // One batched title lookup instead of a per-row query.
+  const titles = await getChallengeTitles([...new Set(rows.map((r) => r.slug))]);
   return rows.map((r) => ({
     ...r,
-    title: getChallengeBySlug(r.slug)?.title ?? r.slug,
+    title: titles.get(r.slug) ?? r.slug,
   }));
 }
 

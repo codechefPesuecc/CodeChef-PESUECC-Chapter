@@ -3,23 +3,12 @@ import {
   parseTimeLimitMs,
   parseMemoryLimitBytes,
   isReleased,
-  getAllChallenges,
+  toPublicContent,
   type Challenge,
 } from "./challenges";
 
-function challengeOn(date: string): Challenge {
-  return {
-    slug: "sample",
-    title: "Sample",
-    difficulty: "Easy",
-    tags: [],
-    date,
-    statement: "…",
-    samples: [],
-    checker: { type: "token" },
-    tests: [],
-  };
-}
+// These cover the pure helpers only. The readers (getDailyChallenge, …) hit the
+// database and are exercised by the end-to-end/seed flow, not unit tests.
 
 describe("parseTimeLimitMs", () => {
   it("parses seconds and milliseconds", () => {
@@ -52,25 +41,28 @@ describe("parseMemoryLimitBytes", () => {
 
 describe("isReleased", () => {
   it("releases past-dated problems and hides future-dated ones", () => {
-    expect(isReleased(challengeOn("2000-01-01"))).toBe(true);
-    expect(isReleased(challengeOn("2999-12-31"))).toBe(false);
+    expect(isReleased({ date: "2000-01-01" })).toBe(true);
+    expect(isReleased({ date: "2999-12-31" })).toBe(false);
   });
 });
 
-describe("bundled challenge manifest", () => {
-  it("loads valid records with the required public fields", () => {
-    const all = getAllChallenges();
-    expect(all.length).toBeGreaterThanOrEqual(1);
-    for (const c of all) {
-      expect(c.slug).toBeTruthy();
-      expect(c.title).toBeTruthy();
-      expect(c.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    }
-  });
-
-  it("is sorted newest-first by date", () => {
-    const dates = getAllChallenges().map((c) => c.date);
-    const sorted = [...dates].sort((a, b) => b.localeCompare(a));
-    expect(dates).toEqual(sorted);
+describe("toPublicContent", () => {
+  it("strips hidden tests and the checker", () => {
+    const full: Challenge = {
+      slug: "sample",
+      title: "Sample",
+      difficulty: "Easy",
+      tags: ["x"],
+      date: "2026-01-01",
+      statement: "…",
+      samples: [{ input: "1", output: "2" }],
+      checker: { type: "token" },
+      tests: [{ input: "3", output: "4" }],
+    };
+    const pub = toPublicContent(full);
+    expect(pub).not.toHaveProperty("tests");
+    expect(pub).not.toHaveProperty("checker");
+    expect(pub.slug).toBe("sample");
+    expect(pub.samples).toHaveLength(1);
   });
 });

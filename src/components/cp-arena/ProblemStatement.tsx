@@ -1,60 +1,63 @@
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import type { ChallengeContent } from "@/lib/challenges";
+import { renderMarkdown } from "@/lib/markdown";
 
 /**
  * Server component — renders a challenge's public content (statement + structured
- * sections) to styled HTML with no client JS. Prose fields are Markdown; element
- * styling lives in the `.arena-prose` scope in globals.css so it re-themes in
- * dark mode. Hidden tests are never passed here.
+ * sections) to styled HTML. Prose fields are Markdown, rendered to sanitized HTML
+ * on the server (no client-side Markdown library); element styling lives in the
+ * `.arena-prose` scope in globals.css so it re-themes in dark mode. Hidden tests
+ * are never passed here.
  */
-function Md({ children }: { children: string }) {
-  return <Markdown remarkPlugins={[remarkGfm]}>{children}</Markdown>;
-}
-
-export default function ProblemStatement({
+export default async function ProblemStatement({
   challenge,
 }: {
   challenge: ChallengeContent;
 }) {
+  const [statement, inputFormat, outputFormat, constraints, sampleExplanations] =
+    await Promise.all([
+      renderMarkdown(challenge.statement),
+      renderMarkdown(challenge.inputFormat ?? ""),
+      renderMarkdown(challenge.outputFormat ?? ""),
+      renderMarkdown(challenge.constraints ?? ""),
+      Promise.all(challenge.samples.map((s) => renderMarkdown(s.explanation ?? ""))),
+    ]);
+
   return (
     <div className="arena-prose">
-      <Md>{challenge.statement}</Md>
+      <div dangerouslySetInnerHTML={{ __html: statement }} />
 
-      {challenge.inputFormat && (
+      {inputFormat && (
         <>
           <h2>Input Format</h2>
-          <Md>{challenge.inputFormat}</Md>
+          <div dangerouslySetInnerHTML={{ __html: inputFormat }} />
         </>
       )}
 
-      {challenge.outputFormat && (
+      {outputFormat && (
         <>
           <h2>Output Format</h2>
-          <Md>{challenge.outputFormat}</Md>
+          <div dangerouslySetInnerHTML={{ __html: outputFormat }} />
         </>
       )}
 
-      {challenge.constraints && (
+      {constraints && (
         <>
           <h2>Constraints</h2>
-          <Md>{challenge.constraints}</Md>
+          <div dangerouslySetInnerHTML={{ __html: constraints }} />
         </>
       )}
 
       {challenge.samples.map((sample, i) => (
         <section key={i}>
-          <h2>
-            Sample{challenge.samples.length > 1 ? ` ${i + 1}` : ""}
-          </h2>
+          <h2>Sample{challenge.samples.length > 1 ? ` ${i + 1}` : ""}</h2>
           <div className="arena-io-label">Input</div>
           <pre>{sample.input.replace(/\n+$/, "")}</pre>
           <div className="arena-io-label">Output</div>
           <pre>{sample.output.replace(/\n+$/, "")}</pre>
-          {sample.explanation && (
+          {sampleExplanations[i] && (
             <>
               <h3>Explanation</h3>
-              <Md>{sample.explanation}</Md>
+              <div dangerouslySetInnerHTML={{ __html: sampleExplanations[i] }} />
             </>
           )}
         </section>

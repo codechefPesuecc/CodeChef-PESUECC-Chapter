@@ -6,6 +6,7 @@ import { submissions, attempts } from "@/server/db/schema";
 import { getCurrentUser } from "@/server/auth/session";
 import { getDailyChallenge } from "@/lib/challenges";
 import { judge } from "@/server/judge";
+import { hasSolvedRanked } from "@/server/solves";
 import { rateLimit, clientIp } from "@/server/rateLimit";
 import { verifyTurnstile } from "@/server/turnstile";
 import { PISTON_LANGUAGE } from "@/lib/piston";
@@ -105,11 +106,27 @@ export async function POST(req: Request) {
     );
   }
 
-  // Only the current Problem of the Day is ranked. Past problems are practice:
-  // they're judged for AC/WA feedback but not recorded, so re-solving an old
-  // problem at leisure can't mint fresh speed-bounty points or move the boards.
-  const daily = getDailyChallenge();
+  // Only the current Problem of the Day is ranked (speed-bounty by finish order).
+  // A past problem is practice: an accepted solve earns the flat base score, but
+  // it never mints speed-bounty points or shifts the live board.
+  const daily = await getDailyChallenge();
   const ranked = daily?.slug === slug;
+
+  // Hide-after-solve, enforced server-side: once a user has a live AC for today's
+  // problem, the solve page stops serving it AND a crafted re-submit is rejected.
+  // This also guarantees exactly one ranked award per (user, problem).
+  if (ranked) {
+    try {
+      if (await hasSolvedRanked(user.id, slug)) {
+        return NextResponse.json(
+          { ok: false, alreadySolved: true, error: "You've already solved today's problem." },
+          { status: 409 },
+        );
+      }
+    } catch (error) {
+      console.error("[submit] failed to check for an existing solve:", error);
+    }
+  }
 
   const result = await judge({ slug, language, code });
 
@@ -160,6 +177,7 @@ export async function POST(req: Request) {
         elapsedSeconds,
         flags: typeof body.flags === "number" ? Math.max(0, Math.round(body.flags)) : 0,
         flagsBreakdown,
+        ranked: true,
         createdAt: submittedAt,
       });
     } catch (error) {
@@ -190,6 +208,26 @@ export async function POST(req: Request) {
         console.error("[submit] failed to compute post-AC standings:", error);
         // Fall through to the generic response — client will use board fetch.
       }
+    }
+  } else if (result.verdict === "AC") {
+    // Past-problem practice: record the accepted solve so it earns the flat base
+    // score on the aggregate boards. No attempt clock and no proctoring flags.
+    try {
+      await getDb().insert(submissions).values({
+        id: crypto.randomUUID(),
+        challengeSlug: slug,
+        userId: user.id,
+        language,
+        code,
+        status: result.verdict,
+        elapsedSeconds: null,
+        flags: 0,
+        flagsBreakdown: null,
+        ranked: false,
+        createdAt: submittedAt,
+      });
+    } catch (error) {
+      console.error("[submit] failed to record practice solve:", error);
     }
   }
 
