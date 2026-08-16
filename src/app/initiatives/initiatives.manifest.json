@@ -190,27 +190,83 @@
       "timeline": [
         {
           "date": "August 2024",
-          "title": "AlgoHunt v4.0",
+          "title": "AlgoHunt v4.0: The Campus Node",
           "tag": "Upcoming",
-          "description": "The biggest campus-wide algorithmic treasure hunt is back with more complex crypto-puzzles and physical checkpoints."
+          "description": "The biggest campus-wide algorithmic treasure hunt returns. We are completely overhauling the puzzle engine to integrate deep cryptography, physical lock-picking, and GPS-fenced checkpoints across the university architecture.",
+          "image": "/dev-team.jpg",
+          "stats": [
+            {
+              "label": "Expected Players",
+              "value": "800+"
+            },
+            {
+              "label": "Hardware Nodes",
+              "value": "15"
+            }
+          ],
+          "features": [
+            "Real-time websocket leaderboard synchronization",
+            "Custom ESP32-based hardware puzzles",
+            "Dynamic scoring based on physical sprint time"
+          ]
         },
         {
           "date": "February 2024",
-          "title": "AlgoHunt v3.0",
+          "title": "AlgoHunt v3.0: The WebSocket Era",
           "tag": "Completed",
-          "description": "Over 500 participants across 100 teams raced across campus. Introduced the real-time websocket leaderboard."
+          "description": "Our first massive-scale deployment. We introduced a live-updating dashboard that tracked teams physically moving across campus in real time. The pressure of watching rival teams jump ahead on the leaderboard while running up the stairs changed the game.",
+          "stats": [
+            {
+              "label": "Total Teams",
+              "value": "125"
+            },
+            {
+              "label": "Code Submissions",
+              "value": "1,400+"
+            }
+          ],
+          "features": [
+            "Live WebSocket scoreboard",
+            "Introduction of Time-Penalty algorithms",
+            "Cross-campus clue chaining"
+          ]
         },
         {
           "date": "September 2023",
-          "title": "AlgoHunt v2.0",
+          "title": "AlgoHunt v2.0: Reverse Engineering",
           "tag": "Completed",
-          "description": "Expanded to include hardware-based challenges and reverse-engineering nodes."
+          "description": "Expanded the core algorithmic formula to include reverse-engineering nodes. Teams had to decompile binaries on their laptops while standing in the cafeteria to unlock the next physical location.",
+          "image": "/dev-team.jpg",
+          "stats": [
+            {
+              "label": "Puzzles",
+              "value": "8"
+            },
+            {
+              "label": "Completion Rate",
+              "value": "32%"
+            }
+          ],
+          "features": [
+            "Binary decompilation rounds",
+            "Cipher-text campus maps"
+          ]
         },
         {
           "date": "March 2023",
           "title": "AlgoHunt Genesis",
           "tag": "Completed",
-          "description": "The inaugural event that started it all, blending competitive programming with a physical race."
+          "description": "The inaugural event that started it all. We wanted to see if we could blend competitive programming with a physical race. It was chaotic, the servers crashed for 5 minutes, but the energy was unparalleled.",
+          "stats": [
+            {
+              "label": "Initial Hackers",
+              "value": "150"
+            },
+            {
+              "label": "Server Crashes",
+              "value": "1 (It's a feature)"
+            }
+          ]
         }
       ],
       "mentors": [
