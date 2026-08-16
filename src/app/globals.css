@@ -462,22 +462,72 @@ button:focus-visible,
 
   /*
  * --- Mecha buttons ---
- * Rounded button controls. Single-element (no border layer) so the classes drop
- * onto a <button> or a <Link> alike. `solid` is the primary bronze CTA; `ghost`
- * is an outlined secondary.
+ * Chamfered, mono-uppercase HUD controls. Single-element (no border layer) so the
+ * classes drop onto a <button> or a <Link> alike. `solid` is the primary CTA with
+ * a metallic bronze gradient + glow; `ghost` is a translucent bronze secondary.
+ * (The Navbar login button is intentionally its own style, not a mecha-btn.)
  */
   .mecha-btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-all duration-200;
-    padding: 0.75rem 1.25rem;
-    font-size: 0.875rem;
+    --mb-n: 8px;
+    clip-path: polygon(var(--mb-n) 0,
+        calc(100% - var(--mb-n)) 0,
+        100% var(--mb-n),
+        100% calc(100% - var(--mb-n)),
+        calc(100% - var(--mb-n)) 100%,
+        var(--mb-n) 100%,
+        0 calc(100% - var(--mb-n)),
+        0 var(--mb-n));
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    font-family: var(--font-mono), monospace;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    padding: 0.72rem 1.4rem;
+    transition:
+      background 0.2s ease,
+      color 0.2s ease,
+      filter 0.2s ease,
+      transform 0.08s ease;
   }
 
-  .mecha-btn--ghost {
-    @apply border border-brown text-brown hover:bg-brown hover:text-white dark:hover:text-[#16110c];
+  .mecha-btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  .mecha-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .mecha-btn--solid {
-    @apply bg-bronze text-white shadow-sm hover:bg-bronze/90 hover:shadow-md;
+    background: linear-gradient(180deg,
+        color-mix(in oklab, var(--color-bronze) 86%, white) 0%,
+        var(--color-bronze) 48%,
+        color-mix(in oklab, var(--color-bronze) 82%, black) 100%);
+    color: #fff;
+    filter: drop-shadow(0 3px 10px color-mix(in oklab, var(--color-bronze) 50%, transparent));
+  }
+
+  .mecha-btn--solid:hover:not(:disabled) {
+    background: linear-gradient(180deg,
+        color-mix(in oklab, var(--color-bronze) 94%, white) 0%,
+        var(--color-bronze) 52%,
+        color-mix(in oklab, var(--color-bronze) 78%, black) 100%);
+    filter: drop-shadow(0 5px 16px color-mix(in oklab, var(--color-bronze) 72%, transparent));
+  }
+
+  .mecha-btn--ghost {
+    background: color-mix(in oklab, var(--color-bronze) 13%, transparent);
+    color: var(--color-bronze);
+  }
+
+  .mecha-btn--ghost:hover:not(:disabled) {
+    background: color-mix(in oklab, var(--color-bronze) 24%, transparent);
+    filter: drop-shadow(0 3px 12px color-mix(in oklab, var(--color-bronze) 35%, transparent));
   }
 
   .mecha-btn--ok {
@@ -486,10 +536,10 @@ button:focus-visible,
   }
 
   .mecha-btn--sm {
-    --mb-n: 5px;
+    --mb-n: 6px;
     font-size: 0.68rem;
-    padding: 0.42rem 0.85rem;
-    letter-spacing: 0.06em;
+    padding: 0.45rem 0.95rem;
+    letter-spacing: 0.07em;
   }
 
   /*
