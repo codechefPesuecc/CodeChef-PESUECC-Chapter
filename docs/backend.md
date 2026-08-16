@@ -11,8 +11,9 @@ only containerised piece is the **Piston** code-execution sandbox.
 | Database | SQLite via libSQL + Drizzle | file at `./data/arena.db` (git-ignored) |
 | Judge | Piston in Docker | `docker-compose.yml`, reached at `PISTON_URL` |
 
-Challenges stay as GitOps markdown (`src/lib/challenges.ts`); the DB
-(`src/server/db/schema.ts`) holds users and submissions.
+Problems live in the database too — the `challenges` table (`src/server/db/schema.ts`),
+read by `src/lib/challenges.ts`. Statements are Markdown, rendered to sanitized HTML
+server-side. Seed the example problem locally with `npm run challenges:seed`.
 
 ## First run
 
@@ -26,7 +27,10 @@ npm run piston:install        # c++, python, java
 # 3. Run the app (migrations auto-apply on startup)
 npm run dev
 
-# 4. Verify the whole stack
+# 4. Seed the example problem into the DB (publishes it; re-run after edits)
+npm run challenges:seed
+
+# 5. Verify the whole stack
 curl localhost:3000/api/health
 # => { "ok": true, "db": true, "piston": true, "runtimes": ["c++@10.2.0", ...] }
 ```

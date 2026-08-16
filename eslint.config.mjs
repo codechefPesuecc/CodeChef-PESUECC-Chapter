@@ -16,7 +16,6 @@ const eslintConfig = defineConfig([
     ".open-next/**",
     ".wrangler/**",
     ".wrangler-dryrun/**",
-    "src/lib/challenges.manifest.json",
   ]),
 ]);
 

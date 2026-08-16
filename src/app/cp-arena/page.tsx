@@ -64,8 +64,8 @@ export default async function CpArenaPage() {
         </h1>
         <p className="mt-3 max-w-2xl text-charcoal/70">
           Sharpen your skills with the daily Problem of the Day, or practice any
-          past challenge. Practice solves are judged against hidden tests for
-          real feedback, but they don&apos;t affect the speed-bounty leaderboard.
+          past challenge. A practice solve earns a flat 100 points toward your
+          all-time total — the speed bounty is reserved for the live problem.
         </p>
 
         {/* ━━━━━━━━━━━━━━━━━━ Problem of the Day ━━━━━━━━━━━━━━━━━━ */}

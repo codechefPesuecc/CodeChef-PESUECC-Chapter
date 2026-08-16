@@ -47,26 +47,33 @@ a cheap VPS) exactly as `docker-compose.yml` does, expose it over HTTPS, and set
 `PISTON_URL`, so no code change — just the secret. Without a reachable Piston,
 Run/Submit return a 503 "judge unreachable" and the rest of the site works.
 
-## 4. Challenges & hidden tests (implemented — bundled)
+## 4. Challenges (in D1 — seeded)
 
-Workers have no `fs`, so the `/challenges/*.json` records are **bundled at build
-time**. `scripts/build-challenges.mjs` reads the folder into
-`src/lib/challenges.manifest.json`, and `next.config.ts` invokes it for `next dev`,
-`next build`, and `opennextjs-cloudflare build` alike. `src/lib/challenges.ts`
-imports that manifest instead of touching the filesystem; the GitOps authoring
-flow (one JSON per problem, author → PR → merge) is unchanged.
+Problems live in the `challenges` table, not the bundle. Author each problem as a
+JSON file, validate it, and load it into D1 with the seed script:
 
-Publishing a new problem is a **redeploy** (the manifest is baked into the bundle).
-Run `npm run challenges:build` to refresh the manifest locally; it's also
-regenerated automatically on every build. Keep the repo private — the hidden
-tests ride in the bundle (server-side only, never sent to the client).
+```bash
+npm run challenges:validate
+npm run challenges:seed                      # local dev DB (data/arena.db)
+npm run challenges:seed -- --target remote   # production D1 (via wrangler)
+```
+
+Publishing a problem is a **database write, not a redeploy** — the seed upserts on
+`slug`, so re-running reflects edits and preserves the original publish time. The
+Problem of the Day is the most recent released problem whose `date` (IST) is on or
+before today. Hidden tests live only in D1: the authoring JSON is git-ignored, so
+they never enter the repo or the client bundle, and a problem's `tests`/`checker`
+are selected only by the judge.
 
 ## 5. Secrets
 
 ```bash
 npx wrangler secret put AUTH_SECRET
 npx wrangler secret put PISTON_URL
-npx wrangler secret put RESEND_API_KEY          # if email verification is on
+# email OTP verification — the Gmail API transport (all three required):
+npx wrangler secret put GMAIL_CLIENT_ID
+npx wrangler secret put GMAIL_CLIENT_SECRET
+npx wrangler secret put GMAIL_REFRESH_TOKEN
 npx wrangler secret put TURNSTILE_SECRET_KEY    # if Turnstile is on
 ```
 
@@ -74,8 +81,10 @@ The database needs no secret — D1 is the `DB` binding in `wrangler.jsonc`.
 `DATABASE_URL` / `DATABASE_AUTH_TOKEN` are only used by the local dev fallback.
 
 `NEXT_PUBLIC_*` values (e.g. `NEXT_PUBLIC_TURNSTILE_SITE_KEY`) are build-time —
-set them in the build environment, not as secrets. Turn on
-`REQUIRE_EMAIL_VERIFICATION` as a plain var once email is configured.
+set them in the build environment, not as secrets. Email sends via the Gmail API
+(`src/server/email.ts`): set the three `GMAIL_*` secrets above plus `EMAIL_FROM`,
+then turn on `REQUIRE_EMAIL_VERIFICATION` — never before, or new users get an OTP
+that's only logged server-side, never delivered, and can't finish signing up.
 
 ## 6. Build & deploy
 
