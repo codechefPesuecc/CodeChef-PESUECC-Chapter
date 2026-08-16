@@ -19,8 +19,8 @@ const MONTHS = [
 ];
 
 function formatDay(ms: number): string {
-  const d = new Date(ms);
-  return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  const d = new Date(ms + 5.5 * 60 * 60 * 1000);
+  return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
 }
 
 function formatClock(seconds: number | null): string {

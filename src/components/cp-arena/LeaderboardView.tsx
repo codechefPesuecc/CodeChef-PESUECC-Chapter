@@ -18,6 +18,7 @@ export default function LeaderboardView() {
   const user = useUser();
   const [scope, setScope] = useState<LeaderScope>("today");
   const [cache, setCache] = useState<Partial<Record<LeaderScope, LeaderRow[]>>>({});
+  const [errors, setErrors] = useState<Partial<Record<LeaderScope, boolean>>>({});
   const fetched = useRef<Set<LeaderScope>>(new Set());
 
   useEffect(() => {
@@ -28,12 +29,12 @@ export default function LeaderboardView() {
       .then((d) => {
         if (!alive) return;
         fetched.current.add(scope);
+        setErrors((e) => ({ ...e, [scope]: false }));
         setCache((c) => ({ ...c, [scope]: d.rows ?? [] }));
       })
       .catch(() => {
         if (!alive) return;
-        fetched.current.add(scope);
-        setCache((c) => ({ ...c, [scope]: [] }));
+        setErrors((e) => ({ ...e, [scope]: true }));
       });
     return () => {
       alive = false;
@@ -59,7 +60,21 @@ export default function LeaderboardView() {
       </div>
 
       <MechaPanel className="mt-4" label={activeLabel} ticks>
-        {rows === undefined ? (
+        {errors[scope] ? (
+          <div className="px-6 py-10 text-center">
+            <p className="text-sm text-charcoal/50">Failed to load standings.</p>
+            <button
+              onClick={() => {
+                fetched.current.delete(scope);
+                setErrors((e) => ({ ...e, [scope]: false }));
+                setScope(scope); // trigger re-render
+              }}
+              className="mt-3 text-xs font-semibold text-bronze hover:underline"
+            >
+              Retry
+            </button>
+          </div>
+        ) : rows === undefined ? (
           <p className="px-6 py-10 text-center text-sm text-charcoal/50">
             Loading…
           </p>

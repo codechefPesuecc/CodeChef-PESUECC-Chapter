@@ -1,12 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
+import { FooterYear } from "@/components/ui/FooterYear";
 
 const explore = [
   { href: "/", label: "Home" },
   { href: "/cp-arena", label: "Arena" },
   { href: "/initiatives", label: "Initiatives" },
   { href: "/team", label: "Team" },
-  { href: "/newsroom", label: "Newsroom" },
 ];
 
 const initiatives = [
@@ -32,7 +32,6 @@ const socials = [
 ];
 
 export default function Footer() {
-  const year = new Date().getFullYear();
 
   return (
     <footer className="relative mt-auto overflow-hidden bg-[#efe9e0] text-charcoal/80 dark:bg-[#0f0b07] dark:text-cream/80">
@@ -166,7 +165,7 @@ export default function Footer() {
         <div className="mt-14 border-t border-chocolate/12 pt-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="font-mono text-xs text-charcoal/55">
-              © {year} CodeChef PESUECC Chapter. All rights reserved.
+              © <FooterYear /> CodeChef PESUECC Chapter. All rights reserved.
             </p>
             <p className="font-display text-sm font-semibold text-charcoal/70">
               Built in the open.

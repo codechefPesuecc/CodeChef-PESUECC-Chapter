@@ -1,17 +1,3 @@
-export const stats = [
-  { label: "Core Initiatives", value: "4+", progress: 100 },
-  { label: "Production Platforms", value: "2", progress: 79 },
-  { label: "Students Reached", value: "500+", progress: 66 },
-  { label: "Culture", value: "Daily CP", progress: 53 },
-];
-
-export const opsMetrics = [
-  { label: "Active Nodes", value: "12/12", progress: 100 },
-  { label: "Pipeline Load", value: "78%", progress: 78 },
-  { label: "Global Uptime", value: "99.9%", progress: 99 },
-  { label: "Recent Deploys", value: "4", progress: 100 },
-];
-
 export const events = [
   {
     id: "cp-arena",
@@ -51,7 +37,7 @@ export const events = [
       { src: "/dev-team.jpg", caption: "Weekly practice cohorts" },
       { src: "/dev-team.jpg", caption: "Editorial review circles" },
     ],
-    href: "/newsroom?initiative=leetcode-101",
+    href: "/initiatives#leetcode-101",
   },
   {
     id: "algohunt",
@@ -71,7 +57,7 @@ export const events = [
       { src: "/dev-team.jpg", caption: "Team solving under live pressure" },
       { src: "/dev-team.jpg", caption: "Leaderboard-driven finale" },
     ],
-    href: "/newsroom?initiative=algohunt",
+    href: "/initiatives#algohunt",
   },
   {
     id: "praxis",
@@ -91,7 +77,7 @@ export const events = [
       { src: "/dev-team.jpg", caption: "Build sprint execution" },
       { src: "/dev-team.jpg", caption: "Final demos and judging" },
     ],
-    href: "/newsroom?initiative=praxis",
+    href: "/initiatives#praxis",
   },
 ];
 

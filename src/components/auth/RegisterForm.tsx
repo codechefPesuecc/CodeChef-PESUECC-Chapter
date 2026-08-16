@@ -57,7 +57,7 @@ export default function RegisterForm() {
   };
 
   return (
-    <div className="mx-auto flex max-w-md flex-col justify-center px-6 py-12">
+    <div className="mx-auto flex max-w-lg flex-col justify-center px-6 py-12">
       <MechaPanel bodyClassName="p-8">
         <h1 className="font-display text-2xl font-bold text-chocolate">
           Create your account
