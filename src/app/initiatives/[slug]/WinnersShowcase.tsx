@@ -2,13 +2,13 @@
 
 import { motion } from "motion/react";
 import Image from "next/image";
-import { Quote, Trophy, Users } from "lucide-react";
+import { Quote, Trophy, Users, ExternalLink } from "lucide-react";
 
 interface Winner {
   team: string;
   achievement: string;
   heroImage: string;
-  members: string[];
+  members: { name: string; linkedin?: string }[];
   experience: string;
 }
 
@@ -77,9 +77,10 @@ export default function WinnersShowcase({ winners }: { winners: Winner[] }) {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {winner.members.map((member, i) => (
-                      <span key={i} className="px-3 py-1.5 bg-chocolate/5 dark:bg-cream/5 text-chocolate dark:text-cream text-sm font-semibold rounded-lg border border-chocolate/10 dark:border-cream/10">
-                        {member}
-                      </span>
+                      <a key={i} href={member.linkedin || "#"} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 bg-chocolate/5 dark:bg-cream/5 hover:bg-chocolate/10 dark:hover:bg-cream/10 text-chocolate dark:text-cream text-sm font-semibold rounded-lg border border-chocolate/10 dark:border-cream/10 transition-colors">
+                        {member.name}
+                        {member.linkedin && <ExternalLink className="h-3.5 w-3.5 text-chocolate/50 dark:text-cream/50" />}
+                      </a>
                     ))}
                   </div>
                 </div>
