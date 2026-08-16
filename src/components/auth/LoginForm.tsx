@@ -36,7 +36,7 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-6 py-16">
+    <div className="mx-auto flex min-h-[70vh] max-w-lg flex-col justify-center px-6 py-16">
       <MechaPanel bodyClassName="p-8">
         <h1 className="font-display text-2xl font-bold text-chocolate">Log in</h1>
         <p className="mt-1 text-sm text-charcoal/60">

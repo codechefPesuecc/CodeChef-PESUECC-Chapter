@@ -1390,7 +1390,7 @@ function Watermark({ tag }: { tag: string }) {
         {Array.from({ length: 90 }).map((_, i) => (
           <span
             key={i}
-            className="whitespace-nowrap font-mono text-xs font-semibold uppercase tracking-wider text-chocolate"
+            className="whitespace-nowrap font-mono text-xs font-semibold uppercase tracking-wider text-black dark:text-white"
           >
             {tag}
           </span>

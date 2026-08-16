@@ -13,7 +13,6 @@ const links = [
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/initiatives", label: "Initiatives" },
   { href: "/team", label: "Team" },
-  { href: "/newsroom", label: "Newsroom" },
 ];
 
 export default function Navbar() {

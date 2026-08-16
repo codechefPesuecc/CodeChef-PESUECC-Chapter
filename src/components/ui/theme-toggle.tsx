@@ -36,6 +36,12 @@ export function ThemeToggle({ className, onToggle }: ThemeToggleProps) {
         className
       )}
       onClick={onToggle}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onToggle(e as unknown as React.MouseEvent);
+        }
+      }}
       role="button"
       tabIndex={0}
       title="Toggle dark mode"
