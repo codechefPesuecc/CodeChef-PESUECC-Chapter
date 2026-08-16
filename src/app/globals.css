@@ -344,8 +344,7 @@ button:focus-visible,
     margin-left: 4px;
   }
 
-  .initiative-btn:hover::after,
-  .group:hover .initiative-btn::after {
+  .initiative-btn:hover::after {
     transform: translate(6px, -2px);
   }
 
