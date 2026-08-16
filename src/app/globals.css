@@ -462,13 +462,13 @@ button:focus-visible,
 
   /*
  * --- Mecha buttons ---
- * Chamfered, mono-uppercase controls. Single-element (no border layer) so the
- * classes drop onto a <button> or a <Link> alike. `solid` is the primary CTA;
- * `ghost` is a translucent secondary.
+ * Rounded button controls. Single-element (no border layer) so the classes drop
+ * onto a <button> or a <Link> alike. `solid` is the primary bronze CTA; `ghost`
+ * is an outlined secondary.
  */
   .mecha-btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors duration-200;
-    padding: 0.62rem 1.25rem;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-all duration-200;
+    padding: 0.75rem 1.25rem;
     font-size: 0.875rem;
   }
 
@@ -477,7 +477,7 @@ button:focus-visible,
   }
 
   .mecha-btn--solid {
-    @apply bg-brown text-cream shadow-sm hover:bg-chocolate;
+    @apply bg-bronze text-white shadow-sm hover:bg-bronze/90 hover:shadow-md;
   }
 
   .mecha-btn--ok {
