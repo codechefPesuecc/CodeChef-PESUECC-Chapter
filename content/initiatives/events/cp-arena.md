@@ -45,14 +45,20 @@ mentors:
     photo: "/dev-team.jpg"
     linkedin: "https://linkedin.com"
 winners:
-  - name: "Team Alpha"
+  - team: "Team Alpha"
     achievement: "Grand Champions"
-    photo: "/dev-team.jpg"
-    quote: "This was the most technically challenging and rewarding event we've ever been part of!"
-  - name: "The Null Pointers"
+    heroImage: "/dev-team.jpg"
+    members:
+      - "John Doe"
+      - "Jane Smith"
+    experience: "This was the most technically challenging and rewarding event we've ever been part of!"
+  - team: "The Null Pointers"
     achievement: "Runner Ups"
-    photo: "/dev-team.jpg"
-    quote: "We learned more in these 24 hours than in an entire semester."
+    heroImage: "/dev-team.jpg"
+    members:
+      - "Alice Walker"
+      - "Bob Tables"
+    experience: "We learned more in these 24 hours than in an entire semester."
 ---
 
 

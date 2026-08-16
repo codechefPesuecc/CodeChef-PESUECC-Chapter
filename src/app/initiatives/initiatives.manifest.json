@@ -65,16 +65,24 @@
       ],
       "winners": [
         {
-          "name": "Team Alpha",
+          "team": "Team Alpha",
           "achievement": "Grand Champions",
-          "photo": "/dev-team.jpg",
-          "quote": "This was the most technically challenging and rewarding event we've ever been part of!"
+          "heroImage": "/dev-team.jpg",
+          "members": [
+            "John Doe",
+            "Jane Smith"
+          ],
+          "experience": "This was the most technically challenging and rewarding event we've ever been part of!"
         },
         {
-          "name": "The Null Pointers",
+          "team": "The Null Pointers",
           "achievement": "Runner Ups",
-          "photo": "/dev-team.jpg",
-          "quote": "We learned more in these 24 hours than in an entire semester."
+          "heroImage": "/dev-team.jpg",
+          "members": [
+            "Alice Walker",
+            "Bob Tables"
+          ],
+          "experience": "We learned more in these 24 hours than in an entire semester."
         }
       ],
       "detailedExplanation": "CP Arena is the backbone of our daily coding culture..."
@@ -144,16 +152,24 @@
       ],
       "winners": [
         {
-          "name": "Team Alpha",
+          "team": "Team Alpha",
           "achievement": "Grand Champions",
-          "photo": "/dev-team.jpg",
-          "quote": "This was the most technically challenging and rewarding event we've ever been part of!"
+          "heroImage": "/dev-team.jpg",
+          "members": [
+            "John Doe",
+            "Jane Smith"
+          ],
+          "experience": "This was the most technically challenging and rewarding event we've ever been part of!"
         },
         {
-          "name": "The Null Pointers",
+          "team": "The Null Pointers",
           "achievement": "Runner Ups",
-          "photo": "/dev-team.jpg",
-          "quote": "We learned more in these 24 hours than in an entire semester."
+          "heroImage": "/dev-team.jpg",
+          "members": [
+            "Alice Walker",
+            "Bob Tables"
+          ],
+          "experience": "We learned more in these 24 hours than in an entire semester."
         }
       ],
       "detailedExplanation": "LeetCode 101 is our flagship mentorship program engineered to systematically break down data structures and algorithms."
@@ -209,64 +225,6 @@
             "Custom ESP32-based hardware puzzles",
             "Dynamic scoring based on physical sprint time"
           ]
-        },
-        {
-          "date": "February 2024",
-          "title": "AlgoHunt v3.0: The WebSocket Era",
-          "tag": "Completed",
-          "description": "Our first massive-scale deployment. We introduced a live-updating dashboard that tracked teams physically moving across campus in real time. The pressure of watching rival teams jump ahead on the leaderboard while running up the stairs changed the game.",
-          "stats": [
-            {
-              "label": "Total Teams",
-              "value": "125"
-            },
-            {
-              "label": "Code Submissions",
-              "value": "1,400+"
-            }
-          ],
-          "features": [
-            "Live WebSocket scoreboard",
-            "Introduction of Time-Penalty algorithms",
-            "Cross-campus clue chaining"
-          ]
-        },
-        {
-          "date": "September 2023",
-          "title": "AlgoHunt v2.0: Reverse Engineering",
-          "tag": "Completed",
-          "description": "Expanded the core algorithmic formula to include reverse-engineering nodes. Teams had to decompile binaries on their laptops while standing in the cafeteria to unlock the next physical location.",
-          "image": "/dev-team.jpg",
-          "stats": [
-            {
-              "label": "Puzzles",
-              "value": "8"
-            },
-            {
-              "label": "Completion Rate",
-              "value": "32%"
-            }
-          ],
-          "features": [
-            "Binary decompilation rounds",
-            "Cipher-text campus maps"
-          ]
-        },
-        {
-          "date": "March 2023",
-          "title": "AlgoHunt Genesis",
-          "tag": "Completed",
-          "description": "The inaugural event that started it all. We wanted to see if we could blend competitive programming with a physical race. It was chaotic, the servers crashed for 5 minutes, but the energy was unparalleled.",
-          "stats": [
-            {
-              "label": "Initial Hackers",
-              "value": "150"
-            },
-            {
-              "label": "Server Crashes",
-              "value": "1 (It's a feature)"
-            }
-          ]
         }
       ],
       "mentors": [
@@ -281,32 +239,29 @@
           "role": "Problem Setter",
           "photo": "/dev-team.jpg",
           "linkedin": "https://linkedin.com"
-        },
-        {
-          "name": "Shivansh",
-          "role": "Platform Engineer",
-          "photo": "/dev-team.jpg",
-          "linkedin": "https://linkedin.com"
         }
       ],
       "winners": [
         {
-          "name": "Team Enigma",
-          "achievement": "1st Place - v3.0",
-          "photo": "/dev-team.jpg",
-          "quote": "The combination of algorithmic thinking and sprinting across campus was unparalleled!"
+          "team": "Team Enigma",
+          "achievement": "1st Place Champions - AlgoHunt v3.0",
+          "heroImage": "/dev-team.jpg",
+          "members": [
+            "Alex Chen",
+            "Sarah Jenkins",
+            "Rahul Patel"
+          ],
+          "experience": "The combination of algorithmic thinking and sprinting across campus was unparalleled. We spent 20 minutes debugging Dijkstra while physically standing in the rain at the final checkpoint. It pushed us to our absolute limits, tested our team communication under extreme pressure, and was easily the best technical event we've ever experienced!"
         },
         {
-          "name": "Runtime Terrors",
-          "achievement": "2nd Place - v3.0",
-          "photo": "/dev-team.jpg",
-          "quote": "We spent 20 minutes debugging Dijkstra while physically standing in the rain. Best event ever."
-        },
-        {
-          "name": "O(1) Braincells",
-          "achievement": "1st Place - v2.0",
-          "photo": "/dev-team.jpg",
-          "quote": "The final checkpoint puzzle blew our minds. Incredible execution by the CodeChef team."
+          "team": "Runtime Terrors",
+          "achievement": "Runner Ups - AlgoHunt v3.0",
+          "heroImage": "/dev-team.jpg",
+          "members": [
+            "David Kim",
+            "Priya Singh"
+          ],
+          "experience": "We lost our lead because we forgot a semicolon in the cryptography round, but making up the time during the campus sprint was thrilling."
         }
       ],
       "detailedExplanation": "AlgoHunt transforms competitive programming into a high-octane physical reality. It demands a unique hybrid of rapid code execution, team communication under pressure, and physical stamina. AlgoHunt tests not just how well you know Dijkstra's algorithm, but how fast your team can debug it while racing against the clock to the next checkpoint."
@@ -376,16 +331,24 @@
       ],
       "winners": [
         {
-          "name": "Team Alpha",
+          "team": "Team Alpha",
           "achievement": "Grand Champions",
-          "photo": "/dev-team.jpg",
-          "quote": "This was the most technically challenging and rewarding event we've ever been part of!"
+          "heroImage": "/dev-team.jpg",
+          "members": [
+            "John Doe",
+            "Jane Smith"
+          ],
+          "experience": "This was the most technically challenging and rewarding event we've ever been part of!"
         },
         {
-          "name": "The Null Pointers",
+          "team": "The Null Pointers",
           "achievement": "Runner Ups",
-          "photo": "/dev-team.jpg",
-          "quote": "We learned more in these 24 hours than in an entire semester."
+          "heroImage": "/dev-team.jpg",
+          "members": [
+            "Alice Walker",
+            "Bob Tables"
+          ],
+          "experience": "We learned more in these 24 hours than in an entire semester."
         }
       ],
       "detailedExplanation": "Praxis is designed to push developers out of tutorial hell and into the builder's mindset."

@@ -2,46 +2,100 @@
 
 import { motion } from "motion/react";
 import Image from "next/image";
-import { Quote } from "lucide-react";
+import { Quote, Trophy, Users } from "lucide-react";
 
-export default function WinnersShowcase({ winners }: { winners: Record<string, unknown>[] }) {
+interface Winner {
+  team: string;
+  achievement: string;
+  heroImage: string;
+  members: string[];
+  experience: string;
+}
+
+export default function WinnersShowcase({ winners }: { winners: Winner[] }) {
+  if (!winners || winners.length === 0) return null;
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {winners.map((winner, idx) => (
-        <motion.div
-          key={idx}
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.4, delay: idx * 0.1 }}
-          className="relative rounded-2xl border border-[#e2e8f0] bg-white/50 p-8 shadow-sm backdrop-blur dark:border-[#3a2c20] dark:bg-[#221a12]/50 flex flex-col"
-        >
-          <Quote className="absolute top-6 right-6 h-8 w-8 text-bronze/20 rotate-180" />
-          
-          <p className="relative z-10 flex-grow text-lg italic text-chocolate/80 dark:text-cream/80 mb-8">
-            &quot;{winner.quote as string}&quot;
-          </p>
-          
-          <div className="flex items-center gap-4 mt-auto">
-            <div className="relative h-12 w-12 overflow-hidden rounded-full border-2 border-bronze">
-              <Image 
-                src={winner.photo as string} 
-                alt={winner.name as string}
-                fill
-                className="object-cover"
-              />
-            </div>
-            <div>
-              <h4 className="font-space font-bold text-chocolate dark:text-cream">
-                {winner.name as string}
-              </h4>
-              <p className="text-sm font-medium text-bronze">
-                {winner.achievement as string}
-              </p>
-            </div>
-          </div>
-        </motion.div>
-      ))}
+    <div className="mx-auto max-w-7xl px-6 lg:px-8 py-24">
+      <div className="text-center mb-16">
+        <h2 className="font-space text-4xl font-bold text-chocolate dark:text-cream sm:text-5xl">
+          Hall of Fame
+        </h2>
+        <p className="mt-4 text-lg text-chocolate/70 dark:text-cream/70">
+          The champions who conquered the arena and etched their names in history.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-16">
+        {winners.map((winner, index) => {
+          const isFirst = index === 0;
+
+          return (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6, delay: index * 0.1 }}
+              className={`relative flex flex-col ${
+                isFirst ? "lg:flex-row" : "lg:flex-row-reverse items-center"
+              } gap-8 lg:gap-12 rounded-3xl bg-white/50 dark:bg-[#1a140f]/50 border ${
+                isFirst ? "border-bronze/50 shadow-[0_0_30px_rgba(205,127,50,0.15)]" : "border-[#e2e8f0] dark:border-[#3a2c20]"
+              } p-6 lg:p-10 backdrop-blur-sm`}
+            >
+              {/* Grand Photo Section */}
+              <div className={`relative ${isFirst ? "w-full lg:w-1/2 aspect-[4/3]" : "w-full lg:w-2/5 aspect-video"} overflow-hidden rounded-2xl border border-chocolate/10 dark:border-cream/10`}>
+                <Image
+                  src={winner.heroImage}
+                  alt={winner.team}
+                  fill
+                  className="object-cover transition-transform duration-700 hover:scale-105"
+                />
+                {isFirst && (
+                  <div className="absolute top-4 left-4 flex items-center gap-2 bg-bronze/90 backdrop-blur text-white px-4 py-2 rounded-full font-bold shadow-lg">
+                    <Trophy className="h-5 w-5" />
+                    Grand Champions
+                  </div>
+                )}
+              </div>
+
+              {/* Grand Details Section */}
+              <div className={`flex flex-col ${isFirst ? "w-full lg:w-1/2 justify-center" : "w-full lg:w-3/5"}`}>
+                <div className="mb-2 inline-flex font-mono text-sm font-bold uppercase tracking-widest text-bronze">
+                  {winner.achievement}
+                </div>
+                
+                <h3 className={`font-display font-bold text-chocolate dark:text-cream mb-6 ${isFirst ? "text-4xl lg:text-5xl" : "text-3xl"}`}>
+                  {winner.team}
+                </h3>
+
+                {/* Team Members List */}
+                <div className="mb-8">
+                  <div className="flex items-center gap-2 text-sm font-bold text-chocolate/50 dark:text-cream/50 uppercase tracking-wider mb-3 border-b border-chocolate/10 dark:border-cream/10 pb-2">
+                    <Users className="h-4 w-4" />
+                    Team Roster
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {winner.members.map((member, i) => (
+                      <span key={i} className="px-3 py-1.5 bg-chocolate/5 dark:bg-cream/5 text-chocolate dark:text-cream text-sm font-semibold rounded-lg border border-chocolate/10 dark:border-cream/10">
+                        {member}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Testimonial / Experience */}
+                <div className="relative mt-auto">
+                  <Quote className="absolute -top-3 -left-2 h-10 w-10 text-bronze/20 -rotate-6" />
+                  <p className={`relative z-10 text-chocolate/80 dark:text-cream/80 italic leading-relaxed ${isFirst ? "text-lg lg:text-xl font-medium" : "text-base"}`}>
+                    "{winner.experience}"
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
     </div>
   );
 }
