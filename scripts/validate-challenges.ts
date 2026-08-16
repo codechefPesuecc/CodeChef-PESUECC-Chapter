@@ -1,78 +1,15 @@
 /**
  * Validates every problem JSON in `/challenges` against the Arena schema.
  *
- * Runs locally (`npm run challenges:validate`) and in CI on any PR that touches
- * `challenges/**`, so a malformed problem — a missing hidden test, a bad date, a
- * stray `points` field — is caught in review instead of at release time.
+ * Runs locally (`npm run challenges:validate`) and in CI, so a malformed problem
+ * — a missing hidden test, a bad date, a stray `points` field — is caught in
+ * review before it is ever seeded into the database.
  *
  *   node --import tsx scripts/validate-challenges.ts
  */
 import fs from "node:fs";
 import path from "node:path";
-import { z } from "zod";
-
-const CHALLENGES_DIR = path.join(process.cwd(), "challenges");
-
-/** True for a syntactically valid AND real calendar date (YYYY-MM-DD). */
-function isRealDate(iso: string): boolean {
-  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!m) return false;
-  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
-  const dt = new Date(Date.UTC(y, mo - 1, d));
-  return (
-    dt.getUTCFullYear() === y &&
-    dt.getUTCMonth() === mo - 1 &&
-    dt.getUTCDate() === d
-  );
-}
-
-const TestCase = z.object({
-  input: z.string(),
-  output: z.string(),
-});
-
-const Sample = z.object({
-  input: z.string(),
-  output: z.string(),
-  explanation: z.string().optional(),
-});
-
-const Checker = z
-  .object({
-    type: z.enum(["exact", "token", "float"]),
-    epsilon: z.number().positive().optional(),
-  })
-  .optional();
-
-const ChallengeSchema = z.object({
-  schemaVersion: z.number().int().positive().optional(),
-  slug: z
-    .string()
-    .regex(/^[a-z0-9-]+$/, "must be lowercase letters, digits and hyphens")
-    .optional(),
-  title: z.string().min(1, "is required"),
-  difficulty: z.enum(["Easy", "Medium", "Hard", "Unrated"]).optional(),
-  tags: z.array(z.string()).optional(),
-  date: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "must be YYYY-MM-DD")
-    .refine(isRealDate, "must be a real calendar date"),
-  timeLimit: z
-    .string()
-    .regex(/^[\d.]+\s*(ms|s)?$/i, 'must look like "1s", "2 s" or "500ms"')
-    .optional(),
-  memoryLimit: z.string().optional(),
-  author: z.string().optional(),
-  statement: z.string().min(1, "is required"),
-  inputFormat: z.string().optional(),
-  outputFormat: z.string().optional(),
-  constraints: z.string().optional(),
-  samples: z.array(Sample).min(1, "at least one sample is required"),
-  tests: z.array(TestCase).min(1, "at least one hidden test is required"),
-  checker: Checker,
-});
-
-const KNOWN_KEYS = new Set(Object.keys(ChallengeSchema.shape));
+import { CHALLENGES_DIR, ChallengeSchema, KNOWN_KEYS } from "./challenge-schema";
 
 let files: string[];
 try {

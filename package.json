@@ -12,7 +12,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "challenges:validate": "tsx scripts/validate-challenges.ts",
-    "challenges:build": "node scripts/build-challenges.mjs",
+    "challenges:seed": "tsx scripts/seed-challenges.ts",
     "team:build": "node scripts/build-team.mjs",
     "cf:build": "opennextjs-cloudflare build",
     "cf:deploy": "opennextjs-cloudflare build && wrangler deploy",
