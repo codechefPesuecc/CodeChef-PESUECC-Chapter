@@ -260,6 +260,51 @@ export async function getChallengeBySlug(slug: string): Promise<Challenge | null
   return rows[0] ? rowToChallenge(rows[0]) : null;
 }
 
+/** A single challenge by slug for the admin console — the FULL record (incl. hidden
+ * tests + checker) and WITHOUT the release-date gate, so admins can view and edit
+ * future-dated (unreleased) problems too. Server-only; never expose to non-admins. */
+export async function getChallengeForAdmin(slug: string): Promise<Challenge | null> {
+  const db = getDb();
+  const rows = await db
+    .select()
+    .from(challengesTable)
+    .where(eq(challengesTable.slug, slug))
+    .limit(1);
+  return rows[0] ? rowToChallenge(rows[0]) : null;
+}
+
+/** Lightweight identity fields for every problem (incl. unreleased) — for the admin
+ * console list. Projects server-side so hidden tests/checker never reach the client;
+ * `released` is whether the problem's date has arrived (IST). */
+export interface AdminChallengeItem {
+  slug: string;
+  title: string;
+  date: string;
+  difficulty: string;
+  released: boolean;
+}
+
+export async function getAdminChallengeList(): Promise<AdminChallengeItem[]> {
+  const db = getDb();
+  const rows = await db
+    .select({
+      slug: challengesTable.slug,
+      title: challengesTable.title,
+      date: challengesTable.date,
+      difficulty: challengesTable.difficulty,
+    })
+    .from(challengesTable)
+    .orderBy(desc(challengesTable.date), desc(challengesTable.createdAt));
+  const today = todayStr();
+  return rows.map((r) => ({
+    slug: r.slug,
+    title: r.title,
+    date: r.date,
+    difficulty: r.difficulty,
+    released: r.date <= today,
+  }));
+}
+
 /** Titles for a set of slugs in one query — for rendering submission history
  * without an N+1 per-row lookup. Slugs with no matching row are simply absent. */
 export async function getChallengeTitles(
