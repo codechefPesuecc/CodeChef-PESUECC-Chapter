@@ -13,16 +13,6 @@
     "binding": "ASSETS"
   },
 
-  // Smart placement moves the Worker toward the D1 region so the per-request D1
-  // reads on dynamic routes (arena, profile, API) pay a smaller network round-trip.
-  // Static pages are served from the edge ASSETS binding and are unaffected.
-  // Independently revertable if it ever routes traffic sub-optimally.
-  "placement": { "mode": "smart" },
-
-  // Explicit per-request CPU ceiling. Workers Standard already defaults to 30 s;
-  // stated here so the limit is visible when debugging Error 1102.
-  "limits": { "cpu_ms": 30000 },
-
   // Plain-text runtime config. Require email verification (6-digit OTP) before a
   // user can submit — the register flow sends the code and routes to /verify.
   // Safe here because the Gmail secrets are configured (see DEPLOY.md §5).
