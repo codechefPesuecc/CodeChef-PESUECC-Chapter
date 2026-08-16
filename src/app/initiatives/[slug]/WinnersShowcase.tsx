@@ -89,7 +89,7 @@ export default function WinnersShowcase({ winners }: { winners: Winner[] }) {
                 <div className="relative mt-auto">
                   <Quote className="absolute -top-3 -left-2 h-10 w-10 text-bronze/20 -rotate-6" />
                   <p className={`relative z-10 text-chocolate/80 dark:text-cream/80 italic leading-relaxed ${isFirst ? "text-lg lg:text-xl font-medium" : "text-base"}`}>
-                    "{winner.experience}"
+                    &quot;{winner.experience}&quot;
                   </p>
                 </div>
               </div>

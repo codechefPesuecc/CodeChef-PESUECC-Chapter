@@ -2,7 +2,7 @@
 
 import { motion, useScroll, useTransform } from "motion/react";
 import { useRef } from "react";
-import { Calendar, CheckCircle2, ChevronRight } from "lucide-react";
+import { Calendar, CheckCircle2 } from "lucide-react";
 import Image from "next/image";
 
 
