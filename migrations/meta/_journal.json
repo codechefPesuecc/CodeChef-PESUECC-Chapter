@@ -43,6 +43,13 @@
       "when": 1786827202821,
       "tag": "0005_arena_challenges",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1786918101616,
+      "tag": "0006_magenta_invaders",
+      "breakpoints": true
     }
   ]
 }

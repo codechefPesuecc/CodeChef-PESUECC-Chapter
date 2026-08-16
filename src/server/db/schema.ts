@@ -129,6 +129,12 @@ export const challenges = sqliteTable("challenges", {
   outputFormat: text("output_format"),
   constraints: text("constraints"),
   samples: text("samples").notNull().default("[]"), // JSON Sample[] (public)
+  // Pre-rendered, sanitized HTML for the prose fields + per-sample explanations,
+  // built once at seed time (scripts/seed-challenges.ts) so the request path serves
+  // stored HTML instead of running the Markdown pipeline on every load. JSON shape:
+  // { statement, inputFormat, outputFormat, constraints, sampleExplanations[] }.
+  // Nullable so the ADD COLUMN is safe; populated by re-seeding after the migration.
+  contentHtml: text("content_html"), // JSON RenderedContent (public, derived)
   tests: text("tests").notNull().default("[]"), // JSON TestCase[] — SECRET, judge only
   checker: text("checker").notNull().default('{"type":"token"}'), // JSON { type, epsilon? }
   schemaVersion: integer("schema_version").notNull().default(1),

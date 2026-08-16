@@ -1,26 +1,20 @@
 import type { ChallengeContent } from "@/lib/challenges";
-import { renderMarkdown } from "@/lib/markdown";
 
 /**
  * Server component — renders a challenge's public content (statement + structured
- * sections) to styled HTML. Prose fields are Markdown, rendered to sanitized HTML
- * on the server (no client-side Markdown library); element styling lives in the
- * `.arena-prose` scope in globals.css so it re-themes in dark mode. Hidden tests
- * are never passed here.
+ * sections). The prose is Markdown pre-rendered to sanitized HTML at seed time (see
+ * scripts/seed-challenges.ts and @/lib/markdown), so the request path serves stored
+ * HTML with no Markdown library in the bundle. Element styling lives in the
+ * `.arena-prose` scope in globals.css so it re-themes in dark mode. Hidden tests are
+ * never passed here.
  */
-export default async function ProblemStatement({
+export default function ProblemStatement({
   challenge,
 }: {
   challenge: ChallengeContent;
 }) {
-  const [statement, inputFormat, outputFormat, constraints, sampleExplanations] =
-    await Promise.all([
-      renderMarkdown(challenge.statement),
-      renderMarkdown(challenge.inputFormat ?? ""),
-      renderMarkdown(challenge.outputFormat ?? ""),
-      renderMarkdown(challenge.constraints ?? ""),
-      Promise.all(challenge.samples.map((s) => renderMarkdown(s.explanation ?? ""))),
-    ]);
+  const { statement, inputFormat, outputFormat, constraints, sampleExplanations } =
+    challenge.contentHtml;
 
   return (
     <div className="arena-prose">

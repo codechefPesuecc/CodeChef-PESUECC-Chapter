@@ -56,6 +56,13 @@ describe("toPublicContent", () => {
       date: "2026-01-01",
       statement: "…",
       samples: [{ input: "1", output: "2" }],
+      contentHtml: {
+        statement: "<p>…</p>",
+        inputFormat: "",
+        outputFormat: "",
+        constraints: "",
+        sampleExplanations: [],
+      },
       checker: { type: "token" },
       tests: [{ input: "3", output: "4" }],
     };
@@ -64,5 +71,6 @@ describe("toPublicContent", () => {
     expect(pub).not.toHaveProperty("checker");
     expect(pub.slug).toBe("sample");
     expect(pub.samples).toHaveLength(1);
+    expect(pub.contentHtml.statement).toBe("<p>…</p>");
   });
 });
