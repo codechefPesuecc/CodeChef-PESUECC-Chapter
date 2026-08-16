@@ -28,6 +28,20 @@ export interface Checker {
   epsilon?: number;
 }
 
+/**
+ * Pre-rendered, sanitized HTML for a challenge's prose, built once at seed time so
+ * the request path serves stored HTML instead of running the Markdown pipeline on
+ * every load. Fields are empty strings when absent; `sampleExplanations` is parallel
+ * to `samples`.
+ */
+export interface RenderedContent {
+  statement: string;
+  inputFormat: string;
+  outputFormat: string;
+  constraints: string;
+  sampleExplanations: string[];
+}
+
 /** Fields safe to render to solvers. */
 export interface ChallengeContent {
   slug: string;
@@ -43,6 +57,8 @@ export interface ChallengeContent {
   outputFormat?: string;
   constraints?: string;
   samples: Sample[];
+  /** Rendered HTML for the prose fields above (see RenderedContent). */
+  contentHtml: RenderedContent;
 }
 
 export interface Challenge extends ChallengeContent {
@@ -134,6 +150,20 @@ function normalizeChecker(raw: unknown): Checker {
   return { type, epsilon: typeof o.epsilon === "number" ? o.epsilon : undefined };
 }
 
+function normalizeRenderedContent(raw: unknown): RenderedContent {
+  const o = (raw ?? {}) as Record<string, unknown>;
+  const str = (v: unknown) => (typeof v === "string" ? v : "");
+  return {
+    statement: str(o.statement),
+    inputFormat: str(o.inputFormat),
+    outputFormat: str(o.outputFormat),
+    constraints: str(o.constraints),
+    sampleExplanations: Array.isArray(o.sampleExplanations)
+      ? o.sampleExplanations.map(str)
+      : [],
+  };
+}
+
 function rowToChallenge(r: ChallengeRow): Challenge {
   return {
     slug: r.slug,
@@ -149,6 +179,7 @@ function rowToChallenge(r: ChallengeRow): Challenge {
     outputFormat: r.outputFormat ?? undefined,
     constraints: r.constraints ?? undefined,
     samples: normalizeSamples(safeJson<unknown>(r.samples, [])),
+    contentHtml: normalizeRenderedContent(safeJson<unknown>(r.contentHtml, {})),
     checker: normalizeChecker(safeJson<unknown>(r.checker, {})),
     tests: normalizeTests(safeJson<unknown>(r.tests, [])),
   };
@@ -259,6 +290,7 @@ export function toPublicContent(c: Challenge): ChallengeContent {
     outputFormat: c.outputFormat,
     constraints: c.constraints,
     samples: c.samples,
+    contentHtml: c.contentHtml,
   };
 }
 

@@ -1,0 +1,1 @@
+ALTER TABLE `challenges` ADD `content_html` text;

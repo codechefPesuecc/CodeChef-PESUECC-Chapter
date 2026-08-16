@@ -19,6 +19,7 @@ import { spawnSync } from "node:child_process";
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import { challenges, type NewChallengeRow } from "../src/server/db/schema";
+import { renderMarkdown } from "../src/lib/markdown";
 import {
   CHALLENGES_DIR,
   ChallengeSchema,
@@ -37,8 +38,9 @@ function parseTarget(): "local" | "remote" {
   return t;
 }
 
-/** Reads + validates every challenge file, returning DB rows or exiting on error. */
-function loadRows(): NewChallengeRow[] {
+/** Reads + validates every challenge file, renders its Markdown prose to sanitized
+ * HTML, and returns DB rows (or exits on error). */
+async function loadRows(): Promise<NewChallengeRow[]> {
   let files: string[];
   try {
     files = fs.readdirSync(CHALLENGES_DIR).filter((f) => f.endsWith(".json"));
@@ -91,6 +93,18 @@ function loadRows(): NewChallengeRow[] {
     }
     slugsSeen.set(slug, file);
 
+    // Pre-render the Markdown prose to sanitized HTML now, so the request path
+    // serves stored HTML and never loads the Markdown pipeline (see #120).
+    const contentHtml = JSON.stringify({
+      statement: await renderMarkdown(c.statement),
+      inputFormat: await renderMarkdown(c.inputFormat ?? ""),
+      outputFormat: await renderMarkdown(c.outputFormat ?? ""),
+      constraints: await renderMarkdown(c.constraints ?? ""),
+      sampleExplanations: await Promise.all(
+        c.samples.map((s) => renderMarkdown(s.explanation ?? "")),
+      ),
+    });
+
     rows.push({
       slug,
       title: c.title,
@@ -105,6 +119,7 @@ function loadRows(): NewChallengeRow[] {
       outputFormat: c.outputFormat ?? null,
       constraints: c.constraints ?? null,
       samples: JSON.stringify(c.samples),
+      contentHtml,
       tests: JSON.stringify(c.tests),
       checker: JSON.stringify(c.checker ?? { type: "token" }),
       schemaVersion: c.schemaVersion ?? 1,
@@ -151,7 +166,7 @@ async function seedLocal(rows: NewChallengeRow[]): Promise<void> {
 const COLUMNS = [
   "slug", "title", "difficulty", "tags", "date", "time_limit", "memory_limit",
   "author", "statement", "input_format", "output_format", "constraints",
-  "samples", "tests", "checker", "schema_version", "created_at", "updated_at",
+  "samples", "content_html", "tests", "checker", "schema_version", "created_at", "updated_at",
 ] as const;
 
 function lit(v: string | number | null): string {
@@ -167,7 +182,7 @@ function seedRemote(rows: NewChallengeRow[]): void {
       r.slug, r.title, r.difficulty ?? "Unrated", r.tags ?? "[]", r.date,
       r.timeLimit ?? null, r.memoryLimit ?? null, r.author ?? null, r.statement,
       r.inputFormat ?? null, r.outputFormat ?? null, r.constraints ?? null,
-      r.samples ?? "[]", r.tests ?? "[]", r.checker ?? '{"type":"token"}',
+      r.samples ?? "[]", r.contentHtml ?? null, r.tests ?? "[]", r.checker ?? '{"type":"token"}',
       r.schemaVersion ?? 1, r.createdAt, r.updatedAt,
     ].map(lit).join(", ");
     const setClause = updateCols.map((c) => `${c} = excluded.${c}`).join(", ");
@@ -194,7 +209,7 @@ function seedRemote(rows: NewChallengeRow[]): void {
 
 async function main() {
   const target = parseTarget();
-  const rows = loadRows();
+  const rows = await loadRows();
   if (target === "remote") seedRemote(rows);
   else await seedLocal(rows);
 }
