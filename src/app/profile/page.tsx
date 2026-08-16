@@ -61,12 +61,22 @@ export default async function ProfilePage() {
               Member since {formatDay(user.createdAt)}
             </p>
           </div>
-          <Link
-            href="/cp-arena"
-            className="mecha-btn mecha-btn--solid mecha-btn--sm ml-auto"
-          >
-            Today&apos;s problem 
-          </Link>
+          <div className="ml-auto flex items-center gap-2">
+            {user.isAdmin && (
+              <Link
+                href="/admin"
+                className="mecha-btn mecha-btn--ghost mecha-btn--sm"
+              >
+                Admin console
+              </Link>
+            )}
+            <Link
+              href="/cp-arena"
+              className="mecha-btn mecha-btn--solid mecha-btn--sm"
+            >
+              Today&apos;s problem
+            </Link>
+          </div>
         </div>
 
         {/* Private identity (only the owner sees this page) */}

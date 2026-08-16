@@ -28,6 +28,11 @@ export const users = sqliteTable("users", {
   // rejected once it changes, so a reset (or recovery from a compromise) logs out
   // every existing session.
   sessionEpoch: integer("session_epoch").notNull().default(0),
+  // Grants access to the admin console (/admin) — CP Arena problem authoring and
+  // management. Bootstrapped out-of-band for the first admin (see the admin-console
+  // PR notes); a future admin screen can toggle it. The ADD COLUMN backfills every
+  // existing user to non-admin.
+  isAdmin: integer("is_admin", { mode: "boolean" }).notNull().default(false),
   createdAt: integer("created_at").notNull(),
 });
 

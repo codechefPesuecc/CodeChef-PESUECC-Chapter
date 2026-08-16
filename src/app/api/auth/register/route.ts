@@ -124,6 +124,7 @@ export async function POST(req: Request) {
     emailVerified: false,
     srn,
     prn,
+    isAdmin: false,
     createdAt,
   };
   const res = NextResponse.json({

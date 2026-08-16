@@ -86,6 +86,7 @@ export async function POST(req: Request) {
       emailVerified: user.emailVerified,
       srn: user.srn,
       prn: user.prn,
+      isAdmin: user.isAdmin,
       createdAt: user.createdAt,
     },
   });

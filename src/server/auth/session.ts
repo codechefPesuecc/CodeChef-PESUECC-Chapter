@@ -28,6 +28,7 @@ export interface SessionUser {
   emailVerified: boolean;
   srn: string | null;
   prn: string;
+  isAdmin: boolean;
   createdAt: number;
 }
 
@@ -57,6 +58,17 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     emailVerified: user.emailVerified,
     srn: user.srn,
     prn: user.prn,
+    isAdmin: user.isAdmin,
     createdAt: user.createdAt,
   };
+}
+
+/**
+ * The signed-in user, but only when they're an admin — otherwise null. Admin pages
+ * redirect on null; admin API routes return 403. Always gate server-side: hiding the
+ * UI link is not access control.
+ */
+export async function getAdminUser(): Promise<SessionUser | null> {
+  const user = await getCurrentUser();
+  return user?.isAdmin ? user : null;
 }

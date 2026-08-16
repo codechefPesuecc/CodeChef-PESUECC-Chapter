@@ -149,6 +149,15 @@ export default function Navbar() {
               >
                 {user.username.charAt(0).toUpperCase()}
               </Link>
+              {user.isAdmin && (
+                <Link
+                  href="/admin"
+                  aria-current={isActive("/admin") ? "page" : undefined}
+                  className="hidden rounded-full border border-bronze/50 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-bronze transition-colors hover:bg-bronze/10 sm:inline-block"
+                >
+                  Admin
+                </Link>
+              )}
               <button
                 type="button"
                 onClick={logout}
