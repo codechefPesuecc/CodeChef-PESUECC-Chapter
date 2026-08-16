@@ -15,8 +15,8 @@
     "challenges:seed": "tsx scripts/seed-challenges.ts",
     "team:build": "node scripts/build-team.mjs",
     "cf:build": "opennextjs-cloudflare build",
-    "cf:deploy": "opennextjs-cloudflare build && wrangler deploy",
-    "cf:preview": "opennextjs-cloudflare build && wrangler dev",
+    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare populateCache remote && wrangler deploy",
+    "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare populateCache local && wrangler dev",
     "piston:up": "docker compose up -d",
     "piston:down": "docker compose down",
     "piston:install": "sh scripts/install-runtimes.sh"
