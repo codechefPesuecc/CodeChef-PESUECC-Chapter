@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Lenis from "lenis";
 
@@ -11,17 +11,18 @@ import Lenis from "lenis";
  */
 export default function SmoothScroll() {
   const pathname = usePathname();
-  useEffect(() => {
-    // Respect the user's OS "reduce motion" preference — keep native scroll.
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const lenisRef = useRef<Lenis | null>(null);
 
-    // Fix Next.js App Router scroll restoration by resetting on navigation
-    window.scrollTo(0, 0);
+  // 1. Initialize Lenis exactly once
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const lenis = new Lenis({
       duration: 1.15,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
     });
+    
+    lenisRef.current = lenis;
 
     let rafId = 0;
     const raf = (time: number) => {
@@ -33,7 +34,15 @@ export default function SmoothScroll() {
     return () => {
       cancelAnimationFrame(rafId);
       lenis.destroy();
+      lenisRef.current = null;
     };
+  }, []);
+
+  // 2. Instantly reset scroll to top on route change without destroying the engine
+  useEffect(() => {
+    if (lenisRef.current) {
+      lenisRef.current.scrollTo(0, { immediate: true });
+    }
   }, [pathname]);
 
   return null;
