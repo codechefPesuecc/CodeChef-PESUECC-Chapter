@@ -4,8 +4,12 @@ import { notFound } from "next/navigation";
 import {
   getChallengeBySlug,
   getDailyChallenge,
+  toPublicContent,
 } from "@/lib/challenges";
 import { getCurrentUser } from "@/server/auth/session";
+import { hasSolvedRanked } from "@/server/solves";
+import { todayLeaderboard } from "@/server/leaderboard";
+import { ordinal } from "@/lib/points";
 import ProblemStatement from "@/components/cp-arena/ProblemStatement";
 import ArenaWorkspace from "@/components/cp-arena/ArenaWorkspace";
 import ArenaRules from "@/components/cp-arena/ArenaRules";
@@ -23,6 +27,14 @@ function formatDate(iso: string): string {
   const [y, m, d] = iso.split("-").map(Number);
   if (!y || !m || !d) return iso;
   return `${MONTHS[m - 1]} ${d}, ${y}`;
+}
+
+function formatClock(totalSeconds: number): string {
+  const s = Math.max(0, Math.floor(totalSeconds));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return h > 0 ? `${h}:${pad(m)}:${pad(s % 60)}` : `${m}:${pad(s % 60)}`;
 }
 
 const DIFFICULTY_STYLES: Record<string, string> = {
@@ -86,6 +98,53 @@ export default async function SolveProblemPage({
               </Link>
               <Link href="/register" className="mecha-btn mecha-btn--ghost">
                 Create account
+              </Link>
+            </div>
+          </div>
+        </main>
+      );
+    }
+
+    // Hide-after-solve: once solved, today's problem isn't shown again until it
+    // becomes a past problem (reviewable in the archive). Show the result instead.
+    if (await hasSolvedRanked(user.id, slug)) {
+      const board = await todayLeaderboard();
+      const me = board.find((r) => r.display === (user.srn ?? user.prn));
+      return (
+        <main className="flex flex-1 items-center justify-center px-6 py-32 text-center">
+          <div className="max-w-md">
+            <div
+              aria-hidden
+              className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/15 text-2xl text-emerald-600"
+            >
+              ✓
+            </div>
+            <h1 className="font-display text-2xl font-bold text-chocolate">
+              You&apos;ve solved today&apos;s problem
+            </h1>
+            {me && !me.flagged && me.rank != null ? (
+              <p className="mt-3 text-charcoal/70">
+                You finished{" "}
+                <span className="font-semibold text-brown">{ordinal(me.rank)}</span>{" "}
+                — {me.points} pts
+                {me.timeSeconds != null ? ` in ${formatClock(me.timeSeconds)}` : ""}.
+              </p>
+            ) : (
+              <p className="mt-3 text-charcoal/70">Your solve is locked in.</p>
+            )}
+            <p className="mt-3 text-sm text-charcoal/60">
+              It opens for review in the archive once the next problem drops —
+              come back for the next challenge.
+            </p>
+            <div className="mt-6 flex items-center justify-center gap-3">
+              <Link
+                href="/leaderboard"
+                className="rounded-lg bg-bronze px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-bronze/90"
+              >
+                View leaderboard
+              </Link>
+              <Link href="/cp-arena" className="mecha-btn mecha-btn--ghost">
+                Back to Arena
               </Link>
             </div>
           </div>
@@ -161,7 +220,7 @@ export default async function SolveProblemPage({
 
         <ArenaWorkspace
           slug={challenge.slug}
-          problem={<ProblemStatement challenge={challenge} />}
+          problem={<ProblemStatement challenge={toPublicContent(challenge)} />}
           sampleInput={sample?.input ?? ""}
           sampleOutput={sample?.output ?? ""}
           {...(!isLive && { practice: true })}

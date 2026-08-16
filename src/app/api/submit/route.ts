@@ -6,6 +6,7 @@ import { submissions, attempts } from "@/server/db/schema";
 import { getCurrentUser } from "@/server/auth/session";
 import { getDailyChallenge } from "@/lib/challenges";
 import { judge } from "@/server/judge";
+import { hasSolvedRanked } from "@/server/solves";
 import { rateLimit, clientIp } from "@/server/rateLimit";
 import { verifyTurnstile } from "@/server/turnstile";
 import { PISTON_LANGUAGE } from "@/lib/piston";
@@ -116,19 +117,7 @@ export async function POST(req: Request) {
   // This also guarantees exactly one ranked award per (user, problem).
   if (ranked) {
     try {
-      const priorSolve = await getDb()
-        .select({ id: submissions.id })
-        .from(submissions)
-        .where(
-          and(
-            eq(submissions.userId, user.id),
-            eq(submissions.challengeSlug, slug),
-            eq(submissions.status, "AC"),
-            eq(submissions.ranked, true),
-          ),
-        )
-        .limit(1);
-      if (priorSolve.length > 0) {
+      if (await hasSolvedRanked(user.id, slug)) {
         return NextResponse.json(
           { ok: false, alreadySolved: true, error: "You've already solved today's problem." },
           { status: 409 },
