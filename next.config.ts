@@ -1,11 +1,13 @@
 import type { NextConfig } from "next";
 import { buildTeamManifest } from "./scripts/build-team.mjs";
+import { buildInitiativesManifest } from "./scripts/build-initiatives.mjs";
 
 // Bundle the filesystem-backed team roster into a manifest before the build/dev
 // server reads it — Cloudflare Workers have no filesystem (see src/app/team/lib.ts).
 // Challenges are NOT bundled: they live in the database (see src/lib/challenges.ts)
 // and are published with `npm run challenges:seed`, no redeploy required.
 buildTeamManifest();
+buildInitiativesManifest();
 
 const isDev = process.env.NODE_ENV !== "production";
 

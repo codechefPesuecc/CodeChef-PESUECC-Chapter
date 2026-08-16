@@ -1,0 +1,194 @@
+{
+  "events": [
+    {
+      "id": "cp-arena",
+      "title": "CP Arena",
+      "category": "Daily Problem Solving",
+      "status": "Active Daily",
+      "cadence": "Every night",
+      "description": "The CodeChef PESUECC Arena is our custom-built competitive programming ecosystem.",
+      "highlights": [
+        "Daily Problem Sets",
+        "Global Leaderboards",
+        "Upsolving Tracker"
+      ],
+      "accent": "01",
+      "image": "/dev-team.jpg",
+      "gallery": [
+        {
+          "src": "/dev-team.jpg",
+          "caption": "Live contest dashboard"
+        },
+        {
+          "src": "/dev-team.jpg",
+          "caption": "Performance analytics"
+        },
+        {
+          "src": "/dev-team.jpg",
+          "caption": "Global standing tracking"
+        }
+      ],
+      "href": "/cp-arena",
+      "detailedExplanation": "CP Arena is the backbone of our daily coding culture..."
+    },
+    {
+      "id": "leetcode-101",
+      "title": "LeetCode 101",
+      "category": "Learning Pipeline",
+      "status": "Cohort Program",
+      "cadence": "Weekly foundations",
+      "description": "A guided problem-solving pipeline for students moving from syntax comfort to interview-ready competitive thinking.",
+      "highlights": [
+        "Pattern-first sessions",
+        "Mentor-led reviews",
+        "Editorial practice"
+      ],
+      "accent": "02",
+      "image": "/dev-team.jpg",
+      "gallery": [
+        {
+          "src": "/dev-team.jpg",
+          "caption": "Mentor-led pattern sessions"
+        },
+        {
+          "src": "/dev-team.jpg",
+          "caption": "Weekly practice cohorts"
+        },
+        {
+          "src": "/dev-team.jpg",
+          "caption": "Editorial review circles"
+        }
+      ],
+      "href": "/initiatives#leetcode-101",
+      "detailedExplanation": "LeetCode 101 is our flagship mentorship program engineered to systematically break down data structures and algorithms."
+    },
+    {
+      "id": "algohunt",
+      "title": "AlgoHunt",
+      "category": "Gamified Algorithmic Event",
+      "status": "Flagship Contest",
+      "cadence": "Campus-scale hunt",
+      "description": "A physical-digital contest where algorithms unlock checkpoints, clues, and leaderboard momentum across campus.",
+      "highlights": [
+        "Puzzle-backed routes",
+        "Live scoring",
+        "Team-based solving"
+      ],
+      "accent": "03",
+      "image": "/dev-team.jpg",
+      "gallery": [
+        {
+          "src": "/dev-team.jpg",
+          "caption": "Campus checkpoints and clue drops"
+        },
+        {
+          "src": "/dev-team.jpg",
+          "caption": "Team solving under live pressure"
+        },
+        {
+          "src": "/dev-team.jpg",
+          "caption": "Leaderboard-driven finale"
+        }
+      ],
+      "href": "/initiatives#algohunt",
+      "detailedExplanation": "AlgoHunt transforms competitive programming into a high-octane physical reality."
+    },
+    {
+      "id": "praxis",
+      "title": "Praxis Hackathon",
+      "category": "Rapid AI / Build Sprint",
+      "status": "Hackathon Engine",
+      "cadence": "Sprint format",
+      "description": "A high-pressure build sprint for shipping AI-assisted products, prototypes, and technical demos under real constraints.",
+      "highlights": [
+        "Fast ideation",
+        "Demo-first judging",
+        "Production mindset"
+      ],
+      "accent": "04",
+      "image": "/dev-team.jpg",
+      "gallery": [
+        {
+          "src": "/dev-team.jpg",
+          "caption": "Rapid AI product ideation"
+        },
+        {
+          "src": "/dev-team.jpg",
+          "caption": "Build sprint execution"
+        },
+        {
+          "src": "/dev-team.jpg",
+          "caption": "Final demos and judging"
+        }
+      ],
+      "href": "/initiatives#praxis",
+      "detailedExplanation": "Praxis is designed to push developers out of tutorial hell and into the builder's mindset."
+    }
+  ],
+  "systems": [
+    {
+      "id": "algohunt-base",
+      "title": "AlgoHunt Base",
+      "role": "Multi-Language Contest Engine",
+      "description": "The dedicated technical platform built to power our competitive coding hackathons. At its core, AlgoHunt Base utilizes the Piston engine to provide a secure, isolated sandbox for code execution across multiple programming languages. It acts as the backbone for algorithmic events, offering a reliable, high-performance environment for compiling submissions and evaluating solver logic in real-time.",
+      "metrics": [
+        {
+          "label": "Engine",
+          "value": "Piston"
+        },
+        {
+          "label": "Lang",
+          "value": "Multi"
+        },
+        {
+          "label": "Runtime",
+          "value": "Sandbox"
+        }
+      ],
+      "pipeline": [
+        "Code",
+        "Submit",
+        "Compile",
+        "Execute"
+      ],
+      "terminal": [
+        "$ base mount piston-engine",
+        "sandbox isolation verified",
+        "multi-lang compilers loaded",
+        "awaiting submissions..."
+      ]
+    },
+    {
+      "id": "eclipse",
+      "title": "Eclipse",
+      "role": "Hackathon Management",
+      "description": "Our end-to-end hackathon event management platform. Eclipse acts as the central nervous system during our flagship events, handling everything from initial team registrations to live crowd control on the day of the event. It streamlines the entire participant lifecycle, abstracting away logistical friction so we can manage hundreds of hackers seamlessly from a unified dashboard.",
+      "metrics": [
+        {
+          "label": "Flow",
+          "value": "End-to-End"
+        },
+        {
+          "label": "Load",
+          "value": "High-Volume"
+        },
+        {
+          "label": "Role",
+          "value": "Ops Layer"
+        }
+      ],
+      "pipeline": [
+        "Register",
+        "Check-in",
+        "Coordinate",
+        "Manage"
+      ],
+      "terminal": [
+        "$ eclipse init hackathon-ops",
+        "registration portal live",
+        "crowd control modules active",
+        "handling live traffic..."
+      ]
+    }
+  ]
+}
