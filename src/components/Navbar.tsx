@@ -161,7 +161,7 @@ export default function Navbar() {
           ) : (
             <Link
               href="/login"
-              className="mecha-btn mecha-btn--solid"
+              className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-chocolate ring-1 ring-bronze/50 shadow-sm transition-shadow hover:shadow-md dark:bg-[#241a12] dark:text-cream dark:shadow-[0_4px_20px_-2px_rgba(166,124,82,0.55)] dark:hover:shadow-[0_6px_28px_0_rgba(166,124,82,0.75)]"
             >
               Log in
             </Link>
