@@ -91,7 +91,73 @@
         }
       ],
       "href": "/initiatives#algohunt",
-      "detailedExplanation": "AlgoHunt transforms competitive programming into a high-octane physical reality."
+      "timeline": [
+        {
+          "date": "August 2024",
+          "title": "AlgoHunt v4.0",
+          "tag": "Upcoming",
+          "description": "The biggest campus-wide algorithmic treasure hunt is back with more complex crypto-puzzles and physical checkpoints."
+        },
+        {
+          "date": "February 2024",
+          "title": "AlgoHunt v3.0",
+          "tag": "Completed",
+          "description": "Over 500 participants across 100 teams raced across campus. Introduced the real-time websocket leaderboard."
+        },
+        {
+          "date": "September 2023",
+          "title": "AlgoHunt v2.0",
+          "tag": "Completed",
+          "description": "Expanded to include hardware-based challenges and reverse-engineering nodes."
+        },
+        {
+          "date": "March 2023",
+          "title": "AlgoHunt Genesis",
+          "tag": "Completed",
+          "description": "The inaugural event that started it all, blending competitive programming with a physical race."
+        }
+      ],
+      "mentors": [
+        {
+          "name": "Aditya Raj",
+          "role": "Lead Architect",
+          "photo": "https://i.pravatar.cc/300?img=11",
+          "linkedin": "https://linkedin.com"
+        },
+        {
+          "name": "Aniket Barun",
+          "role": "Problem Setter",
+          "photo": "https://i.pravatar.cc/300?img=12",
+          "linkedin": "https://linkedin.com"
+        },
+        {
+          "name": "Shivansh",
+          "role": "Platform Engineer",
+          "photo": "https://i.pravatar.cc/300?img=13",
+          "linkedin": "https://linkedin.com"
+        }
+      ],
+      "winners": [
+        {
+          "name": "Team Enigma",
+          "achievement": "1st Place - v3.0",
+          "photo": "https://i.pravatar.cc/150?img=33",
+          "quote": "The combination of algorithmic thinking and sprinting across campus was unparalleled!"
+        },
+        {
+          "name": "Runtime Terrors",
+          "achievement": "2nd Place - v3.0",
+          "photo": "https://i.pravatar.cc/150?img=47",
+          "quote": "We spent 20 minutes debugging Dijkstra while physically standing in the rain. Best event ever."
+        },
+        {
+          "name": "O(1) Braincells",
+          "achievement": "1st Place - v2.0",
+          "photo": "https://i.pravatar.cc/150?img=15",
+          "quote": "The final checkpoint puzzle blew our minds. Incredible execution by the CodeChef team."
+        }
+      ],
+      "detailedExplanation": "AlgoHunt transforms competitive programming into a high-octane physical reality. It demands a unique hybrid of rapid code execution, team communication under pressure, and physical stamina. AlgoHunt tests not just how well you know Dijkstra's algorithm, but how fast your team can debug it while racing against the clock to the next checkpoint."
     },
     {
       "id": "praxis",

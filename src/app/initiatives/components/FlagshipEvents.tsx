@@ -281,7 +281,7 @@ function EventBlueprintCard({
 
               {/* CTA Button — bordered rectangle with arrow */}
               <Link
-                href={event.href}
+                href={event.id === "cp-arena" ? "/cp-arena" : `/initiatives/${event.id}`}
                 className="initiative-btn self-end mt-10"
               >
                 {event.id === "cp-arena" ? "ENTER ARENA" : "VIEW PROGRAM DETAILS"}
