@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import Lenis from "lenis";
 
 /**
@@ -9,9 +10,13 @@ import Lenis from "lenis";
  * useScroll keep working. Renders nothing.
  */
 export default function SmoothScroll() {
+  const pathname = usePathname();
   useEffect(() => {
     // Respect the user's OS "reduce motion" preference — keep native scroll.
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    // Fix Next.js App Router scroll restoration by resetting on navigation
+    window.scrollTo(0, 0);
 
     const lenis = new Lenis({
       duration: 1.15,
@@ -29,7 +34,7 @@ export default function SmoothScroll() {
       cancelAnimationFrame(rafId);
       lenis.destroy();
     };
-  }, []);
+  }, [pathname]);
 
   return null;
 }
