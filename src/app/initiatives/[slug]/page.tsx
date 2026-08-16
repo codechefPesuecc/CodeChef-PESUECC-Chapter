@@ -11,8 +11,9 @@ export function generateStaticParams() {
   return manifest.events.map((e: { id: string }) => ({ slug: e.id }));
 }
 
-export default function InitiativeDetail({ params }: { params: { slug: string } }) {
-  const event = manifest.events.find((e: { id: string }) => e.id === params.slug);
+export default async function InitiativeDetail({ params }: { params: Promise<{ slug: string }> }) {
+  const resolvedParams = await params;
+  const event = manifest.events.find((e: { id: string }) => e.id === resolvedParams.slug);
   
   if (!event) {
     notFound();
