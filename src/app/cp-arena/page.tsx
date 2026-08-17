@@ -67,6 +67,14 @@ export default async function CpArenaPage() {
           past challenge. A practice solve earns a flat 100 points toward your
           all-time total — the speed bounty is reserved for the live problem.
         </p>
+        <div className="mt-5">
+          <Link
+            href="/leaderboard"
+            className="initiative-btn"
+          >
+            VIEW LEADERBOARD
+          </Link>
+        </div>
 
         {/* ━━━━━━━━━━━━━━━━━━ Problem of the Day ━━━━━━━━━━━━━━━━━━ */}
         <h2 className="mt-10 font-display text-lg font-bold tracking-tight text-chocolate sm:text-xl">
