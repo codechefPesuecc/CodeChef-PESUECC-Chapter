@@ -156,10 +156,10 @@ almost always the cause.
 
 A few things worth internalizing:
 
-- **We run on Cloudflare Workers, and Workers have no filesystem.** Anything that would normally be
-  read from disk at runtime (problems, the team roster) is **bundled at build time** into a manifest.
-  That is why problems are JSON files compiled into the app, and why "publishing a problem is a
-  redeploy."
+- **We run on Cloudflare Workers, and Workers have no filesystem.** Static content that never changes
+  at runtime (the team roster, the initiatives pages) is **bundled at build time** into a manifest.
+  Dynamic data — problems, accounts, submissions — lives in **Cloudflare D1** and is read per request,
+  which is why publishing a problem is a database write (a seed, or the admin console), **not** a redeploy.
 - **Read env/secrets inside the request handler, not at module top level.** On Workers, bindings and
   secrets are only reliably available within request scope. Reading them at module load has caused
   real bugs here.
@@ -268,9 +268,13 @@ If that passes on Node 22, your PR's `verify` job will almost certainly pass too
 
 ## 9. Adding a problem
 
-Problems live in the database. You author each one as **one JSON file**, validate it, and load it into
-D1 with the seed script — publishing is a database write, not a redeploy. (An in-browser admin
-dashboard is planned; until then, the seed script is the publish path.)
+Problems live in the database. There are **two ways** to add one — both documented in
+`challenges/README.md`:
+
+- **Admin console** — with an admin account, open `/admin → New problem` and fill the form; it can
+  also **import a JSON** (paste or upload) to pre-fill itself. Writes straight to D1.
+- **JSON file + seed script** (below) — the source-of-record path, and the one for contributors
+  without an admin login. Publishing is a database write, not a redeploy.
 
 1. Create `challenges/YYYY-MM-DD-slug.json` following the shape documented in `challenges/README.md`.
    In brief: title, difficulty, date, tags, limits, statement, I/O format, constraints, checker,
