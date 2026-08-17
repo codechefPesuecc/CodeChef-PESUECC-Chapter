@@ -10,7 +10,6 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 const links = [
   { href: "/", label: "Home" },
   { href: "/cp-arena", label: "Arena" },
-  { href: "/leaderboard", label: "Leaderboard" },
   { href: "/initiatives", label: "Initiatives" },
   { href: "/team", label: "Team" },
 ];
