@@ -76,6 +76,96 @@ export default function ProblemForm({ initial }: { initial?: Challenge }) {
   const [error, setError] = useState<string | null>(null);
   const [issues, setIssues] = useState<{ path: string; message: string }[]>([]);
 
+  // --- Import from JSON (the same authoring schema as challenges/*.json) ---
+  const [importOpen, setImportOpen] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importNote, setImportNote] = useState<string | null>(null);
+
+  function loadFromJson(text: string) {
+    setImportError(null);
+    setImportNote(null);
+    let data: unknown;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      setImportError(`Invalid JSON: ${(e as Error).message}`);
+      return;
+    }
+    if (!data || typeof data !== "object" || Array.isArray(data)) {
+      setImportError("Expected a single problem object.");
+      return;
+    }
+    const d = data as Record<string, unknown>;
+    const str = (v: unknown) => (typeof v === "string" ? v : "");
+    const list = (v: unknown) => (Array.isArray(v) ? v : []);
+
+    const missing: string[] = [];
+    if (!str(d.title)) missing.push("title");
+    if (!str(d.date)) missing.push("date");
+    if (!str(d.statement)) missing.push("statement");
+    if (list(d.samples).length === 0) missing.push("samples (>= 1)");
+    if (list(d.tests).length === 0) missing.push("tests (>= 1)");
+    if (missing.length) {
+      setImportError(
+        `Missing or invalid: ${missing.join(", ")}. (Full validation still runs on save.)`,
+      );
+      return;
+    }
+
+    setTitle(str(d.title));
+    setSlug(str(d.slug) || slugify(str(d.title)));
+    setSlugTouched(true);
+    setDate(str(d.date));
+    const diff = str(d.difficulty);
+    setDifficulty((DIFFICULTIES as readonly string[]).includes(diff) ? diff : "Unrated");
+    setTags(
+      list(d.tags)
+        .map((t) => str(t))
+        .filter(Boolean)
+        .join(", "),
+    );
+    setTimeLimit(str(d.timeLimit));
+    setMemoryLimit(str(d.memoryLimit));
+    setAuthor(str(d.author));
+    setStatement(str(d.statement));
+    setInputFormat(str(d.inputFormat));
+    setOutputFormat(str(d.outputFormat));
+    setConstraints(str(d.constraints));
+    setSamples(
+      list(d.samples).map((s) => {
+        const o = (s ?? {}) as Record<string, unknown>;
+        return { input: str(o.input), output: str(o.output), explanation: str(o.explanation) };
+      }),
+    );
+    setTests(
+      list(d.tests).map((t) => {
+        const o = (t ?? {}) as Record<string, unknown>;
+        return { input: str(o.input), output: str(o.output) };
+      }),
+    );
+    const checker = (d.checker ?? {}) as Record<string, unknown>;
+    const ctype = str(checker.type);
+    setCheckerType((CHECKERS as readonly string[]).includes(ctype) ? ctype : "token");
+    setEpsilon(typeof checker.epsilon === "number" ? String(checker.epsilon) : "");
+
+    setImportNote(`Loaded "${str(d.title)}" — review the fields below, then Create problem.`);
+    setImportOpen(false);
+    setImportText("");
+    setError(null);
+    setIssues([]);
+  }
+
+  function onImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    file
+      .text()
+      .then((t) => loadFromJson(t))
+      .catch(() => setImportError("Could not read the file."));
+    e.target.value = ""; // allow re-selecting the same file
+  }
+
   const onTitle = (v: string) => {
     setTitle(v);
     if (!isEdit && !slugTouched) setSlug(slugify(v));
@@ -156,6 +246,73 @@ export default function ProblemForm({ initial }: { initial?: Challenge }) {
             </ul>
           )}
         </div>
+      )}
+
+      {/* Import from JSON — create mode only */}
+      {!isEdit && (
+        <section className="rounded-xl border border-hairline bg-cream/40 p-4 dark:bg-white/[0.02]">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="font-display text-sm font-bold text-chocolate">
+                Import from JSON
+              </h2>
+              <p className="mt-0.5 text-[11px] text-charcoal/50">
+                Paste a problem in the challenge JSON schema (or upload a .json file)
+                to fill in the form below.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setImportOpen((v) => !v)}
+              className="shrink-0 font-mono text-[11px] uppercase tracking-wider text-bronze hover:underline"
+            >
+              {importOpen ? "Hide" : "Import"}
+            </button>
+          </div>
+
+          {importNote && !importOpen && (
+            <p className="mt-2 text-xs text-emerald-700 dark:text-emerald-400">
+              {importNote}
+            </p>
+          )}
+
+          {importOpen && (
+            <div className="mt-3 space-y-3">
+              <div className="flex items-center gap-3">
+                <label className="mecha-btn mecha-btn--ghost mecha-btn--sm cursor-pointer">
+                  Upload .json
+                  <input
+                    type="file"
+                    accept=".json,application/json"
+                    onChange={onImportFile}
+                    className="hidden"
+                  />
+                </label>
+                <span className="text-[11px] text-charcoal/45">or paste below</span>
+              </div>
+              <textarea
+                className={`${inputCls} ${mono}`}
+                rows={8}
+                value={importText}
+                onChange={(e) => setImportText(e.target.value)}
+                placeholder={
+                  '{ "title": "…", "date": "2026-07-20", "difficulty": "Easy", "statement": "…", "samples": [{ "input": "…", "output": "…" }], "tests": [{ "input": "…", "output": "…" }], "checker": { "type": "token" } }'
+                }
+              />
+              {importError && (
+                <p className="text-xs text-red-700 dark:text-red-400">{importError}</p>
+              )}
+              <button
+                type="button"
+                onClick={() => loadFromJson(importText)}
+                disabled={!importText.trim()}
+                className="mecha-btn mecha-btn--solid mecha-btn--sm disabled:opacity-50"
+              >
+                Load into form
+              </button>
+            </div>
+          )}
+        </section>
       )}
 
       {/* Metadata */}
