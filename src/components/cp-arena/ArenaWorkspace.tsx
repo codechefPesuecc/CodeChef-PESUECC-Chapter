@@ -164,7 +164,7 @@ export default function ArenaWorkspace({
 
   const solved = mySolveSeconds != null;
   // No proctoring on practice (past) problems — they aren't ranked.
-  const integrity = useIntegrityMonitor(!solved && !practice);
+  const integrity = useIntegrityMonitor(!solved && !practice, slug);
 
   // Live today leaderboard from the DB (refetched after an accepted submit).
   const fetchBoardRows = useCallback(async (): Promise<LeaderRow[]> => {
@@ -399,8 +399,6 @@ export default function ArenaWorkspace({
           language,
           code,
           elapsedSeconds: solveSecs,
-          flags: flagsNow,
-          flagsBreakdown: integrity.counts,
           turnstileToken,
         }),
       });

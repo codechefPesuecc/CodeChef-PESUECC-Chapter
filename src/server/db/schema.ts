@@ -100,6 +100,13 @@ export const attempts = sqliteTable(
     challengeSlug: text("challenge_slug").notNull(),
     // Unix epoch ms of first open, server-recorded.
     startedAt: integer("started_at").notNull(),
+    // Server-authoritative integrity flag count for this ranked attempt, accumulated
+    // live via /api/attempt/flag so it survives a page refresh (the client-side
+    // counter alone reset to 0 on reload). This total — not the client's payload —
+    // is what a submission is scored against.
+    flags: integer("flags").notNull().default(0),
+    // Per-category breakdown, JSON: {paste,copy,cut,tabSwitch,contextMenu,screenshot}.
+    flagsBreakdown: text("flags_breakdown").notNull().default("{}"),
   },
   (t) => [unique().on(t.userId, t.challengeSlug)],
 );
