@@ -13,11 +13,13 @@ import crypto from "node:crypto";
  * constant-time.
  */
 
-// PBKDF2-HMAC-SHA256, 210k iterations, 32-byte (one SHA-256 block) output. Chosen
-// for CPU parity with the previous scrypt cost while eliminating scrypt's ~16 MB
-// scratch allocation. Deriving beyond one block multiplies the defender's cost per
-// byte without helping an attacker, so the output stays at one block.
-const PBKDF2_ITERATIONS = 210_000;
+// PBKDF2-HMAC-SHA256, 100k iterations, 32-byte (one SHA-256 block) output. 100,000 is
+// the Cloudflare Workers cap: the PRODUCTION runtime rejects `deriveBits` above it
+// ("Pbkdf2 failed: iteration counts above 100000 are not supported"), even though a
+// local `wrangler dev` happily allows more — and that exact local-vs-prod divergence
+// broke production login once already. DO NOT raise this above 100000. Output stays at
+// one SHA-256 block (deriving more multiplies the defender's cost per byte for free).
+const PBKDF2_ITERATIONS = 100_000;
 const PBKDF2_KEYLEN = 32;
 const SALT_BYTES = 16;
 // Key length the old scrypt hashes were derived with — needed to verify them.
@@ -79,7 +81,16 @@ export async function verifyPassword(
     ) {
       return { ok: false, needsRehash: false };
     }
-    const test = await pbkdf2(password, salt, iterations);
+    let test: Buffer;
+    try {
+      test = await pbkdf2(password, salt, iterations);
+    } catch (err) {
+      // A stored hash whose iteration count the runtime rejects (e.g. a legacy
+      // pbkdf2$210000$ row created before this prod-cap fix) can't be verified — fail
+      // closed instead of throwing a 500. Logged so it surfaces in `wrangler tail`.
+      console.error("verifyPassword: PBKDF2 derive failed:", err);
+      return { ok: false, needsRehash: false };
+    }
     const ok =
       expected.length === test.length && crypto.timingSafeEqual(expected, test);
     return { ok, needsRehash: ok && iterations < PBKDF2_ITERATIONS };

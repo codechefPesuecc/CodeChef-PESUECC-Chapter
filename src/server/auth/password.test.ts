@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import crypto from "node:crypto";
 import { hashPassword, verifyPassword } from "./password";
 
@@ -35,7 +35,7 @@ async function pbkdf2HashWithIterations(
 describe("password hashing (PBKDF2)", () => {
   it("hashes to the versioned pbkdf2 format", async () => {
     const stored = await hashPassword("correct horse battery staple");
-    expect(stored).toMatch(/^pbkdf2\$210000\$[0-9a-f]+\$[0-9a-f]+$/);
+    expect(stored).toMatch(/^pbkdf2\$100000\$[0-9a-f]+\$[0-9a-f]+$/);
   });
 
   it("uses a fresh salt each time", async () => {
@@ -77,7 +77,7 @@ describe("password hashing (PBKDF2)", () => {
   });
 
   it("flags a PBKDF2 hash below the current iteration count for rehash", async () => {
-    const stored = await pbkdf2HashWithIterations("weakly-stretched", 100_000);
+    const stored = await pbkdf2HashWithIterations("weakly-stretched", 50_000);
     expect(await verifyPassword("weakly-stretched", stored)).toEqual({
       ok: true,
       needsRehash: true,
@@ -85,11 +85,31 @@ describe("password hashing (PBKDF2)", () => {
   });
 
   it("does not flag a current-cost PBKDF2 hash for rehash", async () => {
-    const stored = await pbkdf2HashWithIterations("well-stretched", 210_000);
+    const stored = await pbkdf2HashWithIterations("well-stretched", 100_000);
     expect(await verifyPassword("well-stretched", stored)).toEqual({
       ok: true,
       needsRehash: false,
     });
+  });
+
+  it("fails closed (no throw) when the runtime rejects the derivation", async () => {
+    // Production workerd caps PBKDF2 iterations at 100k and throws above it; a stored
+    // hash the runtime can't derive must yield ok:false, not a 500. Node has no such
+    // cap, so stub the derive to reject the way the edge runtime does.
+    const stored = await pbkdf2HashWithIterations("some-pass", 50_000);
+    const spy = vi
+      .spyOn(globalThis.crypto.subtle, "deriveBits")
+      .mockRejectedValueOnce(
+        new Error("Pbkdf2 failed: iteration counts above 100000 are not supported"),
+      );
+    try {
+      expect(await verifyPassword("some-pass", stored)).toEqual({
+        ok: false,
+        needsRehash: false,
+      });
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it.each(["", "garbage", "pbkdf2$onlytwo$parts", "nosalt:", ":nohash", "pbkdf2$210000$$"])(
