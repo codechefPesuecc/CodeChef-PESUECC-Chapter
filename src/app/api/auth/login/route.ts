@@ -26,7 +26,14 @@ const cookieOptions = {
 // top of the login rate limit. Caches the promise so the derivation runs only once.
 let dummyHashPromise: Promise<string> | null = null;
 function timingEqualizer(): Promise<string> {
-  return (dummyHashPromise ??= hashPassword("timing-equalizer-not-a-real-account"));
+  // Drop a rejected promise so a transient hash failure doesn't poison every future
+  // missing-user login (a cached rejected promise would 500 forever until isolate recycle).
+  return (dummyHashPromise ??= hashPassword("timing-equalizer-not-a-real-account").catch(
+    (err) => {
+      dummyHashPromise = null;
+      throw err;
+    },
+  ));
 }
 
 export async function POST(req: Request) {
