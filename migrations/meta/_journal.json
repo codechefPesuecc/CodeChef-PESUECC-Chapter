@@ -57,6 +57,13 @@
       "when": 1786922234986,
       "tag": "0007_striped_betty_ross",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1786927942233,
+      "tag": "0008_small_rattler",
+      "breakpoints": true
     }
   ]
 }

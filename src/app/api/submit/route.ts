@@ -10,12 +10,7 @@ import { hasSolvedRanked } from "@/server/solves";
 import { rateLimit, clientIp } from "@/server/rateLimit";
 import { verifyTurnstile } from "@/server/turnstile";
 import { PISTON_LANGUAGE } from "@/lib/piston";
-import {
-  bodyTooLarge,
-  tooLong,
-  MAX_CODE_CHARS,
-  MAX_FLAGS_BREAKDOWN_CHARS,
-} from "@/server/limits";
+import { bodyTooLarge, tooLong, MAX_CODE_CHARS } from "@/server/limits";
 
 export const dynamic = "force-dynamic";
 
@@ -70,8 +65,6 @@ export async function POST(req: Request) {
     language?: string;
     code?: string;
     elapsedSeconds?: number;
-    flags?: number;
-    flagsBreakdown?: unknown;
     turnstileToken?: string;
   };
   try {
@@ -143,28 +136,30 @@ export async function POST(req: Request) {
   let persistFailed = false;
   if (ranked) {
     const db = getDb();
+    // The solve clock AND the integrity flags come from the server-authoritative
+    // `attempts` row — flags are accumulated live via /api/attempt/flag, so a page
+    // refresh can't wipe them. The client is not trusted for either.
+    let attemptFlags = 0;
+    let attemptBreakdown: string | null = null;
     try {
       const startRows = await db
-        .select({ startedAt: attempts.startedAt })
+        .select({
+          startedAt: attempts.startedAt,
+          flags: attempts.flags,
+          breakdown: attempts.flagsBreakdown,
+        })
         .from(attempts)
         .where(and(eq(attempts.userId, user.id), eq(attempts.challengeSlug, slug)))
         .limit(1);
-      const startedAt = startRows[0]?.startedAt;
-      if (typeof startedAt === "number") {
-        elapsedSeconds = Math.max(0, Math.round((submittedAt - startedAt) / 1000));
+      const row = startRows[0];
+      if (typeof row?.startedAt === "number") {
+        elapsedSeconds = Math.max(0, Math.round((submittedAt - row.startedAt) / 1000));
       }
+      attemptFlags = row?.flags ?? 0;
+      attemptBreakdown = row?.breakdown ?? null;
     } catch (error) {
-      console.error("[submit] failed to read attempt start:", error);
+      console.error("[submit] failed to read attempt start/flags:", error);
     }
-
-    // Client-supplied integrity detail is diagnostic only; drop it if it's
-    // oversized rather than storing an unbounded blob.
-    const rawBreakdown =
-      body.flagsBreakdown != null ? JSON.stringify(body.flagsBreakdown) : null;
-    const flagsBreakdown =
-      rawBreakdown && rawBreakdown.length <= MAX_FLAGS_BREAKDOWN_CHARS
-        ? rawBreakdown
-        : null;
 
     try {
       await db.insert(submissions).values({
@@ -175,8 +170,8 @@ export async function POST(req: Request) {
         code,
         status: result.verdict,
         elapsedSeconds,
-        flags: typeof body.flags === "number" ? Math.max(0, Math.round(body.flags)) : 0,
-        flagsBreakdown,
+        flags: attemptFlags,
+        flagsBreakdown: attemptBreakdown,
         ranked: true,
         createdAt: submittedAt,
       });

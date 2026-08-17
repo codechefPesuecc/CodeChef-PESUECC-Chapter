@@ -60,14 +60,47 @@ const KEY: Record<IntegrityEvent, keyof IntegrityCounts> = {
   screenshot: "screenshot",
 };
 
-export function useIntegrityMonitor(active: boolean) {
+export function useIntegrityMonitor(active: boolean, slug?: string) {
   const [counts, setCounts] = useState<IntegrityCounts>(EMPTY);
   const [notice, setNotice] = useState<string | null>(null);
 
-  const record = useCallback((event: IntegrityEvent) => {
-    setCounts((c) => ({ ...c, [KEY[event]]: c[KEY[event]] + 1 }));
-    setNotice(MESSAGES[event]);
-  }, []);
+  // Seed from the server-authoritative count on mount, so a page refresh shows the
+  // flags accrued so far instead of resetting to zero.
+  useEffect(() => {
+    if (!active || !slug) return;
+    let alive = true;
+    fetch(`/api/attempt/flag?slug=${encodeURIComponent(slug)}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (alive && d?.ok && d.counts) setCounts(d.counts as IntegrityCounts);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [active, slug]);
+
+  const record = useCallback(
+    (event: IntegrityEvent) => {
+      // Optimistic local bump for instant feedback…
+      setCounts((c) => ({ ...c, [KEY[event]]: c[KEY[event]] + 1 }));
+      setNotice(MESSAGES[event]);
+      // …then report to the server, which holds the authoritative count (survives a
+      // refresh). Reconcile from the response so the shown count can't drift below it.
+      if (!slug) return;
+      fetch("/api/attempt/flag", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ slug, event }),
+      })
+        .then((r) => r.json())
+        .then((d) => {
+          if (d?.ok && d.counts) setCounts(d.counts as IntegrityCounts);
+        })
+        .catch(() => {});
+    },
+    [slug],
+  );
 
   // Auto-dismiss the transient notice.
   useEffect(() => {
