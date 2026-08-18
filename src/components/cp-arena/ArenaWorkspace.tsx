@@ -383,8 +383,8 @@ export default function ArenaWorkspace({
       return;
     }
 
-    // Use WASM execution for C, C++, Go, and Rust
-    if (language === "c" || language === "cpp" || language === "go" || language === "rust") {
+    // Use WASM execution for C, C++, Go, Rust, and Zig
+    if (language === "c" || language === "cpp" || language === "go" || language === "rust" || language === "zig") {
       try {
         const wasmLanguage: SupportedWasmLanguage = language as SupportedWasmLanguage;
 
