@@ -227,6 +227,7 @@ app.post('/compile/go', async (req, res) => {
 });
 
 // Rust Compilation Endpoint
+// Requires: rustup target add wasm32-wasi (standard WASI target for Rust)
 app.post('/compile/rust', async (req, res) => {
   const { sourceCode } = req.body;
 
@@ -238,32 +239,25 @@ app.post('/compile/rust', async (req, res) => {
   }
 
   const id = randomUUID();
-  const projectDir = join(tmpdir(), `rust-${id}`);
-  const inputPath = join(projectDir, 'src', 'main.rs');
-  const outputPath = join(projectDir, 'target', 'wasm32-wasip1', 'release', `rust_${id}.wasm`);
+  const inputPath = join(tmpdir(), `${id}.rs`);
+  const outputPath = join(tmpdir(), `${id}.wasm`);
 
   try {
-    // Create project structure
-    const { mkdir } = await import('fs/promises');
-    await mkdir(join(projectDir, 'src'), { recursive: true });
-
-    // Write source code
+    // Write source code to temporary file
     await writeFile(inputPath, sourceCode);
 
-    // Write Cargo.toml
-    const cargoToml = `[package]
-name = "rust_wasm"
-version = "0.1.0"
-edition = "2021"
-
-[profile.release]
-opt-level = 2
-`;
-    await writeFile(join(projectDir, 'Cargo.toml'), cargoToml);
-
-    // Compile to WASM
-    await runCommand('cargo', ['build', '--target', 'wasm32-wasip1', '--release'], {
-      cwd: projectDir,
+    // Compile to WASM using Rust
+    // -O: optimize (release mode)
+    // --target wasm32-wasi: compile to WASI-compatible WebAssembly
+    // Note: requires `rustup target add wasm32-wasi` on the host
+    await runCommand('rustc', [
+      '--target', 'wasm32-wasi',
+      '-O',
+      inputPath,
+      '-o',
+      outputPath,
+    ], {
+      env: process.env,
     });
 
     // Read compiled WASM binary
@@ -281,8 +275,8 @@ opt-level = 2
   } finally {
     // Cleanup temporary files
     try {
-      const { rm } = await import('fs/promises');
-      await rm(projectDir, { recursive: true, force: true });
+      await unlink(inputPath);
+      await unlink(outputPath);
     } catch {}
   }
 });
