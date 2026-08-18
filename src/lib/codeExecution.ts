@@ -1,3 +1,6 @@
+import { JS_WORKER_CODE } from './workers/jsWorkerCode';
+import { PY_WORKER_CODE } from './workers/pyWorkerCode';
+
 export type SupportedLanguage = 'javascript' | 'python';
 
 export type ExecutionStatus =
@@ -53,12 +56,17 @@ export class CodeExecutionManager {
     this.initializeWorkers();
   }
 
+  private createWorkerFromCode(code: string): Worker {
+    const blob = new Blob([code], { type: 'application/javascript' });
+    const url = URL.createObjectURL(blob);
+    return new Worker(url, { type: 'module' });
+  }
+
   private initializeWorkers() {
+    if (typeof window === 'undefined') return;
+
     try {
-      this.jsWorker = new Worker(
-        new URL('../workers/jsRunner.worker.ts', import.meta.url),
-        { type: 'module' }
-      );
+      this.jsWorker = this.createWorkerFromCode(JS_WORKER_CODE);
       this.jsWorker.onmessage = this.handleWorkerMessage.bind(this);
       this.jsWorker.onerror = this.handleWorkerError.bind(this);
     } catch (err) {
@@ -66,10 +74,7 @@ export class CodeExecutionManager {
     }
 
     try {
-      this.pythonWorker = new Worker(
-        new URL('../workers/pythonRunner.worker.ts', import.meta.url),
-        { type: 'module' }
-      );
+      this.pythonWorker = this.createWorkerFromCode(PY_WORKER_CODE);
       this.pythonWorker.onmessage =
         this.handleWorkerMessage.bind(this);
       this.pythonWorker.onerror =
@@ -117,7 +122,6 @@ export class CodeExecutionManager {
 
   private handleWorkerError(event: ErrorEvent) {
     console.error('Worker error:', event.message);
-    // Clean up pending requests
     for (const [id, pending] of this.pendingRequests) {
       clearTimeout(pending.timeoutHandle);
       pending.reject(
@@ -164,7 +168,7 @@ export class CodeExecutionManager {
           executionTimeMs: timeoutMs,
           error: 'Worker timeout (hard limit)',
         });
-      }, timeoutMs + 1000); // Hard timeout 1s after soft timeout
+      }, timeoutMs + 1000);
 
       this.pendingRequests.set(id, {
         resolve,
@@ -189,7 +193,6 @@ export class CodeExecutionManager {
   }
 }
 
-// Singleton instance
 let executionManager: CodeExecutionManager | null = null;
 
 export function getExecutionManager(): CodeExecutionManager {
