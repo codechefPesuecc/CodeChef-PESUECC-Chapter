@@ -153,8 +153,7 @@ export async function executeJavaMainThread(
           console.log = originalLog;
           console.error = originalError;
         }
-
-      processQueue();
+      }
     };
 
     outputQueue.push(task);
