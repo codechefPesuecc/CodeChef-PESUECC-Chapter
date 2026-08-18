@@ -70,9 +70,27 @@ self.onmessage = async (event) => {
       wasiInstance = new WASIClass(args, env, fds);
       console.log('[Worker] WASI instance created:', !!wasiInstance);
       console.log('[Worker] WASI import available:', !!wasiInstance.wasiImport);
+
+      // Add stub implementations for socket functions that .NET runtime may try to import
+      // but aren't needed for console I/O in the browser WASI environment
+      const wasiImports = {
+        ...wasiInstance.wasiImport,
+        sock_accept: () => 8,        // ENOTSUP
+        sock_bind: () => 8,          // ENOTSUP
+        sock_connect: () => 8,       // ENOTSUP
+        sock_listen: () => 8,        // ENOTSUP
+        sock_recv: () => 8,          // ENOTSUP
+        sock_send: () => 8,          // ENOTSUP
+        sock_setsockopt: () => 8,    // ENOTSUP
+        sock_getsockopt: () => 8,    // ENOTSUP
+        sock_local_address: () => 8, // ENOTSUP
+        sock_remote_address: () => 8,// ENOTSUP
+        sock_shutdown: () => 8,      // ENOTSUP
+      };
+
       console.log('[Worker] Creating WebAssembly.Instance...');
       wasm = new WebAssembly.Instance(wasmModule, {
-        wasi_snapshot_preview1: wasiInstance.wasiImport,
+        wasi_snapshot_preview1: wasiImports,
       });
       console.log('[Worker] WASM instance created:', !!wasm);
       console.log('[Worker] WASM memory:', !!wasm.exports.memory);
