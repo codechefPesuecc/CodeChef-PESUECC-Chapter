@@ -44,7 +44,8 @@ self.onmessage = async (event) => {
   try {
     captureConsole();
 
-    const userFunction = new Function('stdin', 'const input = () => { if (typeof stdin === "string" && stdin.length > 0) { const line = stdin.split("\\n")[0]; stdin = stdin.substring(line.length + 1); return line; } return ""; }; ' + code);
+    const functionBody = 'const input = () => { if (typeof stdin === "string" && stdin.length > 0) { const line = stdin.split("\\n")[0]; stdin = stdin.substring(line.length + 1); return line; } return ""; };\n' + code;
+    const userFunction = new Function('stdin', functionBody);
 
     const executionPromise = Promise.resolve().then(() => {
       userFunction(stdin || '');
