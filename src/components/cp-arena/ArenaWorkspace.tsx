@@ -487,8 +487,8 @@ export default function ArenaWorkspace({
           ? await compileRes.json()
           : await compileRes.arrayBuffer();
 
-        // Execute using CheerpJ on main thread
-        const result = await javaExecute(classData, stdin, 5000);
+        // Execute using CheerpJ on main thread (30s timeout for CheerpJ 4.3 promise delays)
+        const result = await javaExecute(classData, stdin, 30000);
 
         if (!result.success) {
           if (result.error?.includes("Time Limit")) {
