@@ -11,10 +11,11 @@
 
 import express from 'express';
 import { spawn } from 'child_process';
-import { writeFile, unlink } from 'fs/promises';
+import { writeFile, unlink, mkdir, readFile } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { randomUUID } from 'crypto';
+import { rmSync } from 'fs';
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -337,16 +338,65 @@ app.post('/compile/zig', async (req, res) => {
   }
 });
 
+// Java Compilation Endpoint
+// Note: Compiles to Java bytecode (.class), not WebAssembly
+// Requires: Java 17+ compiler (javac) installed
+app.post('/compile/java', async (req, res) => {
+  const { sourceCode } = req.body;
+
+  if (!sourceCode) {
+    return res.status(400).json({
+      status: 'ERROR',
+      error: 'sourceCode is required',
+    });
+  }
+
+  const id = randomUUID();
+  const projectDir = join(tmpdir(), `java-${id}`);
+  const sourceFile = join(projectDir, 'Main.java');
+  const classFile = join(projectDir, 'Main.class');
+
+  try {
+    // Create temporary directory
+    await mkdir(projectDir, { recursive: true });
+
+    // Write source code to Main.java
+    await writeFile(sourceFile, sourceCode);
+
+    // Compile Java source to bytecode
+    // Requires: Java 17+ (javac command)
+    await runCommand('javac', [sourceFile]);
+
+    // Read compiled class file
+    const classBuffer = await readFile(classFile);
+
+    res.set('Content-Type', 'application/octet-stream');
+    res.send(classBuffer);
+  } catch (err) {
+    console.error('Compilation error:', err);
+    res.status(400).json({
+      status: 'COMPILATION_ERROR',
+      error: err.stderr || err.message,
+    });
+  } finally {
+    // Cleanup temporary directory
+    try {
+      rmSync(projectDir, { recursive: true, force: true });
+    } catch {}
+  }
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'wasm-compiler' });
 });
 
 app.listen(PORT, () => {
-  console.log(`WASM Compiler service running on http://localhost:${PORT}`);
+  console.log(`Code Compilation Service running on http://localhost:${PORT}`);
   console.log(`POST /compile/c - Compile C to WASM`);
   console.log(`POST /compile/cpp - Compile C++ to WASM`);
   console.log(`POST /compile/go - Compile Go to WASM`);
   console.log(`POST /compile/rust - Compile Rust to WASM`);
   console.log(`POST /compile/zig - Compile Zig to WASM`);
+  console.log(`POST /compile/java - Compile Java to Bytecode`);
 });
