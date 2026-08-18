@@ -101,10 +101,10 @@ export async function executeJavaMainThread(
           }
         }
 
-        // Write stdin if provided
+        // Write stdin if provided (must match what Runner.java expects: /str/input.txt)
         if (stdin) {
-          console.error(`[JavaExec +${elapsed()}ms] Writing stdin.txt (${stdin.length} bytes)`);
-          await globalScope.cheerpOSAddStringFile('/str/stdin.txt', stdin);
+          console.error(`[JavaExec +${elapsed()}ms] Writing input.txt (${stdin.length} bytes)`);
+          await globalScope.cheerpOSAddStringFile('/str/input.txt', stdin);
         }
 
         // Capture console output
