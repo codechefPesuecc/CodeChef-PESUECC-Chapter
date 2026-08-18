@@ -8,9 +8,10 @@ self.onmessage = async (event) => {
   const stdoutBuf = [];
   const stderrBuf = [];
   const startTime = performance.now();
+  const rawErr = console.error.bind(console);
   const debugLog = (msg) => {
     const elapsed = Math.round(performance.now() - startTime);
-    console.error(\`[JavaRunner +\${elapsed}ms] \${msg}\`);
+    rawErr('[JavaRunner +' + elapsed + 'ms] ' + msg);
   };
 
   try {
@@ -67,7 +68,9 @@ self.onmessage = async (event) => {
 
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
-    debugLog(\`CAUGHT ERROR: \${errorMsg}\`);
+    debugLog('CAUGHT ERROR: ' + errorMsg);
+    rawErr('[JavaRunner] stdoutBuf: ' + JSON.stringify(stdoutBuf));
+    rawErr('[JavaRunner] stderrBuf: ' + JSON.stringify(stderrBuf));
 
     self.postMessage({
       id,
