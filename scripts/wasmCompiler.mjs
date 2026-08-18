@@ -196,7 +196,8 @@ app.post('/compile/go', async (req, res) => {
     // Write source code to temporary file
     await writeFile(inputPath, sourceCode);
 
-    // Compile to WASM using Go 1.21+
+    // Compile to WASM using Go (requires Go 1.21 or higher for wasip1 support)
+    // GOOS=wasip1 and GOARCH=wasm enable WebAssembly System Interface compilation
     await runCommand('go', ['build', '-o', outputPath, inputPath], {
       env: {
         ...process.env,
