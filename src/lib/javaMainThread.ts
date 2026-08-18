@@ -3,6 +3,28 @@
 let cheerpjReady: Promise<void> | null = null;
 let cheerpjInitialized = false;
 
+// Global buffer to capture all console output
+const consoleCaptureBuffer: string[] = [];
+const originalConsoleLog = console.log;
+const originalConsoleError = console.error;
+
+// Override console at global scope BEFORE CheerpJ loads
+if (typeof window !== 'undefined') {
+  (window as any).console = {
+    ...console,
+    log: (...args: any[]) => {
+      const msg = args.map(a => String(a)).join(' ');
+      consoleCaptureBuffer.push(msg);
+      originalConsoleLog(...args);
+    },
+    error: (...args: any[]) => {
+      const msg = args.map(a => String(a)).join(' ');
+      consoleCaptureBuffer.push(msg);
+      originalConsoleError(...args);
+    },
+  };
+}
+
 function ensureCheerpjLoaded(): Promise<void> {
   if (cheerpjInitialized) return Promise.resolve();
   if (cheerpjReady) return cheerpjReady;
@@ -107,9 +129,9 @@ export async function executeJavaMainThread(
 
         let sentinelFired = false;
 
-        // CheerpJ bypasses console.log overrides and uses internal console directly.
-        // Detect completion only via sentinel monitoring (no output capture via overrides).
+        // Console output is captured globally in consoleCaptureBuffer
         try {
+          const startBufferLen = consoleCaptureBuffer.length;
 
           // Execute with timeout
           // Run the Runner launcher class if available (Java), otherwise run Main (legacy)
@@ -122,22 +144,21 @@ export async function executeJavaMainThread(
           );
 
           // Race: cheerpjRunMain promise vs timeout
-          // (CheerpJ prints output to browser console directly, bypassing our capture)
           await Promise.race([executionPromise.catch(() => undefined), timeoutPromise]);
           originalError(`[JavaExec +${elapsed()}ms] Program completed`);
 
-          // Read output file written by Runner.java
-          let stdout = '';
-          try {
-            const blob = await globalScope.cjFileBlob('/str/output.txt');
-            if (blob) {
-              stdout = await blob.text();
-              // Remove sentinel from output
-              stdout = stdout.replace('__CJ_DONE__\n', '').replace('__CJ_DONE__', '').trim();
-            }
-          } catch {
-            stdout = 'Program executed (output unavailable)';
-          }
+          // Extract output captured during execution
+          const capturedLines = consoleCaptureBuffer.slice(startBufferLen);
+          let stdout = capturedLines.join('\n');
+
+          // Remove sentinel and clean up
+          stdout = stdout
+            .replace(/__CJ_DONE__\n/g, '')
+            .replace(/__CJ_DONE__/g, '')
+            .split('\n')
+            .filter(line => !line.includes('[JavaExec')) // Filter debug logs
+            .join('\n')
+            .trim();
 
           resolve({
             success: true,
