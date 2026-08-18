@@ -44,11 +44,19 @@ self.onmessage = async (event) => {
   try {
     captureConsole();
 
-    const functionBody = 'const input = () => { if (typeof stdin === "string" && stdin.length > 0) { const line = stdin.split("\\n")[0]; stdin = stdin.substring(line.length + 1); return line; } return ""; };\n' + code;
-    const userFunction = new Function('stdin', functionBody);
+    let stdinIndex = 0;
+    const stdinLines = (stdin || '').split('\\n');
+    const input = () => {
+      if (stdinIndex < stdinLines.length) {
+        return stdinLines[stdinIndex++];
+      }
+      return '';
+    };
+
+    const userFunction = new Function('input', code);
 
     const executionPromise = Promise.resolve().then(() => {
-      userFunction(stdin || '');
+      userFunction(input);
     });
 
     const timeoutPromise = new Promise((_, reject) => {
