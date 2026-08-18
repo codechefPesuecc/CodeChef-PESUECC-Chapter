@@ -26,6 +26,7 @@ import LeaderboardTable, { type LeaderRow } from "./LeaderboardTable";
 import Turnstile, { turnstileConfigured } from "./Turnstile";
 import MechaPanel from "./MechaPanel";
 import Link from "next/link";
+import { useCodeExecution } from "@/lib/useCodeExecution";
 
 const FILE_EXT: Record<LanguageId, string> = {
   cpp: "cpp",
@@ -96,6 +97,7 @@ export default function ArenaWorkspace({
   };
 
   const user = useUser();
+  const { execute: clientExecute } = useCodeExecution();
   const [language, setLanguage] = useState<LanguageId>("cpp");
   const [code, setCode] = useState<string>(() => loadCode("cpp"));
   const [customInput, setCustomInput] = useState(sampleInput);
@@ -310,6 +312,75 @@ export default function ArenaWorkspace({
     const custom =
       customInput.trim() !== "" && customInput.trim() !== sampleInput.trim();
     const stdin = custom ? customInput : sampleInput;
+
+    // Use client-side execution for Python and JavaScript
+    if (language === "python" || language === "javascript") {
+      try {
+        const result = await clientExecute({
+          language,
+          code,
+          stdin,
+          timeoutMs: 5000,
+        });
+
+        if (result.status === "TLE") {
+          setJudgement({
+            mode: "run",
+            status: "TLE",
+            input: stdin,
+            output: result.stdout,
+            message: "Exceeded the 5.0s time limit.",
+          });
+        } else if (result.status === "RUNTIME_ERROR") {
+          setJudgement({
+            mode: "run",
+            status: "RE",
+            input: stdin,
+            output: result.stdout,
+            stderr: result.stderr || result.error,
+          });
+        } else if (result.status === "INITIALIZATION_ERROR") {
+          setJudgement({
+            mode: "run",
+            status: "CE",
+            input: stdin,
+            stderr: result.error,
+          });
+        } else {
+          // status === "SUCCESS"
+          if (custom) {
+            setJudgement({
+              mode: "run",
+              status: "RAN",
+              input: stdin,
+              output: result.stdout,
+              stderr: result.stderr,
+            });
+          } else {
+            const pass = (result.stdout ?? "").trim() === sampleOutput.trim();
+            setJudgement({
+              mode: "run",
+              status: pass ? "AC" : "WA",
+              input: stdin,
+              output: result.stdout,
+              stderr: result.stderr,
+            });
+          }
+        }
+      } catch {
+        setJudgement({
+          mode: "run",
+          status: "ERR",
+          input: stdin,
+          message: "Failed to execute code.",
+        });
+      } finally {
+        setRunning(false);
+      }
+      return;
+    }
+
+    // Fall back to server-side Piston for other languages
     try {
       const res = await fetch("/api/run", {
         method: "POST",
