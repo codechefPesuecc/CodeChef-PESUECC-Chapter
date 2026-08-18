@@ -27,6 +27,8 @@ import Turnstile, { turnstileConfigured } from "./Turnstile";
 import MechaPanel from "./MechaPanel";
 import Link from "next/link";
 import { useCodeExecution } from "@/lib/useCodeExecution";
+import { useWasmExecution } from "@/lib/useWasmExecution";
+import type { SupportedWasmLanguage } from "@/lib/wasmExecution";
 
 const FILE_EXT: Record<LanguageId, string> = {
   cpp: "cpp",
@@ -98,6 +100,7 @@ export default function ArenaWorkspace({
 
   const user = useUser();
   const { execute: clientExecute } = useCodeExecution();
+  const { compileAndExecute: wasmCompileAndExecute } = useWasmExecution();
   const [language, setLanguage] = useState<LanguageId>("cpp");
   const [code, setCode] = useState<string>(() => loadCode("cpp"));
   const [customInput, setCustomInput] = useState(sampleInput);
@@ -380,7 +383,79 @@ export default function ArenaWorkspace({
       return;
     }
 
-    // Fall back to server-side Piston for all other languages
+    // Use WASM execution for C++ and Go
+    if (language === "cpp" || language === "go") {
+      try {
+        const wasmLanguage: SupportedWasmLanguage = language === "cpp" ? "cpp" : "go";
+
+        setBusyLabel("Compiling to WASM…");
+        const result = await wasmCompileAndExecute(wasmLanguage, code, stdin, 5000);
+
+        if (!result) {
+          setJudgement({
+            mode: "run",
+            status: "ERR",
+            input: stdin,
+            message: "WASM compilation or execution failed.",
+          });
+        } else if (result.status === "TLE") {
+          setJudgement({
+            mode: "run",
+            status: "TLE",
+            input: stdin,
+            output: result.stdout,
+            message: "Exceeded the 5.0s time limit.",
+          });
+        } else if (result.status === "RUNTIME_ERROR") {
+          setJudgement({
+            mode: "run",
+            status: "RE",
+            input: stdin,
+            output: result.stdout,
+            stderr: result.stderr || result.error,
+          });
+        } else if (result.status === "INITIALIZATION_ERROR") {
+          setJudgement({
+            mode: "run",
+            status: "CE",
+            input: stdin,
+            stderr: result.error || "WASM initialization failed",
+          });
+        } else {
+          // status === "SUCCESS"
+          if (custom) {
+            setJudgement({
+              mode: "run",
+              status: "RAN",
+              input: stdin,
+              output: result.stdout,
+              stderr: result.stderr,
+            });
+          } else {
+            const pass = (result.stdout ?? "").trim() === sampleOutput.trim();
+            setJudgement({
+              mode: "run",
+              status: pass ? "AC" : "WA",
+              input: stdin,
+              output: result.stdout,
+              stderr: result.stderr,
+            });
+          }
+        }
+      } catch (err) {
+        setJudgement({
+          mode: "run",
+          status: "ERR",
+          input: stdin,
+          message: err instanceof Error ? err.message : "WASM execution failed.",
+        });
+      } finally {
+        setRunning(false);
+      }
+      return;
+    }
+
+    // Fall back to server-side Piston for other languages
     try {
       const res = await fetch("/api/run", {
         method: "POST",

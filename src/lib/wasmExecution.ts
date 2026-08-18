@@ -1,11 +1,5 @@
 import { WASI_WORKER_CODE } from './workers/wasiWorkerCode';
-
-// Declare WASI on window
-declare global {
-  interface Window {
-    WASI?: any;
-  }
-}
+import { WASI } from '@bjorn3/browser_wasi_shim';
 
 export type SupportedWasmLanguage = 'cpp' | 'c' | 'go' | 'rust';
 
@@ -77,8 +71,8 @@ export class WasmExecutionManager {
     if (typeof window === 'undefined') return;
 
     try {
-      // Load WASI shim into global scope
-      this.loadWasiShim();
+      // Make WASI available globally for workers
+      (globalThis as any).WASI = WASI;
 
       // Create worker pool
       for (let i = 0; i < this.poolSize; i++) {
@@ -90,30 +84,6 @@ export class WasmExecutionManager {
     } catch (err) {
       console.error('Failed to initialize WASM/WASI workers:', err);
     }
-  }
-
-  private loadWasiShim() {
-    // Dynamically load WASI shim
-    const script = document.createElement('script');
-    script.src =
-      'https://cdn.jsdelivr.net/npm/@bjorn3/browser_wasi_shim@0.2.12/dist/index.js';
-    script.async = true;
-
-    // Make WASI available to workers
-    return new Promise((resolve, reject) => {
-      script.onload = () => {
-        // @ts-ignore
-        if (window.WASI) {
-          // @ts-ignore
-          self.WASI_SHIM = window.WASI;
-          resolve(window.WASI);
-        } else {
-          reject(new Error('WASI shim failed to load'));
-        }
-      };
-      script.onerror = () => reject(new Error('Failed to load WASI shim'));
-      document.head.appendChild(script);
-    });
   }
 
   private getWorker(): Worker | null {

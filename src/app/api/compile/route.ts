@@ -3,14 +3,14 @@ import { NextRequest, NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 /**
- * WASM Compilation API
+ * WASM Compilation API Proxy
  *
+ * Proxies compilation requests to local WASM compiler service
  * POST /api/compile/cpp - Compile C/C++ to WASM
  * POST /api/compile/go - Compile Go to WASM
  * POST /api/compile/rust - Compile Rust to WASM
  *
- * Note: This requires Emscripten, Go, and Rust toolchains to be installed locally.
- * For production, use a dedicated compilation service or precompile binaries.
+ * Requires: node scripts/wasmCompiler.mjs running on localhost:3001
  */
 
 export async function POST(request: NextRequest) {
@@ -27,16 +27,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // For development, you would call the external WASM compiler service
-    // In production, pre-compile binaries and serve from storage
+    // Proxy to local WASM compiler service
+    const compilerUrl = `http://localhost:3001/compile/${language}`;
 
-    return NextResponse.json(
-      {
-        status: 'ERROR',
-        error: 'WASM compilation service not configured. See WASM_COMPILER.md for setup.',
-      },
-      { status: 501 }
-    );
+    try {
+      const response = await fetch(compilerUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sourceCode }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        return NextResponse.json(
+          {
+            status: 'ERROR',
+            error: errorData.error || `Compilation failed (${response.status})`,
+          },
+          { status: response.status }
+        );
+      }
+
+      const wasmBuffer = await response.arrayBuffer();
+      return new NextResponse(wasmBuffer, {
+        status: 200,
+        headers: { 'Content-Type': 'application/wasm' },
+      });
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('ECONNREFUSED')) {
+        return NextResponse.json(
+          {
+            status: 'ERROR',
+            error: 'Compilation service not running. Start with: node scripts/wasmCompiler.mjs',
+          },
+          { status: 503 }
+        );
+      }
+      throw err;
+    }
   } catch (err) {
     console.error('Compilation error:', err);
     return NextResponse.json(
