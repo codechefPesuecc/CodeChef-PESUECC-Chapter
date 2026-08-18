@@ -1,0 +1,161 @@
+'use client';
+
+let cheerpjReady: Promise<void> | null = null;
+let cheerpjInitialized = false;
+
+function ensureCheerpjLoaded(): Promise<void> {
+  if (cheerpjInitialized) return Promise.resolve();
+  if (cheerpjReady) return cheerpjReady;
+
+  cheerpjReady = new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = 'https://cjrtnc.leaningtech.com/4.3/loader.js';
+    script.onload = async () => {
+      const globalScope = globalThis as any;
+      if (globalScope.cheerpjInit) {
+        await globalScope.cheerpjInit({
+          javaProperties: {
+            'java.awt.headless': 'true',
+          },
+        });
+        cheerpjInitialized = true;
+        resolve();
+      }
+    };
+    document.head.appendChild(script);
+  });
+
+  return cheerpjReady;
+}
+
+export type JavaExecutionResult = {
+  success: boolean;
+  stdout: string;
+  stderr: string;
+  executionTimeMs: number;
+  exitCode?: number;
+  error?: string;
+};
+
+let runCounter = 0;
+const outputQueue: (() => Promise<JavaExecutionResult>)[] = [];
+let isProcessing = false;
+
+async function processQueue() {
+  if (isProcessing || outputQueue.length === 0) return;
+  isProcessing = true;
+
+  while (outputQueue.length > 0) {
+    const task = outputQueue.shift();
+    if (task) {
+      await task();
+    }
+  }
+
+  isProcessing = false;
+}
+
+type CompiledClasses = {
+  classes: Array<{ name: string; data: string }>;
+};
+
+export async function executeJavaMainThread(
+  classesData: ArrayBuffer | CompiledClasses,
+  stdin?: string,
+  timeoutMs = 5000
+): Promise<JavaExecutionResult> {
+  await ensureCheerpjLoaded();
+
+  const globalScope = globalThis as any;
+  const startTime = performance.now();
+  const runId = ++runCounter;
+  const runDir = `/str/run-${runId}`;
+
+  const stdoutBuf: string[] = [];
+  const stderrBuf: string[] = [];
+
+  return new Promise((resolve) => {
+    const task = async () => {
+      try {
+        // Handle both single binary (legacy WASM) and JSON classes (Java)
+        if (classesData instanceof ArrayBuffer) {
+          // Legacy: single WASM binary
+          const classData = new Uint8Array(classesData);
+          await globalScope.cheerpOSAddStringFile(`${runDir}/Main.class`, classData);
+        } else {
+          // Java: JSON with multiple .class files
+          const compiled = classesData as CompiledClasses;
+          for (const cls of compiled.classes) {
+            // cls.data is base64, decode it
+            const binaryString = atob(cls.data);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+              bytes[i] = binaryString.charCodeAt(i);
+            }
+            await globalScope.cheerpOSAddStringFile(`${runDir}/${cls.name}.class`, bytes);
+          }
+        }
+
+        // Write stdin if provided
+        if (stdin) {
+          await globalScope.cheerpOSAddStringFile(`${runDir}/stdin.txt`, stdin);
+        }
+
+        // Capture console output
+        const originalLog = console.log;
+        const originalError = console.error;
+
+        console.log = (msg: string) => {
+          const msgStr = String(msg);
+          // Filter CheerpJ runtime banners
+          if (
+            !msgStr.includes('CheerpJ runtime ready') &&
+            !msgStr.includes('Class is loaded') &&
+            !msgStr.includes('main is starting')
+          ) {
+            stdoutBuf.push(msgStr);
+          }
+        };
+        console.error = (msg: string) => stderrBuf.push(String(msg));
+
+        // Execute with timeout
+        // Run the Runner launcher class if available (Java), otherwise run Main (legacy)
+        const mainClass = classesData instanceof ArrayBuffer ? 'Main' : 'Runner';
+        const executionPromise = globalScope.cheerpjRunMain(mainClass, runDir);
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Time Limit Exceeded')), timeoutMs)
+        );
+
+        const exitCode = await Promise.race([executionPromise, timeoutPromise]);
+
+        console.log = originalLog;
+        console.error = originalError;
+
+        resolve({
+          success: true,
+          stdout: stdoutBuf.join('\n'),
+          stderr: stderrBuf.join('\n'),
+          executionTimeMs: Math.round(performance.now() - startTime),
+          exitCode: exitCode || 0,
+        });
+      } catch (err) {
+        console.log = console.log;
+        console.error = console.error;
+
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        resolve({
+          success: false,
+          stdout: stdoutBuf.join('\n'),
+          stderr: stderrBuf.join('\n'),
+          executionTimeMs: Math.round(performance.now() - startTime),
+          error: errorMsg,
+        });
+      }
+
+      processQueue();
+    };
+
+    outputQueue.push(task);
+    processQueue();
+  });
+}

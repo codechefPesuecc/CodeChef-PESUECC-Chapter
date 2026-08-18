@@ -341,6 +341,7 @@ app.post('/compile/zig', async (req, res) => {
 // Java Compilation Endpoint
 // Note: Compiles to Java bytecode (.class), not WebAssembly
 // Requires: Java 17+ compiler (javac) installed
+// Returns: JSON { classes: [{name, data}] } with all .class files
 app.post('/compile/java', async (req, res) => {
   const { sourceCode } = req.body;
 
@@ -353,25 +354,57 @@ app.post('/compile/java', async (req, res) => {
 
   const id = randomUUID();
   const projectDir = join(tmpdir(), `java-${id}`);
-  const sourceFile = join(projectDir, 'Main.java');
-  const classFile = join(projectDir, 'Main.class');
+  const mainSourceFile = join(projectDir, 'Main.java');
+  const runnerSourceFile = join(projectDir, 'Runner.java');
 
   try {
     // Create temporary directory
     await mkdir(projectDir, { recursive: true });
 
-    // Write source code to Main.java
-    await writeFile(sourceFile, sourceCode);
+    // Write Main.java with user's code
+    await writeFile(mainSourceFile, sourceCode);
 
-    // Compile Java source to bytecode targeting Java 8 (CheerpJ's default runtime)
-    // --release 8 ensures Java 8 compatibility (CheerpJ refuses Java 9+ class versions)
-    await runCommand('javac', ['--release', '8', sourceFile]);
+    // Write Runner.java (launcher class that redirects stdin)
+    const runnerCode = `import java.io.*;
+public class Runner {
+  public static void main(String[] args) throws Exception {
+    try {
+      System.setIn(new FileInputStream("/str/stdin.txt"));
+    } catch (Exception e) {
+      // stdin.txt may not exist for programs that don't read input
+    }
+    Main.main(args);
+  }
+}`;
+    await writeFile(runnerSourceFile, runnerCode);
 
-    // Read compiled class file
-    const classBuffer = await readFile(classFile);
+    // Compile both Main.java and Runner.java to Java 8 bytecode
+    await runCommand('javac', ['--release', '8', mainSourceFile, runnerSourceFile]);
 
-    res.set('Content-Type', 'application/octet-stream');
-    res.send(classBuffer);
+    // Read all generated .class files
+    const { readdir } = await import('fs/promises');
+    const files = await readdir(projectDir);
+    const classFiles = files.filter((f) => f.endsWith('.class'));
+
+    const classes = [];
+    for (const classFile of classFiles) {
+      const classPath = join(projectDir, classFile);
+      const classData = await readFile(classPath);
+      classes.push({
+        name: classFile.replace('.class', ''),
+        data: classData,
+      });
+    }
+
+    if (classes.length === 0) {
+      return res.status(400).json({
+        status: 'COMPILATION_ERROR',
+        error: 'No .class files generated',
+      });
+    }
+
+    res.set('Content-Type', 'application/json');
+    res.json({ classes });
   } catch (err) {
     console.error('Compilation error:', err);
     res.status(400).json({

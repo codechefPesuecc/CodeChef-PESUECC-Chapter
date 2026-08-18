@@ -60,6 +60,13 @@ export async function POST(
         );
       }
 
+      // Java returns JSON with { classes: [{name, data}] }
+      if (language === 'java') {
+        const data = await response.json();
+        return NextResponse.json(data, { status: 200 });
+      }
+
+      // WASM languages return binary
       const wasmBuffer = await response.arrayBuffer();
       return new NextResponse(wasmBuffer, {
         status: 200,
