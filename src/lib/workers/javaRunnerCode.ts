@@ -10,8 +10,6 @@ self.onmessage = async (event) => {
   const startTime = performance.now();
 
   try {
-    console.log('[JavaRunner] Initializing CheerpJ 4 WebAssembly JVM...');
-
     // Initialize CheerpJ in headless mode
     await cheerpjInit({
       javaProperties: {
@@ -19,21 +17,9 @@ self.onmessage = async (event) => {
       }
     });
 
-    console.log('[JavaRunner] CheerpJ initialized');
-
-    // Write Main.class to virtual filesystem
+    // Write Main.class to /str/ mount (the only writable mount in CheerpJ)
     const classData = new Uint8Array(classBuffer);
-
-    // CheerpJ 4.3: Use cheerpOSAddStringFile (successor to deprecated cheerpjAddStringFile)
-    try {
-      await cheerpOSAddStringFile("/Main.class", classData);
-    } catch (e) {
-      // Fallback for API differences
-      console.warn('[JavaRunner] cheerpOSAddStringFile failed, attempting cheerpjAddStringFile');
-      await cheerpjAddStringFile("/Main.class", classData);
-    }
-
-    console.log('[JavaRunner] Main.class written');
+    await cheerpOSAddStringFile("/str/Main.class", classData);
 
     // Capture output
     const originalLog = console.log;
@@ -42,10 +28,8 @@ self.onmessage = async (event) => {
     console.log = (msg) => stdoutBuf.push(String(msg));
     console.error = (msg) => stderrBuf.push(String(msg));
 
-    console.log('[JavaRunner] Executing Java...');
-
     // Execute with timeout
-    const executionPromise = cheerpjRunMain("Main", "/");
+    const executionPromise = cheerpjRunMain("Main", "/str/");
     const timeoutPromise = new Promise((_, reject) =>
       setTimeout(() => reject(new Error('Time Limit Exceeded')), timeoutMs)
     );

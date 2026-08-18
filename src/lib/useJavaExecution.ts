@@ -40,8 +40,7 @@ export function useJavaExecution() {
     timeoutHandle: NodeJS.Timeout;
   }>>(new Map());
 
-  useEffect(() => {
-    // Initialize Java worker
+  const initializeWorker = useCallback(() => {
     try {
       const blob = new Blob([JAVA_RUNNER_CODE], { type: 'application/javascript' });
       const url = URL.createObjectURL(blob);
@@ -96,15 +95,23 @@ export function useJavaExecution() {
       };
 
       javaWorkerRef.current = worker;
-
-      return () => {
-        worker.terminate();
-      };
+      setError(null);
+      return worker;
     } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to initialize Java worker';
       console.error('[useJavaExecution] Failed to initialize Java worker:', err);
-      setError(err instanceof Error ? err.message : 'Failed to initialize Java worker');
+      setError(msg);
+      return null;
     }
   }, []);
+
+  useEffect(() => {
+    initializeWorker();
+
+    return () => {
+      javaWorkerRef.current?.terminate();
+    };
+  }, [initializeWorker]);
 
   const execute = useCallback(
     async (classBuffer: ArrayBuffer, stdin?: string, timeoutMs = 5000): Promise<JavaExecutionResult> => {
@@ -125,10 +132,10 @@ export function useJavaExecution() {
           setIsExecuting(false);
           try {
             worker.terminate();
-            // Reinitialize worker
-            javaWorkerRef.current = null;
+            // Reinitialize worker for next execution
+            initializeWorker();
           } catch {
-            // Ignore
+            // Ignore and let next execution handle init error
           }
 
           resolve({
