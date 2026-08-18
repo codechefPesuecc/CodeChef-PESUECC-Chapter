@@ -491,7 +491,7 @@ export default function ArenaWorkspace({
         const result = await javaExecute(classData, stdin, 5000);
 
         if (!result.success) {
-          if (result.error?.includes("Time limit")) {
+          if (result.error?.includes("Time Limit")) {
             setJudgement({
               mode: "run",
               status: "TLE",

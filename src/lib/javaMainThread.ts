@@ -13,11 +13,7 @@ function ensureCheerpjLoaded(): Promise<void> {
     script.onload = async () => {
       const globalScope = globalThis as any;
       if (globalScope.cheerpjInit) {
-        await globalScope.cheerpjInit({
-          javaProperties: {
-            'java.awt.headless': 'true',
-          },
-        });
+        await globalScope.cheerpjInit();
         cheerpjInitialized = true;
         resolve();
       }
@@ -101,71 +97,62 @@ export async function executeJavaMainThread(
           }
         }
 
-        // Write stdin if provided (must match what Runner.java expects: /str/input.txt)
-        if (stdin) {
-          console.error(`[JavaExec +${elapsed()}ms] Writing input.txt (${stdin.length} bytes)`);
-          await globalScope.cheerpOSAddStringFile('/str/input.txt', stdin);
-        }
+        // Write stdin unconditionally (must match Runner.java: /str/stdin.txt)
+        console.error(`[JavaExec +${elapsed()}ms] Writing stdin.txt (${(stdin ?? '').length} bytes)`);
+        await globalScope.cheerpOSAddStringFile('/str/stdin.txt', stdin ?? '');
 
         // Capture console output
         const originalLog = console.log;
         const originalError = console.error;
 
-        console.log = (msg: string) => {
-          const msgStr = String(msg);
-          // Filter CheerpJ runtime banners
-          if (
-            !msgStr.includes('CheerpJ runtime ready') &&
-            !msgStr.includes('Class is loaded') &&
-            !msgStr.includes('main is starting')
-          ) {
-            stdoutBuf.push(msgStr);
-          }
-        };
-        console.error = (msg: string) => stderrBuf.push(String(msg));
+        try {
+          console.log = (msg: string) => {
+            const msgStr = String(msg);
+            // Filter CheerpJ runtime banners
+            if (
+              !msgStr.includes('CheerpJ runtime ready') &&
+              !msgStr.includes('Class is loaded') &&
+              !msgStr.includes('main is starting')
+            ) {
+              stdoutBuf.push(msgStr);
+            }
+          };
+          console.error = (msg: string) => stderrBuf.push(String(msg));
 
-        // Execute with timeout
-        // Run the Runner launcher class if available (Java), otherwise run Main (legacy)
-        const mainClass = classesData instanceof ArrayBuffer ? 'Main' : 'Runner';
-        originalError(`[JavaExec +${elapsed()}ms] Calling cheerpjRunMain('${mainClass}', '/str/')`);
-        const executionPromise = globalScope.cheerpjRunMain(mainClass, '/str/');
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Time Limit Exceeded')), timeoutMs)
-        );
+          // Execute with timeout
+          // Run the Runner launcher class if available (Java), otherwise run Main (legacy)
+          const mainClass = classesData instanceof ArrayBuffer ? 'Main' : 'Runner';
+          originalError(`[JavaExec +${elapsed()}ms] Calling cheerpjRunMain('${mainClass}', '/str/')`);
+          const executionPromise = globalScope.cheerpjRunMain(mainClass, '/str/');
+          const timeoutPromise = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Time Limit Exceeded')), timeoutMs)
+          );
 
-        const exitCode = await Promise.race([executionPromise, timeoutPromise]);
-        originalError(`[JavaExec +${elapsed()}ms] Program completed with exit code ${exitCode}`);
+          const exitCode = await Promise.race([executionPromise, timeoutPromise]);
+          originalError(`[JavaExec +${elapsed()}ms] Program completed with exit code ${exitCode}`);
 
-        console.log = originalLog;
-        console.error = originalError;
+          resolve({
+            success: true,
+            stdout: stdoutBuf.join('\n'),
+            stderr: stderrBuf.join('\n'),
+            executionTimeMs: Math.round(performance.now() - startTime),
+            exitCode: exitCode || 0,
+          });
+        } catch (err) {
+          const errorMsg = err instanceof Error ? err.message : String(err);
+          originalError(`[JavaExec +${elapsed()}ms] ERROR: ${errorMsg}`);
 
-        resolve({
-          success: true,
-          stdout: stdoutBuf.join('\n'),
-          stderr: stderrBuf.join('\n'),
-          executionTimeMs: Math.round(performance.now() - startTime),
-          exitCode: exitCode || 0,
-        });
-      } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : String(err);
-        console.error(`[JavaExec +${elapsed()}ms] ERROR: ${errorMsg}`);
-
-        // Restore console if still overridden
-        if (console.log === console.log) {
-          console.log = console.log;
+          resolve({
+            success: false,
+            stdout: stdoutBuf.join('\n'),
+            stderr: stderrBuf.join('\n'),
+            executionTimeMs: Math.round(performance.now() - startTime),
+            error: errorMsg,
+          });
+        } finally {
+          console.log = originalLog;
+          console.error = originalError;
         }
-        if (console.error === console.error) {
-          console.error = console.error;
-        }
-
-        resolve({
-          success: false,
-          stdout: stdoutBuf.join('\n'),
-          stderr: stderrBuf.join('\n'),
-          executionTimeMs: Math.round(performance.now() - startTime),
-          error: errorMsg,
-        });
-      }
 
       processQueue();
     };
