@@ -28,7 +28,7 @@ const csp = [
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://challenges.cloudflare.com https://cdn.jsdelivr.net https://cjrtnc.leaningtech.com`,
   "connect-src 'self' https://challenges.cloudflare.com https://cdn.jsdelivr.net https://cjrtnc.leaningtech.com",
   "frame-src 'self' https://challenges.cloudflare.com",
-  "worker-src 'self' blob: https://cdn.jsdelivr.net",
+  "worker-src 'self' blob: https://cdn.jsdelivr.net https://cjrtnc.leaningtech.com",
   "manifest-src 'self'",
   ...(isDev ? [] : ["upgrade-insecure-requests"]),
 ].join("; ");
