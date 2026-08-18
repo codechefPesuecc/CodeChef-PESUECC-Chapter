@@ -1,336 +1,152 @@
 # Client-Side Execution Integration Guide
 
-This guide explains how to integrate the client-side code execution engine with the existing CP Arena infrastructure (currently using Piston for server-side execution).
+The client-side code execution engine is now **fully integrated** into the CP Arena. This guide explains how it works and how to extend it.
 
 ## Overview
 
-The CP Arena currently uses a **server-side Piston judge** for code execution and testing. The client-side engine provides an alternative execution path that:
+The CP Arena now uses a **hybrid execution model**:
 
-1. **Reduces server load** — offload simple runs to the browser
-2. **Improves UX** — instant feedback without network latency
-3. **Enables offline-like experience** — works even with high server load
-4. **Supports iterative development** — fast code-test-debug cycles
+1. **Python & JavaScript** — runs instantly in the browser via Web Workers (no server latency)
+2. **Other languages** — uses the existing server-side Piston judge (C++, Java, C, C#, Go, Rust, Zig)
 
-## Architecture Integration
-
-### Current Flow (Piston Server-Side)
+### Architecture
 
 ```
-User Code → Submit → Server (/api/submit) → Piston → Judge → Verdict + Score
+User Code → Run Button
+         ├→ Python/JavaScript → Client Web Worker → Instant Feedback
+         └→ Other Languages → Server (/api/run) → Piston → Verdict
 ```
 
-### Proposed Hybrid Flow
+This provides:
+- **Instant feedback** for Python and JavaScript development
+- **Reduced server load** — browser handles simple runs
+- **No breaking changes** — other languages work exactly as before
+- **Fast iteration** — edit-run-debug cycles are near-instant
 
-```
-User Code → Run Button (Try It) → Client Worker → Live Feedback
-        ↘→ Submit Button → Server (/api/submit) → Piston → Official Verdict
-```
+## Current Implementation
 
-## Integration Points
+The client-side execution engine is **already integrated** into `ArenaWorkspace` (`src/components/cp-arena/ArenaWorkspace.tsx`). Here's how it works:
 
-### 1. Code Editor Component
-
-The existing `CodeEditor` component (used in solve pages) can be enhanced:
+### Run Button Flow
 
 ```typescript
-// src/components/cp-arena/CodeEditor.tsx (existing)
-
-import { useCodeExecution } from '@/lib/useCodeExecution';
-
-export function CodeEditor({ problemId, language, code, onChange }) {
-  const { execute, isExecuting, result } = useCodeExecution();
-
-  const handleQuickRun = async () => {
-    // Quick run against sample input (no submission)
-    const sample = problem.samples[0];
-    const result = await execute({
+const run = async () => {
+  // Python and JavaScript use client-side execution
+  if (language === "python" || language === "javascript") {
+    const result = await clientExecute({
       language,
       code,
-      stdin: sample.input,
-      timeoutMs: problem.timeLimit || 2000,
+      stdin,
+      timeoutMs: 5000,
     });
-    // Show result in a panel
-    showResult(result);
-  };
+    // Map result status to verdict (TLE, RE, CE, AC, WA, RAN)
+    // Display in the judgement panel
+  }
 
-  return (
-    <>
-      <CodeMirror value={code} onChange={onChange} />
-      <button onClick={handleQuickRun} disabled={isExecuting}>
-        {isExecuting ? 'Running...' : 'Try It'}
-      </button>
-      {result && <ExecutionOutput result={result} />}
-    </>
-  );
-}
-```
-
-### 2. Test Case Evaluator
-
-Integrate with the problem's sample test cases:
-
-```typescript
-// src/components/cp-arena/SampleTestsPanel.tsx (new)
-
-import { useTestRunner } from '@/lib/useCodeExecution';
-import type { TestCase } from '@/lib/testRunner';
-
-export function SampleTestsPanel({ problem, code, language }) {
-  const { runTests, isRunning, results } = useTestRunner();
-
-  const sampleTestCases: TestCase[] = problem.samples.map((s, i) => ({
-    id: `sample-${i + 1}`,
-    input: s.input,
-    expectedOutput: s.output,
-  }));
-
-  const handleRunTests = () => {
-    runTests(language, code, sampleTestCases, {
-      concurrent: false,
-      timeoutMs: problem.timeLimit || 2000,
-    });
-  };
-
-  return (
-    <div className="bg-slate-900 rounded-lg p-4">
-      <h3 className="text-lg font-semibold mb-4">Sample Test Cases</h3>
-      
-      <button
-        onClick={handleRunTests}
-        disabled={isRunning}
-        className="mb-4 px-4 py-2 bg-green-600 rounded hover:bg-green-700 disabled:bg-gray-600"
-      >
-        {isRunning ? 'Running...' : 'Test Sample Cases'}
-      </button>
-
-      {results && (
-        <div className="space-y-2">
-          <div className="text-sm font-medium">
-            Passed: {results.passed}/{results.total}
-          </div>
-          {results.results.map((result) => (
-            <div
-              key={result.testId}
-              className={`p-2 rounded text-sm ${
-                result.verdict === 'AC'
-                  ? 'bg-green-900/30 text-green-300'
-                  : result.verdict === 'WA'
-                    ? 'bg-red-900/30 text-red-300'
-                    : 'bg-orange-900/30 text-orange-300'
-              }`}
-            >
-              <span className="font-mono font-semibold">{result.testId}</span>
-              {' '} — {result.verdict}
-              {result.verdict === 'WA' && (
-                <details className="mt-1 text-xs">
-                  <summary>Show output</summary>
-                  <pre className="mt-1 p-1 bg-black/30 overflow-auto max-h-24">
-                    {result.stdout}
-                  </pre>
-                </details>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-```
-
-### 3. Quick Run vs Official Submit Flow
-
-Modify the submission workflow:
-
-```typescript
-// src/app/cp-arena/solve/[slug]/page.tsx (existing)
-
-export default function SolvePage() {
-  const [showQuickRun, setShowQuickRun] = useState(false);
-
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-2">
-        <ProblemStatement problem={problem} />
-        {showQuickRun && (
-          <SampleTestsPanel
-            problem={problem}
-            code={code}
-            language={language}
-          />
-        )}
-      </div>
-
-      <div className="space-y-3">
-        <button
-          onClick={() => setShowQuickRun(!showQuickRun)}
-          className="w-full px-4 py-2 bg-blue-600 text-white rounded"
-        >
-          {showQuickRun ? 'Hide' : 'Show'} Sample Tests
-        </button>
-
-        <button
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-          className="w-full px-4 py-2 bg-green-600 text-white rounded"
-        >
-          {isSubmitting ? 'Submitting...' : 'Submit'}
-        </button>
-      </div>
-    </div>
-  );
-}
-```
-
-## Implementation Steps
-
-### Phase 1: Non-Invasive Addition (Minimal Risk)
-
-1. **Add to Playground Page Only**
-   - Deploy `CodePlayground` component at `/playground`
-   - No changes to existing CP Arena infrastructure
-   - Users can test the engine in isolation
-
-2. **Gather Feedback**
-   - Monitor which languages/features users test
-   - Collect error reports and performance metrics
-   - Identify edge cases
-
-### Phase 2: Integration with Editor (Low Risk)
-
-1. **Add "Try It" Button**
-   - Add quick-run capability next to the existing submit button
-   - Show results in a collapsible panel
-   - Don't replace server submission flow
-
-2. **Sample Test Runner**
-   - Add "Test Sample Cases" button
-   - Compare against expected sample outputs
-   - Show pass/fail verdict
-
-### Phase 3: Official Integration (Higher Impact)
-
-1. **Pre-Check Before Submit**
-   - Run sample tests automatically before user hits "Submit"
-   - Warn if sample tests fail: "These samples don't pass. Submit anyway?"
-   - Reduce WA verdicts and improve UX
-
-2. **Speed-Bounty Optimization**
-   - For speed-bounty scoring, instant client-side validation
-   - Reduce Piston queue contention during peak hours
-   - Official verdict still comes from server
-
-## Feature Flags / Gradual Rollout
-
-Use environment variables to control which features are active:
-
-```typescript
-// src/lib/featureFlags.ts
-export const features = {
-  CLIENT_SIDE_PLAYGROUND: process.env.NEXT_PUBLIC_ENABLE_PLAYGROUND === 'true',
-  CLIENT_SIDE_QUICK_RUN: process.env.NEXT_PUBLIC_ENABLE_QUICK_RUN === 'true',
-  CLIENT_SIDE_SAMPLE_TESTS: process.env.NEXT_PUBLIC_ENABLE_SAMPLE_TESTS === 'true',
-  CLIENT_SIDE_PRECHECK: process.env.NEXT_PUBLIC_ENABLE_PRECHECK === 'true',
+  // All other languages fall back to Piston
+  else {
+    const res = await fetch("/api/run", { /* ... */ });
+    // Use existing Piston flow
+  }
 };
-
-// In components:
-{features.CLIENT_SIDE_QUICK_RUN && <QuickRunButton ... />}
 ```
 
-In `wrangler.jsonc`:
+### Verdict Mapping
 
-```jsonc
-{
-  "env": {
-    "staging": {
-      "vars": {
-        "NEXT_PUBLIC_ENABLE_PLAYGROUND": "true",
-        "NEXT_PUBLIC_ENABLE_QUICK_RUN": "true"
-      }
-    },
-    "production": {
-      "vars": {
-        "NEXT_PUBLIC_ENABLE_PLAYGROUND": "true",
-        "NEXT_PUBLIC_ENABLE_QUICK_RUN": "true",
-        "NEXT_PUBLIC_ENABLE_SAMPLE_TESTS": "true"
-      }
-    }
-  }
-}
-```
+| Client Status | Arena Verdict | Display |
+|---|---|---|
+| `SUCCESS` | `AC` (if matches sample) or `WA` | Output shown |
+| `TLE` | `TLE` | "Exceeded the 5.0s time limit." |
+| `RUNTIME_ERROR` | `RE` | Stderr shown |
+| `INITIALIZATION_ERROR` | `CE` | Error shown |
 
-## Migration Path for Existing Submission Routes
+### Key Files
 
-### Option A: Parallel Execution (Safest)
+- **Integration point:** `src/components/cp-arena/ArenaWorkspace.tsx` (the `run` function)
+- **Hook:** `src/lib/useCodeExecution.ts` (the `useCodeExecution` hook)
+- **Workers:** `src/workers/jsRunner.worker.ts` and `src/workers/pythonRunner.worker.ts`
 
-Keep Piston as the official judge; client-side is preview only:
+## Extending the Engine
 
-```typescript
-export async function submitCode(code, language, problemId) {
-  // Client-side preview (optional, for UX)
-  const clientResult = await executeClientSide(code, language, problem.samples);
-  
-  // Official server submission
-  const serverResult = await fetch('/api/submit', {
-    method: 'POST',
-    body: JSON.stringify({ code, language, problemId }),
-  });
+### Adding More Languages
 
-  return serverResult; // Official verdict from Piston
-}
-```
+To add support for another language via WebAssembly:
 
-### Option B: Fallback to Piston (Recommended)
+1. **Create a new worker** (`src/workers/langRunner.worker.ts`):
+   ```typescript
+   type LangWorkerMessage = { id: string; code: string; stdin?: string; };
+   type LangWorkerResponse = { id: string; success: boolean; stdout: string; stderr: string; };
 
-Use client-side for quick feedback; fall back to Piston if needed:
+   self.onmessage = async (event: MessageEvent<LangWorkerMessage>) => {
+     // Load runtime, execute code, capture output
+     self.postMessage(response);
+   };
+   ```
 
-```typescript
-export async function submitCode(code, language, problemId) {
-  // Try client-side for speed
-  const clientResult = await executeClientSide(code, language, problem.allTests);
-  
-  if (clientResult.status === 'SUCCESS' && clientResult.verdict === 'AC') {
-    // Fast path: looks good, but still verify on server
-    return submitToServer(code, language, problemId);
-  } else if (clientResult.status === 'TLE') {
-    // TLE on client usually means TLE on server too
-    return clientResult; // Early return, skip server
-  } else {
-    // WA or RE on client; let server double-check
-    return submitToServer(code, language, problemId);
-  }
-}
-```
+2. **Update `codeExecution.ts`**:
+   ```typescript
+   export type SupportedLanguage = 'javascript' | 'python' | 'rust'; // Add 'rust'
 
-## Monitoring & Telemetry
+   private initializeWorkers() {
+     this.rustWorker = new Worker(
+       new URL('../workers/rustRunner.worker.ts', import.meta.url),
+       { type: 'module' }
+     );
+     // ...
+   }
+   ```
 
-Add monitoring to understand usage patterns:
+3. **Update `ArenaWorkspace.tsx`**:
+   ```typescript
+   if (language === "python" || language === "javascript" || language === "rust") {
+     // Use client-side execution
+   }
+   ```
 
-```typescript
-// src/lib/telemetry.ts
-export async function logCodeExecution(event: {
-  language: SupportedLanguage;
-  source: 'playground' | 'quick-run' | 'sample-tests' | 'precheck';
-  status: ExecutionStatus;
-  executionTimeMs: number;
-  codeLength: number;
-  errorType?: string;
-}) {
-  // Send to analytics backend (e.g., Vercel Analytics, Sentry, custom)
-  if (typeof window !== 'undefined' && window.gtag) {
-    window.gtag('event', 'code_execution', event);
-  }
-}
+### Fallback to Piston
 
-// In CodePlayground or submission handlers:
-await logCodeExecution({
-  language: 'python',
-  source: 'playground',
-  status: result.status,
-  executionTimeMs: result.executionTimeMs,
-  codeLength: code.length,
-});
-```
+If a language's Web Worker fails or isn't available, it automatically falls back to the server-side Piston judge. No additional configuration needed.
+
+## Submit vs Run
+
+**Important distinction:**
+
+- **Run Button** (`/api/run`):
+  - Uses client-side execution for Python/JavaScript
+  - Falls back to Piston for other languages
+  - No scoring, no submission record
+  - Instant feedback
+
+- **Submit Button** (`/api/submit`):
+  - Always uses server-side Piston (hidden tests)
+  - Creates official submission record
+  - Counts toward leaderboard and speed bounty
+  - Proctoring checks apply
+
+The submit flow is **unchanged**. This integration only affects the "run" button for quick feedback.
+
+## Performance Characteristics
+
+### Client-Side Execution (Python/JavaScript)
+
+| Metric | Typical | Notes |
+|--------|---------|-------|
+| First run | 2-3s | Pyodide download + init (cached) |
+| Subsequent runs | 20-100ms | Pure execution time |
+| JS execution | 5-20ms | Very fast for simple code |
+| Python startup | 50ms | After Pyodide init |
+| Network latency | 0ms | Browser-local |
+
+### Server-Side Execution (Other Languages)
+
+| Metric | Typical | Notes |
+|--------|---------|-------|
+| Network round-trip | 100-300ms | To/from judge |
+| Compilation | 50-500ms | Language-dependent |
+| Execution | 10-1000ms | Problem-dependent |
+| **Total** | 200-2000ms | Network + judge |
+
+**Benefit:** Python/JavaScript users get instant feedback (after initial Pyodide load). Other language users see no change.
 
 ## Troubleshooting
 
@@ -386,21 +202,46 @@ When exposing user code execution in the browser:
 
 ## Rollback Plan
 
-If client-side execution causes issues:
+If client-side execution causes issues in production:
 
-1. **Disable at Feature Flag**: Set `NEXT_PUBLIC_ENABLE_PLAYGROUND=false`
-2. **Disable Worker Script**: Return empty blob from `/api/worker-script`
-3. **Full Revert**: `git revert <commit>` (only 1 commit since branch created)
+### Quick Rollback (5 minutes)
 
-All changes are isolated to new files and hooks; existing Piston flow is untouched.
+Temporarily disable client-side execution for specific languages:
 
-## Next Steps
+```typescript
+// src/components/cp-arena/ArenaWorkspace.tsx
+if (false && (language === "python" || language === "javascript")) {
+  // Temporarily disabled
+} else {
+  // Fall back to Piston for all languages
+}
+```
 
-1. Review this integration guide with the team
-2. Deploy Phase 1 (Playground only) to staging
-3. Collect feedback for 1-2 weeks
-4. Plan Phase 2 if metrics are positive
-5. Plan full integration timeline
+Then redeploy with this change.
+
+### Full Rollback
+
+Revert the feature branch commit:
+```bash
+git revert feat/client-side-code-execution
+npm run cf:deploy
+```
+
+All other CP Arena functionality remains unaffected.
+
+## Testing Checklist
+
+- [ ] Python code runs with stdin and produces correct output
+- [ ] JavaScript code runs with stdin and produces correct output
+- [ ] Pyodide loads successfully (check DevTools Network tab)
+- [ ] C++/Java/Go/etc. still use Piston (verify `/api/run` calls)
+- [ ] Sample output comparison works for all languages
+- [ ] Custom stdin input works correctly
+- [ ] TLE detection works (run infinite loop)
+- [ ] CE detection works (syntax error)
+- [ ] RE detection works (runtime error)
+- [ ] Submit button still uses server (unchanged)
+- [ ] Speed bounty scoring unchanged
 
 ## References
 
