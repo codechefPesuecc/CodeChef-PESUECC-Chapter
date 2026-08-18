@@ -1,0 +1,236 @@
+/**
+ * WASM Compilation Service - Local Development Server
+ * Compiles C/C++/Go/Rust to WebAssembly using Emscripten and native toolchains
+ *
+ * Usage:
+ *   node scripts/wasmCompiler.mjs
+ *
+ * Then POST to http://localhost:3001/compile/cpp with:
+ *   { sourceCode: "..." }
+ */
+
+import express from 'express';
+import { spawn } from 'child_process';
+import { writeFile, unlink } from 'fs/promises';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import { randomUUID } from 'crypto';
+
+const app = express();
+app.use(express.json({ limit: '10mb' }));
+
+const PORT = process.env.WASM_COMPILER_PORT || 3001;
+
+// Helper to run shell commands
+const runCommand = (command, args, options = {}) => {
+  return new Promise((resolve, reject) => {
+    const proc = spawn(command, args, {
+      ...options,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+
+    let stdout = '';
+    let stderr = '';
+
+    proc.stdout?.on('data', (data) => {
+      stdout += data.toString();
+    });
+
+    proc.stderr?.on('data', (data) => {
+      stderr += data.toString();
+    });
+
+    proc.on('close', (code) => {
+      if (code === 0) {
+        resolve({ stdout, stderr });
+      } else {
+        reject({
+          code,
+          stderr,
+          stdout,
+        });
+      }
+    });
+
+    proc.on('error', (err) => {
+      reject(err);
+    });
+  });
+};
+
+// C/C++ Compilation Endpoint
+app.post('/compile/cpp', async (req, res) => {
+  const { sourceCode } = req.body;
+
+  if (!sourceCode) {
+    return res.status(400).json({
+      status: 'ERROR',
+      error: 'sourceCode is required',
+    });
+  }
+
+  const id = randomUUID();
+  const inputPath = join(tmpdir(), `${id}.cpp`);
+  const outputPath = join(tmpdir(), `${id}.wasm`);
+
+  try {
+    // Write source code to temporary file
+    await writeFile(inputPath, sourceCode);
+
+    // Compile to WASM using Emscripten
+    // -O2: optimization level
+    // -s STANDALONE_WASM: produce pure WASI binary without JS glue
+    // -s WASM=1: ensure WASM output
+    await runCommand('emcc', [
+      inputPath,
+      '-o',
+      outputPath,
+      '-O2',
+      '-s',
+      'STANDALONE_WASM',
+      '-s',
+      'WASM=1',
+    ]);
+
+    // Read compiled WASM binary
+    const { readFile } = await import('fs/promises');
+    const wasmBuffer = await readFile(outputPath);
+
+    res.set('Content-Type', 'application/wasm');
+    res.send(wasmBuffer);
+  } catch (err) {
+    console.error('Compilation error:', err);
+    res.status(400).json({
+      status: 'COMPILATION_ERROR',
+      error: err.stderr || err.message,
+    });
+  } finally {
+    // Cleanup temporary files
+    try {
+      await unlink(inputPath);
+      await unlink(outputPath);
+    } catch {}
+  }
+});
+
+// Go Compilation Endpoint
+app.post('/compile/go', async (req, res) => {
+  const { sourceCode } = req.body;
+
+  if (!sourceCode) {
+    return res.status(400).json({
+      status: 'ERROR',
+      error: 'sourceCode is required',
+    });
+  }
+
+  const id = randomUUID();
+  const inputPath = join(tmpdir(), `${id}.go`);
+  const outputPath = join(tmpdir(), `${id}.wasm`);
+
+  try {
+    // Write source code to temporary file
+    await writeFile(inputPath, sourceCode);
+
+    // Compile to WASM using Go 1.21+
+    await runCommand('go', ['build', '-o', outputPath, inputPath], {
+      env: {
+        ...process.env,
+        GOOS: 'wasip1',
+        GOARCH: 'wasm',
+      },
+    });
+
+    // Read compiled WASM binary
+    const { readFile } = await import('fs/promises');
+    const wasmBuffer = await readFile(outputPath);
+
+    res.set('Content-Type', 'application/wasm');
+    res.send(wasmBuffer);
+  } catch (err) {
+    console.error('Compilation error:', err);
+    res.status(400).json({
+      status: 'COMPILATION_ERROR',
+      error: err.stderr || err.message,
+    });
+  } finally {
+    // Cleanup temporary files
+    try {
+      await unlink(inputPath);
+      await unlink(outputPath);
+    } catch {}
+  }
+});
+
+// Rust Compilation Endpoint
+app.post('/compile/rust', async (req, res) => {
+  const { sourceCode } = req.body;
+
+  if (!sourceCode) {
+    return res.status(400).json({
+      status: 'ERROR',
+      error: 'sourceCode is required',
+    });
+  }
+
+  const id = randomUUID();
+  const projectDir = join(tmpdir(), `rust-${id}`);
+  const inputPath = join(projectDir, 'src', 'main.rs');
+  const outputPath = join(projectDir, 'target', 'wasm32-wasip1', 'release', `rust_${id}.wasm`);
+
+  try {
+    // Create project structure
+    const { mkdir } = await import('fs/promises');
+    await mkdir(join(projectDir, 'src'), { recursive: true });
+
+    // Write source code
+    await writeFile(inputPath, sourceCode);
+
+    // Write Cargo.toml
+    const cargoToml = `[package]
+name = "rust_wasm"
+version = "0.1.0"
+edition = "2021"
+
+[profile.release]
+opt-level = 2
+`;
+    await writeFile(join(projectDir, 'Cargo.toml'), cargoToml);
+
+    // Compile to WASM
+    await runCommand('cargo', ['build', '--target', 'wasm32-wasip1', '--release'], {
+      cwd: projectDir,
+    });
+
+    // Read compiled WASM binary
+    const { readFile } = await import('fs/promises');
+    const wasmBuffer = await readFile(outputPath);
+
+    res.set('Content-Type', 'application/wasm');
+    res.send(wasmBuffer);
+  } catch (err) {
+    console.error('Compilation error:', err);
+    res.status(400).json({
+      status: 'COMPILATION_ERROR',
+      error: err.stderr || err.message,
+    });
+  } finally {
+    // Cleanup temporary files
+    try {
+      const { rm } = await import('fs/promises');
+      await rm(projectDir, { recursive: true, force: true });
+    } catch {}
+  }
+});
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', service: 'wasm-compiler' });
+});
+
+app.listen(PORT, () => {
+  console.log(`WASM Compiler service running on http://localhost:${PORT}`);
+  console.log(`POST /compile/cpp - Compile C/C++ to WASM`);
+  console.log(`POST /compile/go - Compile Go to WASM`);
+  console.log(`POST /compile/rust - Compile Rust to WASM`);
+});

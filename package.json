@@ -22,6 +22,7 @@
     "piston:install": "sh scripts/install-runtimes.sh"
   },
   "dependencies": {
+    "@bjorn3/browser_wasi_shim": "^0.4.2",
     "@codemirror/lang-cpp": "^6.0.3",
     "@codemirror/lang-go": "^6.0.1",
     "@codemirror/lang-java": "^6.0.2",
