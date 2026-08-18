@@ -15,7 +15,7 @@ import { writeFile, unlink, mkdir, readFile } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { randomUUID } from 'crypto';
-import { rmSync } from 'fs';
+import { rmSync, readdirSync, statSync, existsSync } from 'fs';
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -461,14 +461,36 @@ app.post('/compile/csharp', async (req, res) => {
 
     // Compile to WASM using .NET CLI
     // dotnet publish creates optimized Release build in ./out directory
-    await runCommand('dotnet', ['publish', '-c', 'Release', '-o', './out'], {
+    const { stdout } = await runCommand('dotnet', ['publish', '-c', 'Release', '-o', './out'], {
       cwd: projectDir,
       env: process.env,
     });
 
+    // Robust WASM finder: Dynamically locates the file
+    // (.NET 8 may nest it inside out/AppBundle/ or other subdirectories)
+    const findWasmFile = (dir) => {
+      const files = readdirSync(dir);
+      for (const file of files) {
+        const fullPath = join(dir, file);
+        if (statSync(fullPath).isDirectory()) {
+          const found = findWasmFile(fullPath);
+          if (found) return found;
+        } else if (file.endsWith('.wasm')) {
+          return fullPath;
+        }
+      }
+      return null;
+    };
+
+    const outDir = join(projectDir, 'out');
+    const wasmPath = existsSync(outDir) ? findWasmFile(outDir) : null;
+
+    if (!wasmPath) {
+      throw new Error(`C# Compilation failed. No WASM file generated.\nDotnet Output:\n${stdout}`);
+    }
+
     // Read compiled WASM binary
     const { readFile } = await import('fs/promises');
-    const wasmPath = join(projectDir, 'out', 'Project.wasm');
     const wasmBuffer = await readFile(wasmPath);
 
     res.set('Content-Type', 'application/wasm');
