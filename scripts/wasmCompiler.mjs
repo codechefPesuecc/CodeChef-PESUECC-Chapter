@@ -283,61 +283,6 @@ app.post('/compile/rust', async (req, res) => {
   }
 });
 
-// Zig Compilation Endpoint
-// Requires: Zig compiler installed and available in PATH
-app.post('/compile/zig', async (req, res) => {
-  const { sourceCode } = req.body;
-
-  if (!sourceCode) {
-    return res.status(400).json({
-      status: 'ERROR',
-      error: 'sourceCode is required',
-    });
-  }
-
-  const id = randomUUID();
-  const inputPath = join(tmpdir(), `${id}.zig`);
-  const outputPath = join(tmpdir(), `${id}.wasm`);
-
-  try {
-    // Write source code to temporary file
-    await writeFile(inputPath, sourceCode);
-
-    // Compile to WASM using Zig
-    // -target wasm32-wasi: compile to WASI-compatible WebAssembly
-    // -O ReleaseFast: optimization level for fast compilation and execution
-    // -femit-bin=/tmp/[uuid].wasm: output binary path
-    await runCommand('zig', [
-      'build-exe',
-      inputPath,
-      '-target', 'wasm32-wasi',
-      '-O', 'ReleaseFast',
-      `-femit-bin=${outputPath}`,
-    ], {
-      env: process.env,
-    });
-
-    // Read compiled WASM binary
-    const { readFile } = await import('fs/promises');
-    const wasmBuffer = await readFile(outputPath);
-
-    res.set('Content-Type', 'application/wasm');
-    res.send(wasmBuffer);
-  } catch (err) {
-    console.error('Compilation error:', err);
-    res.status(400).json({
-      status: 'COMPILATION_ERROR',
-      error: err.stderr || err.message,
-    });
-  } finally {
-    // Cleanup temporary files
-    try {
-      await unlink(inputPath);
-      await unlink(outputPath);
-    } catch {}
-  }
-});
-
 // Java Compilation Endpoint
 // Note: Compiles to Java bytecode (.class), not WebAssembly
 // Requires: Java 17+ compiler (javac) installed
@@ -435,6 +380,5 @@ app.listen(PORT, () => {
   console.log(`POST /compile/cpp - Compile C++ to WASM`);
   console.log(`POST /compile/go - Compile Go to WASM`);
   console.log(`POST /compile/rust - Compile Rust to WASM`);
-  console.log(`POST /compile/zig - Compile Zig to WASM`);
   console.log(`POST /compile/java - Compile Java to Bytecode`);
 });
