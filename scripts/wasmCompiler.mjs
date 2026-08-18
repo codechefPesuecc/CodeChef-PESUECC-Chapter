@@ -363,9 +363,9 @@ app.post('/compile/java', async (req, res) => {
     // Write source code to Main.java
     await writeFile(sourceFile, sourceCode);
 
-    // Compile Java source to bytecode
-    // Requires: Java 17+ (javac command)
-    await runCommand('javac', [sourceFile]);
+    // Compile Java source to bytecode targeting Java 8 (CheerpJ's default runtime)
+    // --release 8 ensures Java 8 compatibility (CheerpJ refuses Java 9+ class versions)
+    await runCommand('javac', ['--release', '8', sourceFile]);
 
     // Read compiled class file
     const classBuffer = await readFile(classFile);
