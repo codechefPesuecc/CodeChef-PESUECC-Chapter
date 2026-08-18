@@ -50,7 +50,7 @@ self.onmessage = async (event) => {
     const stderrFile = new File([]);
 
     // Create WASI environment
-    const args = [];
+    const args = ['Project.wasm']; // argv[0] for WASI convention
     const env = []; // WASI expects array of "KEY=VALUE" strings
     const fds = [
       new OpenFile(stdinFile),  // fd 0: stdin

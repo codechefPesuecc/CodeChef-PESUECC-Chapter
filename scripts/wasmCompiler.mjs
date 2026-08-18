@@ -424,98 +424,6 @@ public class Runner {
   }
 });
 
-// C# Compilation Endpoint
-// Requires: .NET 8 SDK with WASI workload (`dotnet workload install wasi-experimental`)
-app.post('/compile/csharp', async (req, res) => {
-  const { sourceCode } = req.body;
-
-  if (!sourceCode) {
-    return res.status(400).json({
-      status: 'ERROR',
-      error: 'sourceCode is required',
-    });
-  }
-
-  const id = randomUUID();
-  const projectDir = join(tmpdir(), `csharp-${id}`);
-
-  try {
-    // Create project directory
-    await mkdir(projectDir, { recursive: true });
-
-    // Create .NET 8 WASI project file with single-file bundling
-    const csprojContent = `<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-    <RuntimeIdentifier>wasi-wasm</RuntimeIdentifier>
-
-    <!-- Force AOT off to avoid NETSDK1203 error -->
-    <PublishAot>false</PublishAot>
-
-    <!-- Force the linker to pack the .dll and dotnet.wasm into one file -->
-    <WasmSingleFileBundle>true</WasmSingleFileBundle>
-
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-</Project>`;
-
-    await writeFile(join(projectDir, 'Project.csproj'), csprojContent);
-
-    // Write user's C# code
-    await writeFile(join(projectDir, 'Program.cs'), sourceCode);
-
-    // Compile to WASM using .NET CLI
-    // dotnet publish creates optimized Release build in ./out directory
-    const { stdout } = await runCommand('dotnet', ['publish', '-c', 'Release', '-o', './out'], {
-      cwd: projectDir,
-      env: process.env,
-    });
-
-    // Robust WASM finder: Dynamically locates the file
-    // (.NET 8 may nest it inside out/AppBundle/ or other subdirectories)
-    const findWasmFile = (dir) => {
-      const files = readdirSync(dir);
-      for (const file of files) {
-        const fullPath = join(dir, file);
-        if (statSync(fullPath).isDirectory()) {
-          const found = findWasmFile(fullPath);
-          if (found) return found;
-        } else if (file.endsWith('.wasm')) {
-          return fullPath;
-        }
-      }
-      return null;
-    };
-
-    const outDir = join(projectDir, 'out');
-    const wasmPath = existsSync(outDir) ? findWasmFile(outDir) : null;
-
-    if (!wasmPath) {
-      throw new Error(`C# Compilation failed. No WASM file generated.\nDotnet Output:\n${stdout}`);
-    }
-
-    // Read compiled WASM binary
-    const { readFile } = await import('fs/promises');
-    const wasmBuffer = await readFile(wasmPath);
-
-    res.set('Content-Type', 'application/wasm');
-    res.send(wasmBuffer);
-  } catch (err) {
-    console.error('C# Compilation error:', err);
-    res.status(400).json({
-      status: 'COMPILATION_ERROR',
-      error: err.stderr || err.message || 'C# compilation failed',
-    });
-  } finally {
-    // Cleanup temporary directory
-    try {
-      rmSync(projectDir, { recursive: true, force: true });
-    } catch {}
-  }
-});
-
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'wasm-compiler' });
@@ -528,6 +436,5 @@ app.listen(PORT, () => {
   console.log(`POST /compile/go - Compile Go to WASM`);
   console.log(`POST /compile/rust - Compile Rust to WASM`);
   console.log(`POST /compile/zig - Compile Zig to WASM`);
-  console.log(`POST /compile/csharp - Compile C# to WASM`);
   console.log(`POST /compile/java - Compile Java to Bytecode`);
 });
