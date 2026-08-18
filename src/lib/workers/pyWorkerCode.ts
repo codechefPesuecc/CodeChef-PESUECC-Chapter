@@ -10,8 +10,8 @@ async function initPyodide() {
   isInitializing = true;
   initPromise = (async () => {
     try {
-      const PyodideModule = await import('https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js');
-      const instance = await PyodideModule.loadPyodide({
+      importScripts('https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js');
+      const instance = await self.loadPyodide({
         indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.1/full/',
       });
       pyodide = instance;
@@ -43,25 +43,10 @@ self.onmessage = async (event) => {
       pyodide = await initPyodide();
     }
 
-    pyodide.runPython(\`
-import sys
-from io import StringIO
-
-_stdout_capture = StringIO()
-_stderr_capture = StringIO()
-_original_stdout = sys.stdout
-_original_stderr = sys.stderr
-_original_stdin = sys.stdin
-
-sys.stdout = _stdout_capture
-sys.stderr = _stderr_capture
-\`);
+    pyodide.runPython('import sys\\nfrom io import StringIO\\n_stdout_capture = StringIO()\\n_stderr_capture = StringIO()\\n_original_stdout = sys.stdout\\n_original_stderr = sys.stderr\\n_original_stdin = sys.stdin\\nsys.stdout = _stdout_capture\\nsys.stderr = _stderr_capture');
 
     if (stdin) {
-      pyodide.runPython(\`
-from io import StringIO
-sys.stdin = StringIO(\${JSON.stringify(stdin)})
-\`);
+      pyodide.runPython('from io import StringIO\\nsys.stdin = StringIO(' + JSON.stringify(stdin) + ')');
     }
 
     const executionPromise = Promise.resolve().then(() => {
@@ -81,11 +66,7 @@ sys.stdin = StringIO(\${JSON.stringify(stdin)})
       '_stderr_capture.getvalue()'
     );
 
-    pyodide.runPython(\`
-sys.stdout = _original_stdout
-sys.stderr = _original_stderr
-sys.stdin = _original_stdin
-\`);
+    pyodide.runPython('sys.stdout = _original_stdout\\nsys.stderr = _original_stderr\\nsys.stdin = _original_stdin');
 
     response.success = true;
     response.stdout = String(stdout || '');

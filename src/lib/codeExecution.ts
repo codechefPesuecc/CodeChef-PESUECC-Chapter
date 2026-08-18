@@ -59,7 +59,12 @@ export class CodeExecutionManager {
   private createWorkerFromCode(code: string): Worker {
     const blob = new Blob([code], { type: 'application/javascript' });
     const url = URL.createObjectURL(blob);
-    return new Worker(url, { type: 'module' });
+    try {
+      return new Worker(url);
+    } catch (err) {
+      console.error('Failed to create worker from blob URL:', err);
+      throw err;
+    }
   }
 
   private initializeWorkers() {
@@ -121,11 +126,12 @@ export class CodeExecutionManager {
   }
 
   private handleWorkerError(event: ErrorEvent) {
-    console.error('Worker error:', event.message);
+    const errorMsg = event.message || event.error?.toString() || 'Unknown worker error';
+    console.error('Worker error:', errorMsg, event);
     for (const [id, pending] of this.pendingRequests) {
       clearTimeout(pending.timeoutHandle);
       pending.reject(
-        new Error(`Worker error: ${event.message}`)
+        new Error(`Worker error: ${errorMsg}`)
       );
     }
     this.pendingRequests.clear();
