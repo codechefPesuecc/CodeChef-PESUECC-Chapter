@@ -5,7 +5,8 @@ export const dynamic = 'force-dynamic';
 /**
  * WASM Compilation API Proxy
  *
- * POST /api/compile/cpp - Compile C/C++ to WASM
+ * POST /api/compile/c - Compile C to WASM
+ * POST /api/compile/cpp - Compile C++ to WASM
  * POST /api/compile/go - Compile Go to WASM
  * POST /api/compile/rust - Compile Rust to WASM
  *

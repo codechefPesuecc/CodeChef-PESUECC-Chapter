@@ -119,6 +119,64 @@ app.post('/compile/cpp', async (req, res) => {
   }
 });
 
+// C Compilation Endpoint
+app.post('/compile/c', async (req, res) => {
+  const { sourceCode } = req.body;
+
+  if (!sourceCode) {
+    return res.status(400).json({
+      status: 'ERROR',
+      error: 'sourceCode is required',
+    });
+  }
+
+  const id = randomUUID();
+  const inputPath = join(tmpdir(), `${id}.c`);
+  const outputPath = join(tmpdir(), `${id}.wasm`);
+
+  try {
+    // Write source code to temporary file
+    await writeFile(inputPath, sourceCode);
+
+    // Compile to WASM using Emscripten (C variant, no C++ stdlib)
+    // -O2: optimization level
+    // -s STANDALONE_WASM: produce pure WASI binary without JS glue
+    // -s WASM=1: ensure WASM output
+    // Note: NOT using -sDEFAULT_TO_CXX since this is pure C
+    await runCommand('emcc', [
+      inputPath,
+      '-o',
+      outputPath,
+      '-O2',
+      '-s',
+      'STANDALONE_WASM',
+      '-s',
+      'WASM=1',
+    ], {
+      env: process.env,
+    });
+
+    // Read compiled WASM binary
+    const { readFile } = await import('fs/promises');
+    const wasmBuffer = await readFile(outputPath);
+
+    res.set('Content-Type', 'application/wasm');
+    res.send(wasmBuffer);
+  } catch (err) {
+    console.error('Compilation error:', err);
+    res.status(400).json({
+      status: 'COMPILATION_ERROR',
+      error: err.stderr || err.message,
+    });
+  } finally {
+    // Cleanup temporary files
+    try {
+      await unlink(inputPath);
+      await unlink(outputPath);
+    } catch {}
+  }
+});
+
 // Go Compilation Endpoint
 app.post('/compile/go', async (req, res) => {
   const { sourceCode } = req.body;

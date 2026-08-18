@@ -1,7 +1,7 @@
 import { WASI_WORKER_CODE } from './workers/wasiWorkerCode';
 import { WASI } from '@bjorn3/browser_wasi_shim';
 
-export type SupportedWasmLanguage = 'cpp' | 'c' | 'go' | 'rust';
+export type SupportedWasmLanguage = 'c' | 'cpp' | 'go' | 'rust';
 
 export type WasmExecutionStatus =
   | 'SUCCESS'
