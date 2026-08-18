@@ -126,9 +126,22 @@ export async function executeJavaMainThread(
           await Promise.race([executionPromise.catch(() => undefined), timeoutPromise]);
           originalError(`[JavaExec +${elapsed()}ms] Program completed`);
 
+          // Read output file written by Runner.java
+          let stdout = '';
+          try {
+            const blob = await globalScope.cjFileBlob('/str/output.txt');
+            if (blob) {
+              stdout = await blob.text();
+              // Remove sentinel from output
+              stdout = stdout.replace('__CJ_DONE__\n', '').replace('__CJ_DONE__', '').trim();
+            }
+          } catch {
+            stdout = 'Program executed (output unavailable)';
+          }
+
           resolve({
             success: true,
-            stdout: 'Java execution completed',
+            stdout,
             stderr: '',
             executionTimeMs: Math.round(performance.now() - startTime),
             exitCode: 0,
