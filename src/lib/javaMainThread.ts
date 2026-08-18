@@ -74,15 +74,22 @@ export async function executeJavaMainThread(
   return new Promise((resolve) => {
     const task = async () => {
       try {
+        const elapsed = () => Math.round(performance.now() - startTime);
+
+        console.error(`[JavaExec +${elapsed()}ms] Starting execution`);
+
         // Handle both single binary (legacy WASM) and JSON classes (Java)
         if (classesData instanceof ArrayBuffer) {
+          console.error(`[JavaExec +${elapsed()}ms] Legacy binary mode`);
           // Legacy: single WASM binary
           const classData = new Uint8Array(classesData);
           await globalScope.cheerpOSAddStringFile('/str/Main.class', classData);
         } else {
+          console.error(`[JavaExec +${elapsed()}ms] Java JSON mode, classes:`, (classesData as CompiledClasses).classes.map(c => c.name));
           // Java: JSON with multiple .class files
           const compiled = classesData as CompiledClasses;
           for (const cls of compiled.classes) {
+            console.error(`[JavaExec +${elapsed()}ms] Writing ${cls.name}.class (${cls.data.length} bytes base64)`);
             // cls.data is base64, decode it
             const binaryString = atob(cls.data);
             const bytes = new Uint8Array(binaryString.length);
@@ -90,11 +97,13 @@ export async function executeJavaMainThread(
               bytes[i] = binaryString.charCodeAt(i);
             }
             await globalScope.cheerpOSAddStringFile(`/str/${cls.name}.class`, bytes);
+            console.error(`[JavaExec +${elapsed()}ms] Wrote ${cls.name}.class`);
           }
         }
 
         // Write stdin if provided
         if (stdin) {
+          console.error(`[JavaExec +${elapsed()}ms] Writing stdin.txt (${stdin.length} bytes)`);
           await globalScope.cheerpOSAddStringFile('/str/stdin.txt', stdin);
         }
 
@@ -118,12 +127,14 @@ export async function executeJavaMainThread(
         // Execute with timeout
         // Run the Runner launcher class if available (Java), otherwise run Main (legacy)
         const mainClass = classesData instanceof ArrayBuffer ? 'Main' : 'Runner';
+        originalError(`[JavaExec +${elapsed()}ms] Calling cheerpjRunMain('${mainClass}', '/str/')`);
         const executionPromise = globalScope.cheerpjRunMain(mainClass, '/str/');
         const timeoutPromise = new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('Time Limit Exceeded')), timeoutMs)
         );
 
         const exitCode = await Promise.race([executionPromise, timeoutPromise]);
+        originalError(`[JavaExec +${elapsed()}ms] Program completed with exit code ${exitCode}`);
 
         console.log = originalLog;
         console.error = originalError;
@@ -136,10 +147,17 @@ export async function executeJavaMainThread(
           exitCode: exitCode || 0,
         });
       } catch (err) {
-        console.log = console.log;
-        console.error = console.error;
-
         const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error(`[JavaExec +${elapsed()}ms] ERROR: ${errorMsg}`);
+
+        // Restore console if still overridden
+        if (console.log === console.log) {
+          console.log = console.log;
+        }
+        if (console.error === console.error) {
+          console.error = console.error;
+        }
+
         resolve({
           success: false,
           stdout: stdoutBuf.join('\n'),
