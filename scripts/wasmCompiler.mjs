@@ -424,6 +424,69 @@ public class Runner {
   }
 });
 
+// C# Compilation Endpoint
+// Requires: .NET 8 SDK with WASI workload (`dotnet workload install wasi-experimental`)
+app.post('/compile/csharp', async (req, res) => {
+  const { sourceCode } = req.body;
+
+  if (!sourceCode) {
+    return res.status(400).json({
+      status: 'ERROR',
+      error: 'sourceCode is required',
+    });
+  }
+
+  const id = randomUUID();
+  const projectDir = join(tmpdir(), `csharp-${id}`);
+
+  try {
+    // Create project directory
+    await mkdir(projectDir, { recursive: true });
+
+    // Create minimal .NET 8 WASI project file
+    const csprojContent = `<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RuntimeIdentifier>wasi-wasm</RuntimeIdentifier>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+</Project>`;
+
+    await writeFile(join(projectDir, 'Project.csproj'), csprojContent);
+
+    // Write user's C# code
+    await writeFile(join(projectDir, 'Program.cs'), sourceCode);
+
+    // Compile to WASM using .NET CLI
+    // dotnet publish creates optimized Release build in ./out directory
+    await runCommand('dotnet', ['publish', '-c', 'Release', '-o', './out'], {
+      cwd: projectDir,
+      env: process.env,
+    });
+
+    // Read compiled WASM binary
+    const { readFile } = await import('fs/promises');
+    const wasmPath = join(projectDir, 'out', 'Project.wasm');
+    const wasmBuffer = await readFile(wasmPath);
+
+    res.set('Content-Type', 'application/wasm');
+    res.send(wasmBuffer);
+  } catch (err) {
+    console.error('C# Compilation error:', err);
+    res.status(400).json({
+      status: 'COMPILATION_ERROR',
+      error: err.stderr || err.message || 'C# compilation failed',
+    });
+  } finally {
+    // Cleanup temporary directory
+    try {
+      rmSync(projectDir, { recursive: true, force: true });
+    } catch {}
+  }
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'wasm-compiler' });
@@ -436,5 +499,6 @@ app.listen(PORT, () => {
   console.log(`POST /compile/go - Compile Go to WASM`);
   console.log(`POST /compile/rust - Compile Rust to WASM`);
   console.log(`POST /compile/zig - Compile Zig to WASM`);
+  console.log(`POST /compile/csharp - Compile C# to WASM`);
   console.log(`POST /compile/java - Compile Java to Bytecode`);
 });
