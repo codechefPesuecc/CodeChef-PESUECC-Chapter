@@ -153,6 +153,16 @@ export async function executeJavaMainThread(
           console.log = originalLog;
           console.error = originalError;
         }
+      } catch (outerErr) {
+        const errorMsg = outerErr instanceof Error ? outerErr.message : String(outerErr);
+        console.error(`[JavaExec +${elapsed()}ms] Outer error: ${errorMsg}`);
+        resolve({
+          success: false,
+          stdout: stdoutBuf.join('\n'),
+          stderr: stderrBuf.join('\n'),
+          executionTimeMs: Math.round(performance.now() - startTime),
+          error: errorMsg,
+        });
       }
     };
 
