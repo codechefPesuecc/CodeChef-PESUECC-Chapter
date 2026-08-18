@@ -227,7 +227,7 @@ app.post('/compile/go', async (req, res) => {
 });
 
 // Rust Compilation Endpoint
-// Requires: rustup target add wasm32-wasi (standard WASI target for Rust)
+// Requires: rustup target add wasm32-wasip1 (WASI Preview 1 target)
 app.post('/compile/rust', async (req, res) => {
   const { sourceCode } = req.body;
 
@@ -248,10 +248,10 @@ app.post('/compile/rust', async (req, res) => {
 
     // Compile to WASM using Rust
     // -O: optimize (release mode)
-    // --target wasm32-wasi: compile to WASI-compatible WebAssembly
-    // Note: requires `rustup target add wasm32-wasi` on the host
+    // --target wasm32-wasip1: compile to WASI Preview 1 WebAssembly
+    // Note: requires `rustup target add wasm32-wasip1` on the host
     await runCommand('rustc', [
-      '--target', 'wasm32-wasi',
+      '--target', 'wasm32-wasip1',
       '-O',
       inputPath,
       '-o',
