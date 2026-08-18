@@ -10,7 +10,7 @@ export function useJavaExecution() {
   const [error, setError] = useState<string | null>(null);
 
   const execute = useCallback(
-    async (classBuffer: ArrayBuffer, stdin?: string, timeoutMs = 5000): Promise<JavaExecutionResult> => {
+    async (classBuffer: ArrayBuffer, stdin?: string, timeoutMs = 30000): Promise<JavaExecutionResult> => {
       setIsExecuting(true);
       setError(null);
 

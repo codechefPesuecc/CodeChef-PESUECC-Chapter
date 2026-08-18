@@ -57,7 +57,7 @@ type CompiledClasses = {
 export async function executeJavaMainThread(
   classesData: ArrayBuffer | CompiledClasses,
   stdin?: string,
-  timeoutMs = 5000
+  timeoutMs = 30000
 ): Promise<JavaExecutionResult> {
   await ensureCheerpjLoaded();
 
