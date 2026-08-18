@@ -482,10 +482,13 @@ export default function ArenaWorkspace({
         }
 
         setBusyLabel("Executing Java via CheerpJ…");
-        const classBuffer = await compileRes.arrayBuffer();
+        // Java API returns JSON with multiple classes; WASM returns binary
+        const classData = language === "java"
+          ? await compileRes.json()
+          : await compileRes.arrayBuffer();
 
-        // Execute using CheerpJ 3 in Web Worker
-        const result = await javaExecute(classBuffer, stdin, 5000);
+        // Execute using CheerpJ on main thread
+        const result = await javaExecute(classData, stdin, 5000);
 
         if (!result.success) {
           if (result.error?.includes("Time limit")) {
