@@ -364,7 +364,7 @@ app.post('/compile/java', async (req, res) => {
     // Write Main.java with user's code
     await writeFile(mainSourceFile, sourceCode);
 
-    // Write Runner.java (launcher class that redirects stdin and stdout to file)
+    // Write Runner.java (launcher class that redirects stdin)
     const runnerCode = `import java.io.*;
 public class Runner {
   public static void main(String[] args) throws Exception {
@@ -373,14 +373,10 @@ public class Runner {
     } catch (Exception e) {
       // stdin.txt may not exist for programs that don't read input
     }
-    PrintStream outFile = new PrintStream(new FileOutputStream("/str/output.txt"));
-    System.setOut(outFile);
     try {
       Main.main(args);
     } finally {
       System.out.println("__CJ_DONE__");
-      outFile.flush();
-      outFile.close();
     }
   }
 }`;
