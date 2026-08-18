@@ -392,7 +392,7 @@ public class Runner {
       const classData = await readFile(classPath);
       classes.push({
         name: classFile.replace('.class', ''),
-        data: classData,
+        data: classData.toString('base64'),
       });
     }
 

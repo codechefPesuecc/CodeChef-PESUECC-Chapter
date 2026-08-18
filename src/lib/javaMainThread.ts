@@ -73,8 +73,8 @@ export async function executeJavaMainThread(
 
   return new Promise((resolve) => {
     const task = async () => {
+      const elapsed = () => Math.round(performance.now() - startTime);
       try {
-        const elapsed = () => Math.round(performance.now() - startTime);
 
         console.error(`[JavaExec +${elapsed()}ms] Starting execution`);
 
