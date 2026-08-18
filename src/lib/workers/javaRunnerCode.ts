@@ -1,6 +1,8 @@
 export const JAVA_RUNNER_CODE = `
-// Import CheerpJ 3 engine from CDN
-importScripts("https://cj3.leaningtech.com/3.0/cj3loader.js");
+// Import CheerpJ 4 engine from CDN (updated loader endpoint)
+importScripts("https://cjrtnc.leaningtech.com/4.3/loader.js");
+
+const globalScope = self;
 
 self.onmessage = async (event) => {
   const { id, classBuffer, stdin, timeoutMs = 5000 } = event.data;
@@ -10,10 +12,10 @@ self.onmessage = async (event) => {
   const startTime = performance.now();
 
   try {
-    console.log('[JavaRunner] Initializing CheerpJ 3 WebAssembly JVM...');
+    console.log('[JavaRunner] Initializing CheerpJ 4 WebAssembly JVM...');
 
     // Initialize CheerpJ in headless mode (no UI)
-    await cheerpjInit({
+    await globalScope.cheerpjInit({
       javaProperties: {
         "java.awt.headless": "true"
       }
@@ -23,13 +25,13 @@ self.onmessage = async (event) => {
 
     // Write the compiled .class file to virtual filesystem
     const classData = new Uint8Array(classBuffer);
-    cheerpjAddStringFile("/app/Main.class", classData);
+    globalScope.cheerpjAddStringFile("/app/Main.class", classData);
 
     console.log('[JavaRunner] Main.class written to /app/');
 
     // If stdin is provided, write it to /app/input.txt for Java to read
     if (stdin && stdin.trim()) {
-      cheerpjAddStringFile("/app/input.txt", new TextEncoder().encode(stdin));
+      globalScope.cheerpjAddStringFile("/app/input.txt", new TextEncoder().encode(stdin));
       console.log('[JavaRunner] stdin written to /app/input.txt');
     }
 
@@ -49,7 +51,7 @@ self.onmessage = async (event) => {
 
     // Execute the Java program
     // timeout check via Promise.race
-    const executionPromise = cheerpjRunMain("Main", "/app/");
+    const executionPromise = globalScope.cheerpjRunMain("Main", "/app/");
     const timeoutPromise = new Promise((_, reject) =>
       setTimeout(() => reject(new Error('Time Limit Exceeded')), timeoutMs)
     );
