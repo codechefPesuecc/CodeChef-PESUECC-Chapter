@@ -105,6 +105,8 @@ export async function executeJavaMainThread(
         const originalLog = console.log;
         const originalError = console.error;
 
+        let sentinelFired = false;
+
         try {
           console.log = (msg: string) => {
             const msgStr = String(msg);
@@ -115,6 +117,15 @@ export async function executeJavaMainThread(
               !msgStr.includes('main is starting')
             ) {
               stdoutBuf.push(msgStr);
+              // Detect sentinel (Runner printed this at the end)
+              if (msgStr.includes('__CJ_DONE__')) {
+                sentinelFired = true;
+                // Remove sentinel from output
+                stdoutBuf[stdoutBuf.length - 1] = stdoutBuf[stdoutBuf.length - 1].replace('__CJ_DONE__', '').trim();
+                if (stdoutBuf[stdoutBuf.length - 1] === '') {
+                  stdoutBuf.pop();
+                }
+              }
             }
           };
           console.error = (msg: string) => stderrBuf.push(String(msg));
@@ -124,19 +135,33 @@ export async function executeJavaMainThread(
           const mainClass = classesData instanceof ArrayBuffer ? 'Main' : 'Runner';
           originalError(`[JavaExec +${elapsed()}ms] Calling cheerpjRunMain('${mainClass}', '/str/')`);
           const executionPromise = globalScope.cheerpjRunMain(mainClass, '/str/');
+
+          // Sentinel promise: resolves when __CJ_DONE__ appears
+          const sentinelPromise = new Promise<void>((resolve) => {
+            const checkSentinel = () => {
+              if (sentinelFired) {
+                resolve();
+              } else {
+                setTimeout(checkSentinel, 10);
+              }
+            };
+            checkSentinel();
+          });
+
           const timeoutPromise = new Promise<never>((_, reject) =>
             setTimeout(() => reject(new Error('Time Limit Exceeded')), timeoutMs)
           );
 
-          const exitCode = await Promise.race([executionPromise, timeoutPromise]);
-          originalError(`[JavaExec +${elapsed()}ms] Program completed with exit code ${exitCode}`);
+          // Race: sentinel (ideal), promise (might resolve), or timeout (fallback)
+          await Promise.race([sentinelPromise, executionPromise.catch(() => undefined), timeoutPromise]);
+          originalError(`[JavaExec +${elapsed()}ms] Program completed`);
 
           resolve({
             success: true,
             stdout: stdoutBuf.join('\n'),
             stderr: stderrBuf.join('\n'),
             executionTimeMs: Math.round(performance.now() - startTime),
-            exitCode: exitCode || 0,
+            exitCode: 0,
           });
         } catch (err) {
           const errorMsg = err instanceof Error ? err.message : String(err);

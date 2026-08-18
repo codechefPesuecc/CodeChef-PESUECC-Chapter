@@ -373,7 +373,11 @@ public class Runner {
     } catch (Exception e) {
       // stdin.txt may not exist for programs that don't read input
     }
-    Main.main(args);
+    try {
+      Main.main(args);
+    } finally {
+      System.out.println("__CJ_DONE__");
+    }
   }
 }`;
     await writeFile(runnerSourceFile, runnerCode);
