@@ -28,6 +28,7 @@ import MechaPanel from "./MechaPanel";
 import Link from "next/link";
 import { useCodeExecution } from "@/lib/useCodeExecution";
 import { useWasmExecution } from "@/lib/useWasmExecution";
+import { useJavaExecution } from "@/lib/useJavaExecution";
 import type { SupportedWasmLanguage } from "@/lib/wasmExecution";
 
 const FILE_EXT: Record<LanguageId, string> = {
@@ -101,6 +102,7 @@ export default function ArenaWorkspace({
   const user = useUser();
   const { execute: clientExecute } = useCodeExecution();
   const { compileAndExecute: wasmCompileAndExecute } = useWasmExecution();
+  const { execute: javaExecute } = useJavaExecution();
   const [language, setLanguage] = useState<LanguageId>("cpp");
   const [code, setCode] = useState<string>(() => loadCode("cpp"));
   const [customInput, setCustomInput] = useState(sampleInput);
@@ -448,6 +450,88 @@ export default function ArenaWorkspace({
           status: "ERR",
           input: stdin,
           message: err instanceof Error ? err.message : "WASM execution failed.",
+        });
+      } finally {
+        setRunning(false);
+      }
+      return;
+    }
+
+    // Use CheerpJ 3 for Java execution (browser-based JVM)
+    if (language === "java") {
+      try {
+        setBusyLabel("Compiling Java…");
+
+        // Compile Java source to .class bytecode
+        const compileRes = await fetch("/api/compile/java", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sourceCode: code }),
+        });
+
+        if (!compileRes.ok) {
+          const compileErr = await compileRes.json();
+          setJudgement({
+            mode: "run",
+            status: "CE",
+            input: stdin,
+            stderr: compileErr.error || "Java compilation failed.",
+          });
+          setRunning(false);
+          return;
+        }
+
+        setBusyLabel("Executing Java via CheerpJ…");
+        const classBuffer = await compileRes.arrayBuffer();
+
+        // Execute using CheerpJ 3 in Web Worker
+        const result = await javaExecute(classBuffer, stdin, 5000);
+
+        if (!result.success) {
+          if (result.error?.includes("Time limit")) {
+            setJudgement({
+              mode: "run",
+              status: "TLE",
+              input: stdin,
+              output: result.stdout,
+              message: "Exceeded the 5.0s time limit.",
+            });
+          } else {
+            setJudgement({
+              mode: "run",
+              status: "RE",
+              input: stdin,
+              output: result.stdout,
+              stderr: result.stderr || result.error,
+            });
+          }
+        } else {
+          // Execution successful
+          if (custom) {
+            setJudgement({
+              mode: "run",
+              status: "RAN",
+              input: stdin,
+              output: result.stdout,
+              stderr: result.stderr,
+            });
+          } else {
+            const pass = (result.stdout ?? "").trim() === sampleOutput.trim();
+            setJudgement({
+              mode: "run",
+              status: pass ? "AC" : "WA",
+              input: stdin,
+              output: result.stdout,
+              stderr: result.stderr,
+            });
+          }
+        }
+      } catch (err) {
+        setJudgement({
+          mode: "run",
+          status: "ERR",
+          input: stdin,
+          message: err instanceof Error ? err.message : "Java execution failed.",
         });
       } finally {
         setRunning(false);
