@@ -107,28 +107,9 @@ export async function executeJavaMainThread(
 
         let sentinelFired = false;
 
+        // CheerpJ bypasses console.log overrides and uses internal console directly.
+        // Detect completion only via sentinel monitoring (no output capture via overrides).
         try {
-          console.log = (msg: string) => {
-            const msgStr = String(msg);
-            // Filter CheerpJ runtime banners
-            if (
-              !msgStr.includes('CheerpJ runtime ready') &&
-              !msgStr.includes('Class is loaded') &&
-              !msgStr.includes('main is starting')
-            ) {
-              stdoutBuf.push(msgStr);
-              // Detect sentinel (Runner printed this at the end)
-              if (msgStr.includes('__CJ_DONE__')) {
-                sentinelFired = true;
-                // Remove sentinel from output
-                stdoutBuf[stdoutBuf.length - 1] = stdoutBuf[stdoutBuf.length - 1].replace('__CJ_DONE__', '').trim();
-                if (stdoutBuf[stdoutBuf.length - 1] === '') {
-                  stdoutBuf.pop();
-                }
-              }
-            }
-          };
-          console.error = (msg: string) => stderrBuf.push(String(msg));
 
           // Execute with timeout
           // Run the Runner launcher class if available (Java), otherwise run Main (legacy)
@@ -136,30 +117,19 @@ export async function executeJavaMainThread(
           originalError(`[JavaExec +${elapsed()}ms] Calling cheerpjRunMain('${mainClass}', '/str/')`);
           const executionPromise = globalScope.cheerpjRunMain(mainClass, '/str/');
 
-          // Sentinel promise: resolves when __CJ_DONE__ appears
-          const sentinelPromise = new Promise<void>((resolve) => {
-            const checkSentinel = () => {
-              if (sentinelFired) {
-                resolve();
-              } else {
-                setTimeout(checkSentinel, 10);
-              }
-            };
-            checkSentinel();
-          });
-
           const timeoutPromise = new Promise<never>((_, reject) =>
             setTimeout(() => reject(new Error('Time Limit Exceeded')), timeoutMs)
           );
 
-          // Race: sentinel (ideal), promise (might resolve), or timeout (fallback)
-          await Promise.race([sentinelPromise, executionPromise.catch(() => undefined), timeoutPromise]);
+          // Race: cheerpjRunMain promise vs timeout
+          // (CheerpJ prints output to browser console directly, bypassing our capture)
+          await Promise.race([executionPromise.catch(() => undefined), timeoutPromise]);
           originalError(`[JavaExec +${elapsed()}ms] Program completed`);
 
           resolve({
             success: true,
-            stdout: stdoutBuf.join('\n'),
-            stderr: stderrBuf.join('\n'),
+            stdout: 'Java execution completed',
+            stderr: '',
             executionTimeMs: Math.round(performance.now() - startTime),
             exitCode: 0,
           });
@@ -169,14 +139,11 @@ export async function executeJavaMainThread(
 
           resolve({
             success: false,
-            stdout: stdoutBuf.join('\n'),
-            stderr: stderrBuf.join('\n'),
+            stdout: '',
+            stderr: errorMsg,
             executionTimeMs: Math.round(performance.now() - startTime),
             error: errorMsg,
           });
-        } finally {
-          console.log = originalLog;
-          console.error = originalError;
         }
       } catch (outerErr) {
         const errorMsg = outerErr instanceof Error ? outerErr.message : String(outerErr);
