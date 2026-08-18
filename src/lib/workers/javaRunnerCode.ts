@@ -2,12 +2,6 @@ export const JAVA_RUNNER_CODE = `
 // Import CheerpJ 3 engine from CDN
 importScripts("https://cj3.leaningtech.com/3.0/cj3loader.js");
 
-// Declare CheerpJ globals for type safety
-declare var cheerpjInit: any;
-declare var cheerpjRunMain: any;
-declare var cheerpjAddStringFile: any;
-declare var cheerpjCreateFile: any;
-
 self.onmessage = async (event) => {
   const { id, classBuffer, stdin, timeoutMs = 5000 } = event.data;
 
