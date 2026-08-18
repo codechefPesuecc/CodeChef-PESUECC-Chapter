@@ -364,7 +364,7 @@ app.post('/compile/java', async (req, res) => {
     // Write Main.java with user's code
     await writeFile(mainSourceFile, sourceCode);
 
-    // Write Runner.java (launcher class that redirects stdin)
+    // Write Runner.java (launcher class that redirects stdin and forces JVM exit)
     const runnerCode = `import java.io.*;
 public class Runner {
   public static void main(String[] args) throws Exception {
@@ -377,6 +377,7 @@ public class Runner {
       Main.main(args);
     } finally {
       System.out.println("__CJ_DONE__");
+      System.exit(0);  // Force JVM termination so cheerpjRunMain Promise resolves
     }
   }
 }`;

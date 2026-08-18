@@ -107,9 +107,10 @@ export async function executeJavaMainThread(
 
         let sentinelFired = false;
 
-        // CheerpJ bypasses console.log overrides and uses internal console directly.
-        // Detect completion only via sentinel monitoring (no output capture via overrides).
+        // Capture console output that flows through console.log during execution
         try {
+          console.log = (msg: string) => stdoutBuf.push(String(msg));
+          console.error = (msg: string) => stderrBuf.push(String(msg));
 
           // Execute with timeout
           // Run the Runner launcher class if available (Java), otherwise run Main (legacy)
@@ -122,22 +123,27 @@ export async function executeJavaMainThread(
           );
 
           // Race: cheerpjRunMain promise vs timeout
-          // (CheerpJ prints output to browser console directly, bypassing our capture)
           await Promise.race([executionPromise.catch(() => undefined), timeoutPromise]);
           originalError(`[JavaExec +${elapsed()}ms] Program completed`);
 
-          // Read output file written by Runner.java
-          let stdout = '';
-          try {
-            const blob = await globalScope.cjFileBlob('/str/output.txt');
-            if (blob) {
-              stdout = await blob.text();
-              // Remove sentinel from output
-              stdout = stdout.replace('__CJ_DONE__\n', '').replace('__CJ_DONE__', '').trim();
-            }
-          } catch {
-            stdout = 'Program executed (output unavailable)';
-          }
+          // Capture completed - restore console and filter output
+          console.log = originalLog;
+          console.error = originalError;
+
+          // Filter CheerpJ runtime banners and empty lines
+          let stdout = stdoutBuf
+            .filter(line => {
+              const s = String(line).trim();
+              return (
+                s &&
+                !s.includes('CheerpJ runtime ready') &&
+                !s.includes('Class is loaded') &&
+                !s.includes('main is starting') &&
+                !s.includes('__CJ_DONE__')
+              );
+            })
+            .join('\n')
+            .trim();
 
           resolve({
             success: true,
@@ -147,13 +153,16 @@ export async function executeJavaMainThread(
             exitCode: 0,
           });
         } catch (err) {
+          console.log = originalLog;
+          console.error = originalError;
+
           const errorMsg = err instanceof Error ? err.message : String(err);
           originalError(`[JavaExec +${elapsed()}ms] ERROR: ${errorMsg}`);
 
           resolve({
             success: false,
-            stdout: '',
-            stderr: errorMsg,
+            stdout: stdoutBuf.join('\n'),
+            stderr: stderrBuf.join('\n'),
             executionTimeMs: Math.round(performance.now() - startTime),
             error: errorMsg,
           });
