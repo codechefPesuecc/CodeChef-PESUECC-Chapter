@@ -21,6 +21,12 @@ export async function POST(
     const body = await request.json();
     const { sourceCode } = body;
 
+    console.log('🔧 [Compile API]', language, {
+      sourceCodeLength: sourceCode?.length || 0,
+      bodyKeys: Object.keys(body),
+      body: JSON.stringify(body).slice(0, 100),
+    });
+
     if (!sourceCode) {
       return NextResponse.json(
         { status: 'ERROR', error: 'sourceCode is required' },

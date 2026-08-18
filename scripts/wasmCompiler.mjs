@@ -26,6 +26,7 @@ const runCommand = (command, args, options = {}) => {
   return new Promise((resolve, reject) => {
     const proc = spawn(command, args, {
       ...options,
+      env: options.env || process.env,
       stdio: ['pipe', 'pipe', 'pipe'],
     });
 
@@ -81,6 +82,7 @@ app.post('/compile/cpp', async (req, res) => {
     // -O2: optimization level
     // -s STANDALONE_WASM: produce pure WASI binary without JS glue
     // -s WASM=1: ensure WASM output
+    // -sDEFAULT_TO_CXX: link C++ stdlib for C++ code
     await runCommand('emcc', [
       inputPath,
       '-o',
@@ -90,7 +92,11 @@ app.post('/compile/cpp', async (req, res) => {
       'STANDALONE_WASM',
       '-s',
       'WASM=1',
-    ]);
+      '-s',
+      'DEFAULT_TO_CXX',
+    ], {
+      env: process.env,
+    });
 
     // Read compiled WASM binary
     const { readFile } = await import('fs/promises');

@@ -182,12 +182,23 @@ export class WasmExecutionManager {
         timeoutHandle,
       });
 
-      worker.postMessage({
-        id,
-        wasmBuffer,
-        stdin,
-        timeoutMs,
-      } as WasmWorkerMessage);
+      // Post message with transferable ArrayBuffer
+      try {
+        worker.postMessage({
+          id,
+          wasmBuffer,
+          stdin,
+          timeoutMs,
+        } as WasmWorkerMessage, [wasmBuffer]);
+      } catch (err) {
+        // Fallback if transfer fails
+        worker.postMessage({
+          id,
+          wasmBuffer,
+          stdin,
+          timeoutMs,
+        } as WasmWorkerMessage);
+      }
     });
   }
 
