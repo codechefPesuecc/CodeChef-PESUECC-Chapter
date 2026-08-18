@@ -37,7 +37,6 @@ export type JavaExecutionResult = {
   error?: string;
 };
 
-let runCounter = 0;
 const outputQueue: (() => Promise<JavaExecutionResult>)[] = [];
 let isProcessing = false;
 
@@ -68,8 +67,6 @@ export async function executeJavaMainThread(
 
   const globalScope = globalThis as any;
   const startTime = performance.now();
-  const runId = ++runCounter;
-  const runDir = `/str/run-${runId}`;
 
   const stdoutBuf: string[] = [];
   const stderrBuf: string[] = [];
@@ -81,7 +78,7 @@ export async function executeJavaMainThread(
         if (classesData instanceof ArrayBuffer) {
           // Legacy: single WASM binary
           const classData = new Uint8Array(classesData);
-          await globalScope.cheerpOSAddStringFile(`${runDir}/Main.class`, classData);
+          await globalScope.cheerpOSAddStringFile('/str/Main.class', classData);
         } else {
           // Java: JSON with multiple .class files
           const compiled = classesData as CompiledClasses;
@@ -92,13 +89,13 @@ export async function executeJavaMainThread(
             for (let i = 0; i < binaryString.length; i++) {
               bytes[i] = binaryString.charCodeAt(i);
             }
-            await globalScope.cheerpOSAddStringFile(`${runDir}/${cls.name}.class`, bytes);
+            await globalScope.cheerpOSAddStringFile(`/str/${cls.name}.class`, bytes);
           }
         }
 
         // Write stdin if provided
         if (stdin) {
-          await globalScope.cheerpOSAddStringFile(`${runDir}/stdin.txt`, stdin);
+          await globalScope.cheerpOSAddStringFile('/str/stdin.txt', stdin);
         }
 
         // Capture console output
@@ -121,7 +118,7 @@ export async function executeJavaMainThread(
         // Execute with timeout
         // Run the Runner launcher class if available (Java), otherwise run Main (legacy)
         const mainClass = classesData instanceof ArrayBuffer ? 'Main' : 'Runner';
-        const executionPromise = globalScope.cheerpjRunMain(mainClass, runDir);
+        const executionPromise = globalScope.cheerpjRunMain(mainClass, '/str/');
         const timeoutPromise = new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('Time Limit Exceeded')), timeoutMs)
         );
