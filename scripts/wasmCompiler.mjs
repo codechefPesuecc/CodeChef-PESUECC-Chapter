@@ -443,7 +443,7 @@ app.post('/compile/csharp', async (req, res) => {
     // Create project directory
     await mkdir(projectDir, { recursive: true });
 
-    // Create minimal .NET 8 WASI project file
+    // Create minimal .NET 8 WASI project file with AOT compilation
     const csprojContent = `<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -451,6 +451,11 @@ app.post('/compile/csharp', async (req, res) => {
     <RuntimeIdentifier>wasi-wasm</RuntimeIdentifier>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <PublishAot>true</PublishAot>
+    <PublishTrimmed>true</PublishTrimmed>
+    <SelfContained>true</SelfContained>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
 </Project>`;
 
