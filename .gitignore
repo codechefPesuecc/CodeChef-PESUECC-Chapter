@@ -69,6 +69,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# load testing (local development only)
+/scripts/loadtest*.py
+/scripts/setup_loadtest_users.py
+
 # claude / ai agent tooling
 .claude/
 CLAUDE.md
