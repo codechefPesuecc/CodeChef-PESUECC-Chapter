@@ -18,10 +18,9 @@ const RULES: string[] = [
   "Don't probe or exploit the judge, and don't attempt to extract the hidden test cases.",
 ];
 
-export default function ArenaRules() {
-  return (
-    <MechaPanel className="mt-6" label="Rules">
-      <details className="group">
+export default function ArenaRules({ defaultOpen, noPanel }: { defaultOpen?: boolean; noPanel?: boolean }) {
+  const inner = (
+      <details className="group" open={defaultOpen}>
       <summary className="flex cursor-pointer list-none items-center gap-3 px-6 py-4 [&::-webkit-details-marker]:hidden">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-bronze/15 text-bronze">
           <BookIcon />
@@ -47,6 +46,13 @@ export default function ArenaRules() {
         ))}
       </ol>
       </details>
+  );
+
+  if (noPanel) return inner;
+
+  return (
+    <MechaPanel className="mt-6" label="Rules">
+      {inner}
     </MechaPanel>
   );
 }

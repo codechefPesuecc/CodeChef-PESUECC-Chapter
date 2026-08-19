@@ -12,6 +12,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import CodeEditor from "./CodeEditor";
+import ArenaRules from "./ArenaRules";
 import {
   LANGUAGES,
   STARTER_CODE,
@@ -25,25 +26,13 @@ import { useUser } from "@/components/auth/useUser";
 import LeaderboardTable, { type LeaderRow } from "./LeaderboardTable";
 import Turnstile, { turnstileConfigured } from "./Turnstile";
 import MechaPanel from "./MechaPanel";
-import Link from "next/link";
 
-const FILE_EXT: Record<LanguageId, string> = {
-  cpp: "cpp",
-  c: "c",
-  python: "py",
-  java: "java",
-  csharp: "cs",
-  javascript: "js",
-  go: "go",
-  rust: "rs",
-  zig: "zig",
-};
 
 // Draggable split between the problem and the editor (desktop only). Stored as
 // the problem pane's width in percent; clamped so neither side collapses.
 const SPLIT_KEY = "cp-arena:split-pct";
-const SPLIT_MIN = 25;
-const SPLIT_MAX = 75;
+const SPLIT_MIN = 20;
+const SPLIT_MAX = 80;
 const SPLIT_STEP = 2; // keyboard nudge per arrow press
 const clampSplit = (n: number) => Math.min(SPLIT_MAX, Math.max(SPLIT_MIN, n));
 
@@ -116,6 +105,10 @@ export default function ArenaWorkspace({
   // Layout: draggable problem/editor split + maximized editor.
   const [splitPct, setSplitPct] = useState(50);
   const [editorFullscreen, setEditorFullscreen] = useState(false);
+  const [splitHeightPct, setSplitHeightPct] = useState(70);
+  const [bottomTab, setBottomTab] = useState<"testcase" | "result">("testcase");
+  const [leftTab, setLeftTab] = useState<"problem" | "rules" | "submissions">("problem");
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const startRef = useRef<number | null>(null);
   const frozenRef = useRef(false);
@@ -284,6 +277,31 @@ export default function ArenaWorkspace({
       e.preventDefault();
       setSplitPct(50);
     }
+  };
+
+  const rightPaneRef = useRef<HTMLDivElement>(null);
+  const startVerticalResize = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const applyFromClientY = (clientY: number) => {
+      const el = rightPaneRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      if (rect.height === 0) return;
+      let pct = ((clientY - rect.top) / rect.height) * 100;
+      pct = Math.min(80, Math.max(20, pct));
+      setSplitHeightPct(pct);
+    };
+    const onMove = (ev: PointerEvent) => applyFromClientY(ev.clientY);
+    const onUp = () => {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+    };
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "row-resize";
   };
 
   const changeLanguage = (next: LanguageId) => {
@@ -523,80 +541,129 @@ export default function ArenaWorkspace({
     }
   };
 
+  const fullscreenBackdrop =
+    editorFullscreen &&
+    typeof document !== "undefined" &&
+    createPortal(
+      <div
+        aria-hidden
+        onClick={() => setEditorFullscreen(false)}
+        className="fixed inset-0 z-[95] bg-black/60 backdrop-blur-sm"
+      />,
+      document.body,
+    );
+
   return (
-    <div className="mt-8 space-y-6">
-      {/* Dim + blur the whole page behind the maximized editor. Portaled to
-          <body> so the backdrop-filter's root is the document — a nested scrim
-          only blurs its own stacking context, letting late-painted fixed layers
-          (e.g. the HUD frame) escape the blur. The editor panel stays in place
-          (z-100 > this z-95), so it isn't blurred and CodeMirror never
-          remounts. Clicking the scrim exits full screen. */}
-      {editorFullscreen &&
-        typeof document !== "undefined" &&
-        createPortal(
-          <div
-            aria-hidden
-            onClick={() => setEditorFullscreen(false)}
-            className="fixed inset-0 z-[95] bg-black/40 backdrop-blur-sm"
-          />,
-          document.body,
-        )}
+    <>
+      <style>{`
+        ::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: #403831; /* Subtle dark bronze/brown */
+          border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: #d49942; /* Bronze highlight */
+        }
+      `}</style>
+      {fullscreenBackdrop}
       <div
         ref={splitContainerRef}
-        className="flex flex-col gap-6 lg:flex-row lg:items-start"
-        style={{ "--arena-left": `${splitPct}%` } as CSSProperties}
+        className={
+          editorFullscreen
+            ? "fixed inset-4 z-[100] rounded-xl bg-[var(--color-panel)] shadow-2xl dark:bg-[#1c1714] flex flex-row items-start gap-3"
+            : "absolute inset-0 flex flex-col gap-3 lg:flex-row lg:items-start"
+        }
+        style={{ "--arena-left": `${splitPct}%` } as React.CSSProperties}
       >
-        {/* Problem statement */}
-        <MechaPanel
-          label={practice ? "Practice" : "Problem"}
-          index="01"
-          ticks
-          className="w-full lg:w-[var(--arena-left)] lg:shrink-0"
-        >
-          <div className="relative">
-            <div
-              // `data-lenis-prevent` lets this panel scroll natively instead of
-              // Lenis hijacking the wheel for the whole page.
-              data-lenis-prevent
-              className={`arena-no-print max-h-[560px] overflow-y-auto px-6 py-6 lg:max-h-[720px] ${
-                practice ? "" : "select-none"
-              }`}
-              onCopyCapture={
-                practice
-                  ? undefined
-                  : (e) => {
-                      e.preventDefault();
-                      integrity.record("copy");
-                    }
-              }
-              onCutCapture={
-                practice
-                  ? undefined
-                  : (e) => {
-                      e.preventDefault();
-                      integrity.record("cut");
-                    }
-              }
-              onContextMenu={
-                practice
-                  ? undefined
-                  : (e) => {
-                      e.preventDefault();
-                      integrity.record("context-menu");
-                    }
-              }
-            >
-              {problem}
+        {/* ────────── LEFT PANE (Problem Statement / Rules / Submissions) ────────── */}
+        <div className={`flex flex-col min-h-0 relative h-full w-full lg:w-[var(--arena-left)] lg:shrink-0 ${editorFullscreen ? "hidden lg:flex" : ""}`}>
+          <div className="flex-1 min-h-0 relative">
+            <div className="absolute inset-0">
+              <MechaPanel
+                className="h-full"
+                bodyClassName="flex flex-col h-full"
+              >
+                <div className="flex shrink-0 items-center gap-4 border-b border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 h-12">
+                  <button
+                    type="button"
+                    onClick={() => setLeftTab("problem")}
+                    className={`mecha-btn inline-flex h-8 items-center justify-center rounded border px-3 font-mono text-[10px] font-bold uppercase tracking-wider transition-all duration-300 ${
+                      leftTab === "problem" 
+                        ? "border-bronze bg-bronze text-[#1c1714] shadow-[0_0_12px_rgba(212,153,66,0.6)] scale-[1.02]" 
+                        : "border-transparent bg-[var(--ide-border)] text-[var(--ide-ink-dim)] hover:border-bronze/50 hover:bg-[#d49942]/20 hover:text-bronze hover:shadow-[0_0_8px_rgba(212,153,66,0.4)]"
+                    }`}
+                  >
+                    Description
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLeftTab("rules")}
+                    className={`mecha-btn inline-flex h-8 items-center justify-center rounded border px-3 font-mono text-[10px] font-bold uppercase tracking-wider transition-all duration-300 ${
+                      leftTab === "rules" 
+                        ? "border-bronze bg-bronze text-[#1c1714] shadow-[0_0_12px_rgba(212,153,66,0.6)] scale-[1.02]" 
+                        : "border-transparent bg-[var(--ide-border)] text-[var(--ide-ink-dim)] hover:border-bronze/50 hover:bg-[#d49942]/20 hover:text-bronze hover:shadow-[0_0_8px_rgba(212,153,66,0.4)]"
+                    }`}
+                  >
+                    Rules
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLeftTab("submissions")}
+                    className={`mecha-btn inline-flex h-8 items-center justify-center rounded border px-3 font-mono text-[10px] font-bold uppercase tracking-wider transition-all duration-300 ${
+                      leftTab === "submissions" 
+                        ? "border-bronze bg-bronze text-[#1c1714] shadow-[0_0_12px_rgba(212,153,66,0.6)] scale-[1.02]" 
+                        : "border-transparent bg-[var(--ide-border)] text-[var(--ide-ink-dim)] hover:border-bronze/50 hover:bg-[#d49942]/20 hover:text-bronze hover:shadow-[0_0_8px_rgba(212,153,66,0.4)]"
+                    }`}
+                  >
+                    Submissions
+                  </button>
+                  
+                  {/* Practice / Arena mode indicator that used to be the MechaPanel label */}
+                  <div className="ml-auto flex items-center gap-2">
+                    <span className="mecha-chip bg-bronze/10 text-bronze">{practice ? "PRACTICE" : "ARENA"}</span>
+                  </div>
+                </div>
+                
+                <div className="flex-1 min-h-0 relative">
+                {leftTab === "problem" && (
+                  <div className="relative h-full">
+                    <div
+                      data-lenis-prevent
+                      className={`arena-no-print h-full overflow-y-auto px-6 py-6 ${practice ? "" : "select-none"}`}
+                      onCopyCapture={practice ? undefined : (e) => { e.preventDefault(); integrity.record("copy"); }}
+                      onCutCapture={practice ? undefined : (e) => { e.preventDefault(); integrity.record("cut"); }}
+                      onContextMenu={practice ? undefined : (e) => { e.preventDefault(); integrity.record("context-menu"); }}
+                    >
+                      {problem}
+                    </div>
+                    {!practice && <Watermark tag={`@${user?.username ?? "guest"} · PESUECC Arena`} />}
+                    {!practice && !pageFocused && <ScreenGuard />}
+                  </div>
+                )}
+                {leftTab === "rules" && (
+                  <div className="h-full overflow-y-auto px-4 py-4 space-y-6" data-lenis-prevent>
+                    <SpeedBounty />
+                    <ArenaRules defaultOpen noPanel />
+                  </div>
+                )}
+                {leftTab === "submissions" && (
+                  <div className="h-full overflow-y-auto" data-lenis-prevent>
+                    <SubmissionsPanel history={history} />
+                  </div>
+                )}
+                </div>
+              </MechaPanel>
             </div>
-            {!practice && (
-              <Watermark tag={`@${user?.username ?? "guest"} · PESUECC Arena`} />
-            )}
-            {!practice && !pageFocused && <ScreenGuard />}
           </div>
-        </MechaPanel>
+        </div>
 
-        {/* Draggable divider — resizes the problem/editor split on desktop.
-            The whole bar is grabbable; arrow keys nudge it, double-click resets. */}
+        {/* ────────── HORIZONTAL DIVIDER ────────── */}
         <div
           role="separator"
           aria-orientation="vertical"
@@ -609,281 +676,253 @@ export default function ArenaWorkspace({
           onKeyDown={onResizeKey}
           onDoubleClick={() => setSplitPct(50)}
           title="Drag to resize · double-click to reset"
-          className="group relative hidden w-1.5 shrink-0 cursor-col-resize touch-none select-none self-stretch rounded-full bg-[var(--ide-border)] transition-colors hover:bg-bronze/60 focus-visible:bg-bronze focus-visible:outline-none lg:block"
+          className="group relative hidden w-1 shrink-0 cursor-col-resize touch-none select-none self-stretch lg:flex items-center justify-center transition-colors z-10"
         >
-          <span
-            aria-hidden
-            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[var(--ide-ink-dim)] transition-colors group-hover:text-bronze"
-          >
-            <GripDotsIcon />
-          </span>
+          <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[2px] bg-transparent group-hover:bg-[#d49942] transition-colors duration-200" />
+          <div className="h-8 w-[2px] rounded-full bg-[#403831] group-hover:bg-[#d49942] transition-colors duration-200" />
         </div>
 
-        {/* Editor + console */}
-        <section className="w-full space-y-4 lg:min-w-0 lg:flex-1">
-          <MechaPanel
-            className={`mecha--ide ${
-              editorFullscreen
-                ? "fixed inset-x-0 top-6 bottom-6 z-[100] mx-auto w-[min(1100px,94vw)]"
-                : ""
-            }`}
-            bodyClassName={editorFullscreen ? "flex flex-col" : ""}
-          >
-            {/* IDE title bar */}
-            <div className="flex shrink-0 items-center gap-3 border-b border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 py-2.5">
-              <span className="flex gap-1.5" aria-hidden>
-                <span className="h-2.5 w-2.5 rounded-full bg-[#e06c5b]" />
-                <span className="h-2.5 w-2.5 rounded-full bg-[#e0b24b]" />
-                <span className="h-2.5 w-2.5 rounded-full bg-[#5bbf7a]" />
-              </span>
-              <span className="font-mono text-xs text-[var(--ide-ink)]">
-                main.{FILE_EXT[language]}
-              </span>
-              <div className="ml-auto flex items-center gap-3">
-                <label className="sr-only" htmlFor="language">
-                  Language
-                </label>
-                <select
-                  id="language"
-                  value={language}
-                  onChange={(e) => changeLanguage(e.target.value as LanguageId)}
-                  className="mecha-input w-auto px-2 py-1 text-xs font-medium"
+        {/* ────────── RIGHT PANE (Editor + Test Cases) ────────── */}
+        <section ref={rightPaneRef} className="flex flex-col h-full w-full lg:min-w-0 lg:flex-1">
+          {/* ── TOP: Code Editor ── */}
+          <div className="min-h-0 flex flex-col relative" style={{ flex: `${splitHeightPct} 1 0%` }}>
+
+            <div className="flex-1 min-h-0 relative">
+              <div className="absolute inset-0">
+                <MechaPanel
+                  className="mecha--ide h-full"
+                  bodyClassName="flex flex-col h-full overflow-hidden"
                 >
-                  {LANGUAGES.map((l) => (
-                    <option
-                      key={l.id}
-                      value={l.id}
-                      style={{
-                        backgroundColor: "var(--ide-body)",
-                        color: "var(--ide-ink-strong)",
-                      }}
+                  <div className="flex shrink-0 items-center gap-3 border-b border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 h-12">
+                    <button
+                      type="button"
+                      onClick={() => setEditorFullscreen((prev) => !prev)}
+                      title={editorFullscreen ? "Exit full screen" : "Full screen"}
+                      className="hidden text-[var(--ide-ink-dim)] transition-colors hover:text-[var(--ide-ink)] lg:block shrink-0"
                     >
-                      {l.label}
-                    </option>
-                  ))}
-                </select>
-                <span
-                  title="Indicative timer — your official solve time is recorded server-side on an accepted submission."
-                  className="inline-flex items-center gap-1.5 font-mono text-xs text-[var(--ide-ink)]"
-                >
-                  <ClockIcon />
-                  {formatClock(elapsed)}
-                </span>
-                {practice ? (
-                  <span className="inline-flex items-center gap-1.5 font-mono text-xs text-[var(--ide-ink-dim)]">
-                    <TerminalIcon />
-                    <span className="hidden sm:inline">Practice</span>
-                  </span>
-                ) : (
-                  <span
-                    title={`Copy, paste and right-click are disabled · tab switches are recorded · more than ${FLAG_LIMIT} flags removes you from the top 10`}
-                    className={`inline-flex items-center gap-1.5 font-mono text-xs ${
-                      integrity.flagged
-                        ? "text-red-400"
-                        : integrity.total > 0
-                          ? "text-amber-400"
-                          : "text-[var(--ide-ink-dim)]"
-                    }`}
-                  >
-                    <ShieldIcon />
-                    <span className="hidden sm:inline">
-                      {integrity.flagged ? "Flagged" : "Proctored"}
-                    </span>
-                    {integrity.total > 0 && <span>· {integrity.total}</span>}
-                  </span>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setEditorFullscreen((v) => !v)}
-                  aria-pressed={editorFullscreen}
-                  title={
-                    editorFullscreen
-                      ? "Exit full screen (Esc)"
-                      : "Full screen editor"
-                  }
-                  className="inline-flex items-center justify-center rounded-md p-1 text-[var(--ide-ink)] transition-colors hover:text-[var(--ide-ink-strong)]"
-                >
-                  {editorFullscreen ? <CompressIcon /> : <ExpandIcon />}
-                </button>
-              </div>
-            </div>
+                      {editorFullscreen ? <CompressIcon /> : <ExpandIcon />}
+                    </button>
+                    
+                    <div className="flex items-center gap-2 px-2 text-[12px] font-bold tracking-wider text-[var(--ide-ink)] uppercase">
+                      Code
+                    </div>
 
-            <div
-              // Let the editor scroll natively — otherwise Lenis hijacks the
-              // wheel for the page (which is scroll-locked in fullscreen) and
-              // the editor never receives it.
-              data-lenis-prevent
-              className={
-                editorFullscreen ? "min-h-0 flex-1 overflow-hidden" : ""
-              }
-            >
-              <CodeEditor
-                value={code}
-                onChange={setCode}
-                language={language}
-                lockClipboard
-                onBlocked={integrity.record}
-                fullscreen={editorFullscreen}
-              />
-            </div>
+                    {!practice && integrity.total > 0 && (
+                      <div
+                        role="status"
+                        className={`flex shrink-0 items-center gap-1.5 rounded border px-2 py-0.5 text-[10px] font-medium ${
+                          integrity.flagged
+                            ? "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400"
+                            : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                        }`}
+                      >
+                        <ShieldIcon />
+                        <span className="hidden sm:inline">
+                          {integrity.notice ??
+                            (integrity.flagged
+                              ? "Removed from today's top 10 — an accepted solve now earns only the 100-point base."
+                              : "Stay under 5 flags to keep your top-10 bounty eligibility.")}
+                        </span>
+                        <span className="ml-1 shrink-0 font-mono">
+                          {integrity.total}/{FLAG_LIMIT}
+                        </span>
+                      </div>
+                    )}
 
-            {turnstileConfigured && !solved && (
-              <div className="shrink-0 border-t border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 py-3">
-                <Turnstile key={turnstileNonce} onToken={setTurnstileToken} />
-              </div>
-            )}
+                    <div className="ml-auto flex items-center gap-3 shrink-0">
+                      <label className="sr-only" htmlFor="language">Language</label>
+                      <select
+                        id="language"
+                        value={language}
+                        onChange={(e) => changeLanguage(e.target.value as LanguageId)}
+                        className="h-7 cursor-pointer appearance-none rounded bg-[var(--ide-border)] py-0 pl-3 pr-7 font-mono text-[11px] font-bold text-[var(--ide-ink)] outline-none hover:bg-bronze hover:text-[#1c1714] transition-colors"
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2212%22%20height%3D%2212%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M3%205l3%203%203-3%22%20stroke%3D%22currentColor%22%20stroke-width%3D%222%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E")`,
+                          backgroundRepeat: "no-repeat",
+                          backgroundPosition: "right 6px center",
+                        }}
+                      >
+                        {LANGUAGES.map((lang) => (
+                          <option key={lang.id} value={lang.id} className="bg-[var(--ide-bar)] text-chocolate dark:text-cream">
+                            {lang.label}
+                          </option>
+                        ))}
+                      </select>
 
-            {/* Action bar */}
-            <div className="flex shrink-0 items-center gap-3 border-t border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 py-3">
-              <button
-                type="button"
-                onClick={resetCode}
-                className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium text-[var(--ide-ink)] transition-colors hover:text-[var(--ide-ink-strong)]"
-              >
-                <ResetIcon />
-                Reset
-              </button>
-              <span
-                title="Your code is auto-saved in this browser."
-                className="hidden items-center gap-1.5 font-mono text-[11px] text-[var(--ide-ink-dim)] sm:inline-flex"
-              >
-                <CheckIcon />
-                Auto-saved
-              </span>
-              <div className="ml-auto flex items-center gap-2.5">
-                <button
-                  type="button"
-                  onClick={run}
-                  disabled={running}
-                  className="mecha-btn mecha-btn--ghost mecha-btn--sm"
-                >
-                  <PlayIcon />
-                  Run
-                </button>
-                {user === null ? (
-                  <Link
-                    href="/login"
-                    className="mecha-btn mecha-btn--solid mecha-btn--sm"
-                  >
-                    <BoltIcon />
-                    Log in to submit
-                  </Link>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={submit}
-                    disabled={running || solved || user === undefined}
-                    className={`mecha-btn mecha-btn--sm ${
-                      solved ? "mecha-btn--ok" : "mecha-btn--solid"
-                    }`}
-                  >
-                    {solved ? (
-                      <>
-                        <CheckIcon />
-                        Solved
-                      </>
-                    ) : (
-                      <>
+                      <span
+                        title={practice ? "Practice timer (local only)" : "Indicative timer"}
+                        className="inline-flex items-center gap-1.5 font-mono text-xs text-[var(--ide-ink)]"
+                      >
+                        <ClockIcon />
+                        {formatClock(elapsed)}
+                      </span>
+
+                      {!practice && (
+                        <span
+                          title="Your penalty flags. Each failed submit adds 1 flag."
+                          className={`inline-flex items-center gap-1.5 font-mono text-[11px] ${
+                            integrity.total >= FLAG_LIMIT ? "text-red-500/80" : "text-[var(--ide-ink-dim)]"
+                          }`}
+                        >
+                          🚩 {integrity.total}
+                        </span>
+                      )}
+
+
+                    </div>
+                  </div>
+
+                  <div className="relative flex-1 min-h-0 bg-[var(--ide-bg)] rounded-xl border border-[var(--ide-border)] overflow-hidden">
+                    {showResetConfirm && (
+                      <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                        <div className="rounded-xl border border-[var(--ide-border)] bg-[var(--ide-bg)] p-6 shadow-2xl max-w-sm w-full mx-4">
+                          <h3 className="text-lg font-bold text-[var(--ide-ink)] mb-2">Reset Code?</h3>
+                          <p className="text-sm text-[var(--ide-ink-dim)] mb-6">
+                            This will permanently overwrite your current draft with the starter code. This action cannot be undone.
+                          </p>
+                          <div className="flex justify-end gap-3">
+                            <button
+                              onClick={() => setShowResetConfirm(false)}
+                              className="px-4 py-2 rounded text-sm font-medium text-[var(--ide-ink)] hover:bg-[var(--ide-border)] transition-colors"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={() => {
+                                setCode(STARTER_CODE[language]);
+                                setShowResetConfirm(false);
+                              }}
+                              className="px-4 py-2 rounded text-sm font-medium bg-red-500/10 text-red-500 border border-red-500/30 hover:bg-red-500/20 transition-colors"
+                            >
+                              Reset
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 p-3" data-lenis-prevent>
+                      <CodeEditor
+                        value={code}
+                        onChange={setCode}
+                        language={language}
+                        lockClipboard
+                        onBlocked={integrity.record}
+                        fullscreen
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 py-3">
+                    <div className="flex items-center gap-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowResetConfirm(true);
+                        }}
+                        className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[var(--ide-ink-dim)] transition-colors hover:text-[var(--ide-ink)]"
+                      >
+                        <ResetIcon />
+                        Reset
+                      </button>
+                      <span className="flex items-center gap-1.5 text-[11px] text-[var(--ide-ink-dim)]">
+                        <CheckIcon /> Auto-saved
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={run}
+                        disabled={running}
+                        className="mecha-btn group inline-flex h-8 items-center gap-2 rounded bg-transparent px-4 font-mono text-xs font-semibold uppercase tracking-wider text-[var(--ide-ink)] hover:bg-[var(--ide-border)] hover:text-white dark:hover:text-black"
+                      >
+                        <PlayIcon />
+                        Run
+                      </button>
+                      <button
+                        type="button"
+                        onClick={submit}
+                        disabled={running || (turnstileConfigured && !solved && !turnstileToken)}
+                        className="mecha-btn group inline-flex h-8 items-center gap-2 rounded bg-bronze px-4 font-mono text-xs font-semibold uppercase tracking-wider text-[#1c1714] shadow hover:bg-[#d49942] focus-visible:ring-2 focus-visible:ring-bronze disabled:cursor-not-allowed disabled:opacity-50"
+                      >
                         <BoltIcon />
                         Submit
-                      </>
-                    )}
-                  </button>
+                      </button>
+                    </div>
+                  </div>
+                </MechaPanel>
+              </div>
+            </div>
+          </div>
+
+          {/* ── VERTICAL DIVIDER ── */}
+          <div
+            role="separator"
+            aria-orientation="horizontal"
+            onPointerDown={startVerticalResize}
+            onDoubleClick={() => setSplitHeightPct(70)}
+            title="Drag to resize · double-click to reset"
+            className="group relative hidden h-2 shrink-0 cursor-row-resize touch-none select-none lg:flex items-center justify-center transition-colors my-1 z-10 w-full"
+          >
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[2px] bg-transparent group-hover:bg-[#d49942] transition-colors duration-200" />
+            <div className="w-8 h-[2px] rounded-full bg-[#403831] group-hover:bg-[#d49942] transition-colors duration-200" />
+          </div>
+
+          {/* ── BOTTOM: Test Cases & Result ── */}
+          <div className="flex flex-col min-h-0 relative" style={{ flex: `${100 - splitHeightPct} 1 0%` }}>
+            <div className="mecha-tabs mb-1.5 shrink-0 flex w-full bg-[var(--ide-bar)] rounded-lg border border-[var(--ide-border)] px-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setBottomTab("testcase")}
+                className={`mecha-tab ${bottomTab === "testcase" ? "mecha-tab--active" : ""}`}
+              >
+                Testcase
+              </button>
+              <button
+                type="button"
+                onClick={() => setBottomTab("result")}
+                className={`mecha-tab ${bottomTab === "result" ? "mecha-tab--active" : ""}`}
+              >
+                Test Result
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 relative">
+              <div className="absolute inset-0 flex flex-col gap-2 overflow-hidden p-0" data-lenis-prevent>
+                {bottomTab === "testcase" ? (
+                  <CustomInputPanel
+                    value={customInput}
+                    onChange={setCustomInput}
+                    onResetToSample={() => setCustomInput(sampleInput)}
+                    isCustom={customInput.trim() !== "" && customInput.trim() !== sampleInput.trim()}
+                  />
+                ) : (
+                  <Console
+                    running={running}
+                    busyLabel={busyLabel}
+                    judgement={judgement}
+                    sampleOutput={sampleOutput}
+                    myRank={myRank}
+                    myPoints={myPoints}
+                    flagged={myFlaggedSolve}
+                    flagCount={myFlags}
+                    practice={practice}
+                    solveClock={mySolveSeconds != null ? formatClock(mySolveSeconds) : ""}
+                  />
+                )}
+
+
+
+                {turnstileConfigured && !solved && (
+                  <div className="shrink-0 border-t border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 py-3 mx-2 mb-2 rounded-lg">
+                    <Turnstile key={turnstileNonce} onToken={setTurnstileToken} />
+                  </div>
                 )}
               </div>
             </div>
-          </MechaPanel>
-
-          <CustomInputPanel
-            value={customInput}
-            onChange={setCustomInput}
-            onResetToSample={() => setCustomInput(sampleInput)}
-            isCustom={
-              customInput.trim() !== "" &&
-              customInput.trim() !== sampleInput.trim()
-            }
-          />
-
-          {integrity.total > 0 && (
-            <div
-              role="status"
-              className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium ${
-                integrity.flagged
-                  ? "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400"
-                  : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400"
-              }`}
-            >
-              <ShieldIcon />
-              <span>
-                {integrity.notice ??
-                  (integrity.flagged
-                    ? "Removed from today's top 10 — an accepted solve now earns only the 100-point base."
-                    : "Stay under 5 flags to keep your top-10 bounty eligibility.")}
-              </span>
-              <span className="ml-auto shrink-0 font-mono">
-                {integrity.total}/{FLAG_LIMIT} flags
-              </span>
-            </div>
-          )}
-
-          <Console
-            running={running}
-            busyLabel={busyLabel}
-            judgement={judgement}
-            sampleOutput={sampleOutput}
-            myRank={myRank}
-            myPoints={myPoints}
-            flagged={myFlaggedSolve}
-            flagCount={myFlags}
-            practice={practice}
-            solveClock={mySolveSeconds != null ? formatClock(mySolveSeconds) : ""}
-          />
-
-          <SubmissionsPanel history={history} />
+          </div>
         </section>
       </div>
-
-      {practice ? (
-        <MechaPanel label="Practice">
-          <div className="px-6 pb-6 pt-3 text-center">
-            <p className="text-sm text-charcoal/70">
-              This is a past problem, open for practice. Submissions are judged
-              against the hidden tests but don&apos;t affect the leaderboard.
-            </p>
-            <Link
-              href="/cp-arena"
-              className="mt-3 inline-block text-sm font-semibold text-bronze hover:underline"
-            >
-              Go to today&apos;s Problem of the Day
-            </Link>
-          </div>
-        </MechaPanel>
-      ) : (
-        <>
-          <SpeedBounty />
-
-          <MechaPanel label="Live Standings" ticks>
-            <div className="flex items-center justify-end border-b border-hairline px-6 py-4">
-              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-charcoal/60">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-                {board?.length ?? 0} solved today
-              </span>
-            </div>
-            {board === null ? (
-              <p className="px-6 py-8 text-center text-sm text-charcoal/50">
-                Loading…
-              </p>
-            ) : (
-              <LeaderboardTable
-                rows={board}
-                scope="today"
-                currentIdentity={user ? user.srn ?? user.prn : undefined}
-              />
-            )}
-          </MechaPanel>
-        </>
-      )}
-    </div>
+    </>
   );
 }
 
@@ -914,11 +953,12 @@ function Console({
 }) {
   return (
     <MechaPanel
-      className="mecha--ide"
+      className="mecha--ide h-full"
+      bodyClassName="flex flex-col h-full"
       label="Console"
       index={<VerdictBadge running={running} judgement={judgement} />}
     >
-      <div className="min-h-[150px] px-4 py-4 font-mono text-xs leading-relaxed text-[var(--ide-code)]">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 font-mono text-xs leading-relaxed text-[var(--ide-code)]">
         {running ? (
           <p className="flex items-center gap-2 text-bronze">
             <span className="h-2 w-2 animate-pulse rounded-full bg-bronze" />
@@ -1244,46 +1284,38 @@ function CustomInputPanel({
   isCustom: boolean;
 }) {
   return (
-    <MechaPanel>
-      <details className="group">
-      <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 [&::-webkit-details-marker]:hidden">
-        <span className="text-bronze">
-          <TerminalIcon />
-        </span>
-        <span className="text-sm font-semibold text-chocolate">
-          Custom input
-        </span>
+    <div className="flex flex-col flex-1 min-h-0 h-full rounded-xl border border-[var(--ide-border)] bg-[var(--ide-bg)] overflow-hidden">
+      <div className="flex shrink-0 items-center justify-between border-b border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 py-2">
+        <span className="text-[10px] uppercase tracking-wider text-[var(--ide-ink-dim)]">Custom Input</span>
         {isCustom ? (
           <span className="mecha-chip bg-bronze/15 text-bronze">custom</span>
         ) : (
           <span className="text-xs text-charcoal/45">using sample</span>
         )}
-        <ChevronIcon className="ml-auto text-charcoal/40 transition-transform group-open:rotate-180" />
-      </summary>
-      <div className="border-t border-hairline p-3">
+      </div>
+      <div className="flex-1 min-h-0 flex flex-col p-3">
         <textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
           spellCheck={false}
-          rows={4}
           placeholder="Enter stdin to Run against…"
-          className="mecha-input resize-y py-2 font-mono text-xs"
+          className="mecha-input flex-1 min-h-0 py-2 font-mono text-xs resize-none"
         />
-        <div className="mt-2 flex items-center justify-between gap-3">
+        <div className="mt-2 flex items-center justify-between gap-3 shrink-0">
           <p className="text-[11px] text-charcoal/50">
             Run uses this input. Submit always judges the hidden tests.
           </p>
-          <button
-            type="button"
-            onClick={onResetToSample}
-            className="shrink-0 text-[11px] font-medium text-bronze hover:underline"
-          >
-            Reset to sample
-          </button>
+          {isCustom && (
+            <button
+              onClick={onResetToSample}
+              className="text-[11px] font-medium text-bronze hover:underline"
+            >
+              Reset to sample
+            </button>
+          )}
         </div>
       </div>
-      </details>
-    </MechaPanel>
+    </div>
   );
 }
 
@@ -1291,8 +1323,8 @@ function CustomInputPanel({
 
 function SubmissionsPanel({ history }: { history: Submission[] }) {
   return (
-    <MechaPanel>
-      <div className="flex items-center justify-between border-b border-hairline px-4 py-3">
+    <div className="h-full flex flex-col">
+      <div className="flex items-center justify-between border-b border-hairline px-4 py-3 shrink-0">
         <h3 className="font-display text-sm font-bold text-chocolate">
           Your submissions
         </h3>
@@ -1333,7 +1365,7 @@ function SubmissionsPanel({ history }: { history: Submission[] }) {
           ))}
         </ul>
       )}
-    </MechaPanel>
+    </div>
   );
 }
 
@@ -1342,34 +1374,33 @@ function SubmissionsPanel({ history }: { history: Submission[] }) {
 function SpeedBounty() {
   const medal = ["#d9a441", "#b9b4ad", "#c08457"];
   return (
-    <MechaPanel label="Speed Bounty" ticks>
-      <div className="px-6 pb-6 pt-3">
-        <p className="text-xs text-charcoal/60">
-          Points by finish order — the faster you get accepted, the more you earn.
-        </p>
-        <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-5 lg:grid-cols-10">
-          {BOUNTY_LADDER.map((tier, i) => (
+    <div className="px-2 pb-4 pt-2">
+      <h3 className="font-display text-base font-bold text-chocolate mb-1">Speed Bounty</h3>
+      <p className="text-xs text-charcoal/60">
+        Points by finish order — the faster you get accepted, the more you earn.
+      </p>
+      <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-5 lg:grid-cols-10">
+        {BOUNTY_LADDER.map((tier, i) => (
+        <div
+          key={tier.label}
+          className="rounded-xl border border-hairline bg-cream/40 px-3 py-3 text-center dark:bg-white/[0.03]"
+        >
           <div
-            key={tier.label}
-            className="rounded-xl border border-hairline bg-cream/40 px-3 py-3 text-center dark:bg-white/[0.03]"
+            className="font-mono text-[11px] font-semibold"
+            style={{ color: i < 3 ? medal[i] : "var(--color-bronze)" }}
           >
-            <div
-              className="font-mono text-[11px] font-semibold"
-              style={{ color: i < 3 ? medal[i] : "var(--color-bronze)" }}
-            >
-              {tier.label}
-            </div>
-            <div className="mt-1 font-display text-xl font-bold text-chocolate">
-              {tier.points}
-            </div>
-            <div className="text-[10px] uppercase tracking-wide text-charcoal/50">
-              {i === BOUNTY_LADDER.length - 1 ? "base" : "pts"}
-            </div>
+            {tier.label}
           </div>
-          ))}
+          <div className="mt-1 font-display text-xl font-bold text-chocolate">
+            {tier.points}
+          </div>
+          <div className="text-[10px] uppercase tracking-wide text-charcoal/50">
+            {i === BOUNTY_LADDER.length - 1 ? "base" : "pts"}
+          </div>
         </div>
+        ))}
       </div>
-    </MechaPanel>
+    </div>
   );
 }
 
@@ -1385,7 +1416,7 @@ function Watermark({ tag }: { tag: string }) {
       className="pointer-events-none absolute inset-0 z-10 select-none overflow-hidden opacity-[0.07]"
     >
       <div className="absolute left-1/2 top-1/2 flex h-[170%] w-[170%] -translate-x-1/2 -translate-y-1/2 -rotate-[24deg] flex-wrap content-center justify-center gap-x-12 gap-y-10">
-        {Array.from({ length: 90 }).map((_, i) => (
+        {Array.from({ length: 400 }).map((_, i) => (
           <span
             key={i}
             className="whitespace-nowrap font-mono text-xs font-semibold uppercase tracking-wider text-black dark:text-white"
@@ -1475,15 +1506,6 @@ function ShieldIcon() {
   return (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-    </svg>
-  );
-}
-
-function TerminalIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m4 17 6-6-6-6" />
-      <path d="M12 19h8" />
     </svg>
   );
 }

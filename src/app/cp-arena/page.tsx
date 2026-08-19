@@ -82,7 +82,7 @@ export default async function CpArenaPage() {
         </h2>
 
         {daily ? (
-          <Link href={`/cp-arena/solve/${daily.slug}`} className="group mt-4 block">
+          <Link href={`/cp-arena/consent/${daily.slug}`} className="group mt-4 block">
             <MechaPanel
               ticks
               bodyClassName="relative overflow-hidden px-6 py-6 sm:px-8 sm:py-7"
@@ -172,7 +172,7 @@ export default async function CpArenaPage() {
               return (
                 <li key={c.slug}>
                   <Link
-                    href={`/cp-arena/archive/${c.slug}`}
+                    href={`/cp-arena/solve/${c.slug}`}
                     className="group block"
                   >
                     <MechaPanel bodyClassName="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-4">
