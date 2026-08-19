@@ -31,11 +31,9 @@ const FILE_NAME: Record<string, string> = {
   c: "main.c",
   python: "main.py",
   java: "Main.java",
-  csharp: "main.cs",
   javascript: "main.js",
   go: "main.go",
   rust: "main.rs",
-  zig: "main.zig",
 };
 
 const MAX_RUN_MS = 10000;

@@ -22,11 +22,9 @@ install() {
 install gcc 10.2.0      # C / C++
 install python 3.12.0   # Python
 install java 15.0.2     # Java
-install mono 6.12.0     # C#
 install node 20.11.1    # JavaScript
 install go 1.16.2       # Go
 install rust 1.68.2     # Rust
-install zig 0.10.1      # Zig
 
 echo "Done. Installed runtimes:"
 curl -s "$PISTON/api/v2/runtimes"

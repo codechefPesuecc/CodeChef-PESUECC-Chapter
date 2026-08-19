@@ -45,11 +45,9 @@ export const PISTON_LANGUAGE: Record<string, string> = {
   c: "c",
   python: "python",
   java: "java",
-  csharp: "csharp",
   javascript: "javascript",
   go: "go",
   rust: "rust",
-  zig: "zig",
 };
 
 export interface PistonRuntime {

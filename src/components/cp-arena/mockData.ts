@@ -10,22 +10,18 @@ export type LanguageId =
   | "python"
   | "java"
   | "c"
-  | "csharp"
   | "javascript"
   | "go"
-  | "rust"
-  | "zig";
+  | "rust";
 
 export const LANGUAGES: { id: LanguageId; label: string }[] = [
   { id: "cpp", label: "C++" },
   { id: "python", label: "Python" },
   { id: "java", label: "Java" },
   { id: "c", label: "C" },
-  { id: "csharp", label: "C#" },
   { id: "javascript", label: "JavaScript" },
   { id: "go", label: "Go" },
   { id: "rust", label: "Rust" },
-  { id: "zig", label: "Zig" },
 ];
 
 export function languageLabel(id: LanguageId): string {
@@ -89,20 +85,6 @@ int main(void) {
     return 0;
 }
 `,
-  csharp: `using System;
-using System.Linq;
-
-class Program {
-    static void Main() {
-        int n = int.Parse(Console.ReadLine().Trim());
-        long[] r = Console.ReadLine()
-            .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
-            .Select(long.Parse).ToArray();
-
-        // TODO: compute the minimum number of candies and print it.
-    }
-}
-`,
   javascript: `const data = require("fs").readFileSync(0, "utf8").split(/\\s+/).filter(Boolean);
 let idx = 0;
 const n = Number(data[idx++]);
@@ -142,14 +124,6 @@ fn main() {
 
     // TODO: compute the minimum number of candies and print it.
     let _ = r;
-}
-`,
-  zig: `const std = @import("std");
-
-pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
-    // TODO: read from stdin and print your answer.
-    try stdout.print("", .{});
 }
 `,
 };

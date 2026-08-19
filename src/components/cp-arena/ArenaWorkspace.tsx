@@ -36,11 +36,9 @@ const FILE_EXT: Record<LanguageId, string> = {
   c: "c",
   python: "py",
   java: "java",
-  csharp: "cs",
   javascript: "js",
   go: "go",
   rust: "rs",
-  zig: "zig",
 };
 
 // Draggable split between the problem and the editor (desktop only). Stored as

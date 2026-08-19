@@ -7,30 +7,23 @@ import { java } from "@codemirror/lang-java";
 import { javascript } from "@codemirror/lang-javascript";
 import { go } from "@codemirror/lang-go";
 import { rust } from "@codemirror/lang-rust";
-import { StreamLanguage } from "@codemirror/language";
-import { csharp } from "@codemirror/legacy-modes/mode/clike";
 import type { LanguageId } from "./mockData";
 import type { IntegrityEvent } from "./useIntegrityMonitor";
 import { useThemeMode } from "./useThemeMode";
 
-// C and C++ share the cpp highlighter; Kotlin/C# use the legacy clike modes;
-// Zig has no CodeMirror grammar yet, so it falls back to a plain editor.
+// C and C++ share the cpp highlighter.
 const extensionFor = (language: LanguageId) => {
   switch (language) {
     case "python":
       return python();
     case "java":
       return java();
-    case "csharp":
-      return StreamLanguage.define(csharp);
     case "javascript":
       return javascript();
     case "go":
       return go();
     case "rust":
       return rust();
-    case "zig":
-      return [];
     case "c":
     case "cpp":
     default:
