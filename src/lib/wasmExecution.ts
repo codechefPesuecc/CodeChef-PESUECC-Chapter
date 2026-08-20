@@ -1,4 +1,5 @@
 import { WASI_WORKER_CODE } from './workers/wasiWorkerCode';
+import { normalizeWasmResponse, type WasmWorkerResponse } from './wasmResponse';
 
 export type SupportedWasmLanguage = 'c' | 'cpp' | 'go' | 'rust';
 
@@ -27,15 +28,6 @@ type WasmWorkerMessage = {
   wasmBuffer: ArrayBuffer;
   stdin?: string;
   timeoutMs?: number;
-};
-
-type WasmWorkerResponse = {
-  id: string;
-  success: boolean;
-  stdout: string;
-  stderr: string;
-  executionTimeMs: number;
-  error?: string;
 };
 
 export class WasmExecutionManager {
@@ -94,8 +86,7 @@ export class WasmExecutionManager {
   }
 
   private handleWorkerMessage(event: MessageEvent<WasmWorkerResponse>) {
-    const { id, success, stdout, stderr, executionTimeMs, error } =
-      event.data;
+    const { id } = event.data;
 
     const pending = this.pendingRequests.get(id);
     if (!pending) return;
@@ -103,30 +94,9 @@ export class WasmExecutionManager {
     clearTimeout(pending.timeoutHandle);
     this.pendingRequests.delete(id);
 
-    if (error === 'TIME_LIMIT_EXCEEDED') {
-      pending.resolve({
-        status: 'TLE',
-        stdout,
-        stderr,
-        executionTimeMs,
-        error: 'Time limit exceeded',
-      });
-    } else if (success) {
-      pending.resolve({
-        status: 'SUCCESS',
-        stdout,
-        stderr,
-        executionTimeMs,
-      });
-    } else {
-      pending.resolve({
-        status: 'RUNTIME_ERROR',
-        stdout,
-        stderr,
-        executionTimeMs,
-        error,
-      });
-    }
+    // Normalize worker response to execution result
+    const result = normalizeWasmResponse(event.data);
+    pending.resolve(result);
   }
 
   private handleWorkerError(event: ErrorEvent) {
