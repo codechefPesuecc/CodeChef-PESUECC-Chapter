@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
+import { notFound, redirect } from "next/navigation";
 import {
   getChallengeBySlug,
   getDailyChallenge,
@@ -12,7 +13,6 @@ import { todayLeaderboard } from "@/server/leaderboard";
 import { ordinal } from "@/lib/points";
 import ProblemStatement from "@/components/cp-arena/ProblemStatement";
 import ArenaWorkspace from "@/components/cp-arena/ArenaWorkspace";
-import ArenaRules from "@/components/cp-arena/ArenaRules";
 import NextProblemCountdown from "@/components/cp-arena/NextProblemCountdown";
 
 // The released set and today's daily are date-dependent — resolve per request.
@@ -37,11 +37,6 @@ function formatClock(totalSeconds: number): string {
   return h > 0 ? `${h}:${pad(m)}:${pad(s % 60)}` : `${m}:${pad(s % 60)}`;
 }
 
-const DIFFICULTY_STYLES: Record<string, string> = {
-  Easy: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
-  Medium: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
-  Hard: "bg-red-500/15 text-red-700 dark:text-red-400",
-};
 
 export async function generateMetadata({
   params,
@@ -151,80 +146,31 @@ export default async function SolveProblemPage({
         </main>
       );
     }
+
+    const cookieStore = await cookies();
+    if (!cookieStore.get(`arena-consent-${slug}`)) {
+      redirect(`/cp-arena/consent/${slug}`);
+    }
   }
 
-  const difficultyStyle =
-    DIFFICULTY_STYLES[challenge.difficulty] ?? "bg-bronze/15 text-bronze";
+
   const sample = challenge.samples[0];
 
   return (
-    <main className="flex-1">
-      <section className="mx-auto max-w-7xl px-6 pt-6 pb-20">
-        {/* Header */}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 font-mono text-xs">
-          <Link
-            href="/cp-arena"
-            className="text-charcoal/50 underline decoration-charcoal/20 underline-offset-2 transition-colors hover:text-bronze"
-          >
-            ← Arena
-          </Link>
-          <span className="text-charcoal/40">·</span>
-          <span className="font-semibold uppercase tracking-wider text-bronze">
-            {isLive ? "Problem of the Day" : "Practice"}
-          </span>
-          <span className="text-charcoal/40">·</span>
-          <span className="text-charcoal/60">{formatDate(challenge.date)}</span>
-          {isLive && (
-            <>
-              <span className="text-charcoal/40">·</span>
-              <NextProblemCountdown />
-            </>
-          )}
+    <main className="flex-1 flex flex-col h-[calc(100dvh-6rem)] max-h-[calc(100dvh-6rem)] overflow-hidden">
+      <style dangerouslySetInnerHTML={{ __html: `
+        footer { display: none !important; }
+      `}} />
+      <section className="mx-auto w-full px-2 py-2 lg:px-4 lg:py-4 flex-1 flex flex-col min-h-0">
+<div className="flex-1 min-h-0 relative">
+          <ArenaWorkspace
+            slug={challenge.slug}
+            problem={<ProblemStatement challenge={toPublicContent(challenge)} />}
+            sampleInput={sample?.input ?? ""}
+            sampleOutput={sample?.output ?? ""}
+            {...(!isLive && { practice: true })}
+          />
         </div>
-
-        <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
-          <h1 className="text-balance font-display text-3xl font-bold tracking-tight text-chocolate sm:text-4xl">
-            {challenge.title}
-          </h1>
-          <span className={`mecha-chip ${difficultyStyle}`}>
-            {challenge.difficulty}
-          </span>
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          {challenge.tags.map((tag) => (
-            <span key={tag} className="mecha-chip bg-bronze/10 text-brown">
-              {tag}
-            </span>
-          ))}
-          {challenge.timeLimit && (
-            <span className="ml-1 text-xs text-charcoal/50">
-              {challenge.timeLimit} limit
-            </span>
-          )}
-          {challenge.memoryLimit && (
-            <span className="text-xs text-charcoal/50">
-              · {challenge.memoryLimit}
-            </span>
-          )}
-        </div>
-
-        {challenge.author && (
-          <p className="mt-3 text-sm text-charcoal/60">
-            Set by{" "}
-            <span className="font-semibold text-brown">{challenge.author}</span>
-          </p>
-        )}
-
-        {isLive && <ArenaRules />}
-
-        <ArenaWorkspace
-          slug={challenge.slug}
-          problem={<ProblemStatement challenge={toPublicContent(challenge)} />}
-          sampleInput={sample?.input ?? ""}
-          sampleOutput={sample?.output ?? ""}
-          {...(!isLive && { practice: true })}
-        />
       </section>
     </main>
   );
