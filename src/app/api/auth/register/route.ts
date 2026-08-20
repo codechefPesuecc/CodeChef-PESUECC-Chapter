@@ -125,6 +125,7 @@ export async function POST(req: Request) {
     srn,
     prn,
     isAdmin: false,
+    isTeacher: false,
     createdAt,
   };
   const res = NextResponse.json({

@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { eq } from "drizzle-orm";
 import { getAdminUser } from "@/server/auth/session";
 import { getAdminChallengeList, getDailyChallenge } from "@/lib/challenges";
+import { getDb } from "@/server/db";
+import { users } from "@/server/db/schema";
 import DeleteProblemButton from "@/components/admin/DeleteProblemButton";
 
 export const metadata: Metadata = { title: "Admin console" };
@@ -15,15 +18,61 @@ export default async function AdminPage() {
   const admin = await getAdminUser();
   if (!admin) redirect("/");
 
-  const [problems, daily] = await Promise.all([
+  const db = getDb();
+  const [problems, daily, teacherRows] = await Promise.all([
     getAdminChallengeList(),
     getDailyChallenge(),
+    db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.isTeacher, true)),
   ]);
   const dailySlug = daily?.slug ?? null;
+  const teacherCount = teacherRows.length;
 
   return (
     <main className="flex-1">
       <section className="mx-auto max-w-4xl px-6 pt-6 pb-24">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <nav className="flex gap-4">
+            <Link
+              href="/admin"
+              className="font-mono text-xs uppercase tracking-wider font-medium text-chocolate hover:text-bronze transition"
+            >
+              CP Arena
+            </Link>
+            <Link
+              href="/admin/teachers"
+              className="font-mono text-xs uppercase tracking-wider font-medium text-charcoal/60 hover:text-chocolate transition"
+            >
+              Teachers
+            </Link>
+          </nav>
+        </div>
+
+        {/* Teacher Management Card */}
+        <div className="mb-8 p-6 rounded-2xl border border-hairline bg-blue-50/40 dark:bg-blue-900/20">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm font-semibold text-blue-900 dark:text-blue-300">
+                Monstr Teacher Management
+              </p>
+              <p className="text-3xl font-bold text-chocolate mt-2">
+                {teacherCount}
+              </p>
+              <p className="text-xs text-charcoal/60 mt-1">
+                {teacherCount === 1 ? "teacher" : "teachers"} available
+              </p>
+            </div>
+            <Link
+              href="/admin/teachers"
+              className="mecha-btn mecha-btn--solid"
+            >
+              Manage Teachers
+            </Link>
+          </div>
+        </div>
+
         <div className="flex flex-wrap items-center gap-4">
           <div>
             <p className="font-mono text-[11px] uppercase tracking-wider text-bronze">

@@ -33,6 +33,9 @@ export const users = sqliteTable("users", {
   // PR notes); a future admin screen can toggle it. The ADD COLUMN backfills every
   // existing user to non-admin.
   isAdmin: integer("is_admin", { mode: "boolean" }).notNull().default(false),
+  // Grants access to Monstr teacher features — contest creation and management.
+  // Promoted by admins via /api/admin/teachers.
+  isTeacher: integer("is_teacher", { mode: "boolean" }).notNull().default(false),
   createdAt: integer("created_at").notNull(),
 });
 
@@ -154,6 +157,74 @@ export const challenges = sqliteTable("challenges", {
   updatedAt: integer("updated_at").notNull(),
 });
 
+export const monstrContests = sqliteTable("monstr_contests", {
+  id: text("id").primaryKey(),
+  teacherId: text("teacher_id")
+    .notNull()
+    .references(() => users.id),
+  title: text("title").notNull(),
+  joinCode: text("join_code").notNull().unique(),
+  durationMinutes: integer("duration_minutes").notNull(),
+  allowedLanguages: text("allowed_languages").notNull(), // JSON string[]
+  startedAt: integer("started_at"), // null = not started
+  endsAt: integer("ends_at"), // null until started
+  createdAt: integer("created_at").notNull(),
+});
+
+export const monstrProblems = sqliteTable("monstr_problems", {
+  id: text("id").primaryKey(),
+  contestId: text("contest_id")
+    .notNull()
+    .references(() => monstrContests.id),
+  orderIndex: integer("order_index").notNull().default(0),
+  title: text("title").notNull(),
+  statement: text("statement").notNull(),
+  inputFormat: text("input_format"),
+  outputFormat: text("output_format"),
+  constraints: text("constraints"),
+  timeLimit: text("time_limit"),
+  memoryLimit: text("memory_limit"),
+  samples: text("samples").notNull().default("[]"), // JSON Sample[]
+  contentHtml: text("content_html"), // JSON RenderedContent
+  tests: text("tests").notNull().default("[]"), // JSON TestCase[] — SECRET
+  checker: text("checker").notNull().default('{"type":"token"}'), // JSON Checker
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+export const monstrParticipants = sqliteTable(
+  "monstr_participants",
+  {
+    id: text("id").primaryKey(),
+    contestId: text("contest_id")
+      .notNull()
+      .references(() => monstrContests.id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    joinedAt: integer("joined_at").notNull(),
+  },
+  (t) => [unique().on(t.contestId, t.userId)],
+);
+
+export const monstrSubmissions = sqliteTable("monstr_submissions", {
+  id: text("id").primaryKey(),
+  contestId: text("contest_id")
+    .notNull()
+    .references(() => monstrContests.id),
+  problemId: text("problem_id")
+    .notNull()
+    .references(() => monstrProblems.id),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  language: text("language").notNull(),
+  code: text("code").notNull(),
+  status: text("status").notNull().default("pending"), // AC | WA | TLE | MLE | RE | CE | ERR
+  runtimeMs: integer("runtime_ms"),
+  createdAt: integer("created_at").notNull(),
+});
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Attempt = typeof attempts.$inferSelect;
@@ -164,3 +235,10 @@ export type PasswordReset = typeof passwordResets.$inferSelect;
 // Named *Row to avoid clashing with the domain `Challenge` type in @/lib/challenges.
 export type ChallengeRow = typeof challenges.$inferSelect;
 export type NewChallengeRow = typeof challenges.$inferInsert;
+export type MonstrContest = typeof monstrContests.$inferSelect;
+export type NewMonstrContest = typeof monstrContests.$inferInsert;
+export type MonstrProblem = typeof monstrProblems.$inferSelect;
+export type NewMonstrProblem = typeof monstrProblems.$inferInsert;
+export type MonstrParticipant = typeof monstrParticipants.$inferSelect;
+export type MonstrSubmission = typeof monstrSubmissions.$inferSelect;
+export type NewMonstrSubmission = typeof monstrSubmissions.$inferInsert;

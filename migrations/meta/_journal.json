@@ -64,6 +64,13 @@
       "when": 1786927942233,
       "tag": "0008_small_rattler",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1787253944579,
+      "tag": "0009_pink_post",
+      "breakpoints": true
     }
   ]
 }

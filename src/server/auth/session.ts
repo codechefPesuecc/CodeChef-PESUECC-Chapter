@@ -29,6 +29,7 @@ export interface SessionUser {
   srn: string | null;
   prn: string;
   isAdmin: boolean;
+  isTeacher: boolean;
   createdAt: number;
 }
 
@@ -59,6 +60,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     srn: user.srn,
     prn: user.prn,
     isAdmin: user.isAdmin,
+    isTeacher: user.isTeacher,
     createdAt: user.createdAt,
   };
 }
@@ -71,4 +73,13 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
 export async function getAdminUser(): Promise<SessionUser | null> {
   const user = await getCurrentUser();
   return user?.isAdmin ? user : null;
+}
+
+/**
+ * The signed-in user, but only when they're a teacher or admin — otherwise null.
+ * Teachers can create and manage Monstr contests. Admins have all teacher permissions.
+ */
+export async function getTeacherUser(): Promise<SessionUser | null> {
+  const user = await getCurrentUser();
+  return user && (user.isTeacher || user.isAdmin) ? user : null;
 }
