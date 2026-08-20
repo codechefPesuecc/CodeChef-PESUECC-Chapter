@@ -124,6 +124,7 @@ self.onmessage = async (event) => {
       console.log('[Worker] Calling wasi.start()...');
       wasiInstance.start(wasm);
       console.log('[Worker] Execution completed normally');
+      response.success = true;
     } catch (execErr) {
       // WASI throws WASIProcExit when the program calls exit()
       // This is expected behavior, not an error
@@ -156,8 +157,6 @@ self.onmessage = async (event) => {
         // This is a real runtime error (e.g., Memory Out of Bounds)
         throw execErr;
       }
-    } else {
-      response.success = true;
     }
     response.stdout = new TextDecoder().decode(stdoutFile.data);
     response.stderr = new TextDecoder().decode(stderrFile.data);

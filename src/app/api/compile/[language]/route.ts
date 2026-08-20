@@ -126,18 +126,20 @@ export async function POST(
         headers: { 'Content-Type': 'application/wasm' },
       });
     } catch (err) {
-      // Check for connection refused (compiler service down)
+      // Check for connection refused or reset (compiler service down/crashed)
+      const errCode = (err as any).cause?.code || '';
+      const errMsg = err instanceof Error ? err.message : '';
       if (
-        err instanceof Error &&
-        (err.message.includes('ECONNREFUSED') ||
-          (err as any).cause?.code === 'ECONNREFUSED' ||
-          (err as any).cause?.message?.includes('ECONNREFUSED'))
+        errCode === 'ECONNREFUSED' ||
+        errCode === 'ECONNRESET' ||
+        errMsg.includes('ECONNREFUSED') ||
+        errMsg.includes('ECONNRESET')
       ) {
         return NextResponse.json(
           {
             status: 'ERROR',
             error:
-              'Compilation service not running. Start with: node scripts/wasmCompiler.mjs',
+              'Compilation service unavailable. Start with: node scripts/wasmCompiler.mjs',
           },
           { status: 503 }
         );

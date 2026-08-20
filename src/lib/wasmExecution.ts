@@ -164,18 +164,20 @@ export class WasmExecutionManager {
       });
 
       // Post message with transferable ArrayBuffer
+      // Clone the buffer before transfer so the original can be reused (e.g., from cache)
+      const bufferToTransfer = wasmBuffer.slice(0);
       try {
         worker.postMessage({
           id,
-          wasmBuffer,
+          wasmBuffer: bufferToTransfer,
           stdin,
           timeoutMs,
-        } as WasmWorkerMessage, [wasmBuffer]);
+        } as WasmWorkerMessage, [bufferToTransfer]);
       } catch {
         // Fallback if transfer fails
         worker.postMessage({
           id,
-          wasmBuffer,
+          wasmBuffer: bufferToTransfer,
           stdin,
           timeoutMs,
         } as WasmWorkerMessage);
