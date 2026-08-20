@@ -4,6 +4,7 @@ import { rateLimit, clientIp } from '@/server/rateLimit';
 export const dynamic = 'force-dynamic';
 
 const SUPPORTED_LANGUAGES = ['c', 'cpp', 'go', 'rust', 'java'] as const;
+type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 const MAX_SOURCE_CODE_SIZE = 50 * 1024; // 50 KB
 const COMPILER_URL = process.env.WASM_COMPILER_URL || 'http://localhost:3001';
 
@@ -27,7 +28,7 @@ export async function POST(
     const { language } = await params;
 
     // Validate language against allowlist
-    if (!SUPPORTED_LANGUAGES.includes(language as any)) {
+    if (!SUPPORTED_LANGUAGES.includes(language as SupportedLanguage)) {
       return NextResponse.json(
         {
           status: 'ERROR',

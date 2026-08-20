@@ -105,7 +105,7 @@ export class WasmExecutionManager {
       event.error?.toString() ||
       'Unknown worker error';
     console.error('WASI Worker error:', errorMsg, event);
-    for (const [id, pending] of this.pendingRequests) {
+    for (const [, pending] of this.pendingRequests) {
       clearTimeout(pending.timeoutHandle);
       pending.reject(new Error(`Worker error: ${errorMsg}`));
     }
@@ -171,7 +171,7 @@ export class WasmExecutionManager {
           stdin,
           timeoutMs,
         } as WasmWorkerMessage, [wasmBuffer]);
-      } catch (err) {
+      } catch {
         // Fallback if transfer fails
         worker.postMessage({
           id,
