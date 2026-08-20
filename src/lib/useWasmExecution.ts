@@ -15,6 +15,17 @@ export type UseWasmExecutionState = {
   error: string | null;
 };
 
+// Client-side binary cache: Map<"lang:hash", ArrayBuffer>
+const compileBinaryCache = new Map<string, ArrayBuffer>();
+const COMPILE_CACHE_MAX_SIZE = 10; // Max 10 entries
+
+function getCacheKey(language: SupportedWasmLanguage, sourceCode: string): string {
+  // Simple hash for browser (can't use Node's createHash)
+  // Uses source code length + simple FNV-1a hash of first 100 chars
+  const hashSeed = sourceCode.slice(0, 100).split('').reduce((acc, c) => ((acc << 5) - acc + c.charCodeAt(0)) | 0, 0);
+  return `${language}:${sourceCode.length}:${hashSeed}`;
+}
+
 export function useWasmExecution() {
   const [state, setState] = useState<UseWasmExecutionState>({
     isExecuting: false,
@@ -24,6 +35,7 @@ export function useWasmExecution() {
   });
 
   const executionManager = useRef(getWasmExecutionManager());
+  const cacheStatsRef = useRef({ hits: 0, misses: 0 });
 
   useEffect(() => {
     return () => {
@@ -36,6 +48,18 @@ export function useWasmExecution() {
       setState((s) => ({ ...s, isCompiling: true, error: null }));
 
       try {
+        const cacheKey = getCacheKey(language, sourceCode);
+
+        // Check cache first
+        if (compileBinaryCache.has(cacheKey)) {
+          cacheStatsRef.current.hits++;
+          const cached = compileBinaryCache.get(cacheKey)!;
+          setState((s) => ({ ...s, isCompiling: false }));
+          return cached;
+        }
+
+        cacheStatsRef.current.misses++;
+
         const response = await fetch(`/api/compile/${language}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -48,6 +72,16 @@ export function useWasmExecution() {
         }
 
         const wasmBuffer = await response.arrayBuffer();
+
+        // Store in cache (LRU: delete oldest if at max size)
+        if (compileBinaryCache.size >= COMPILE_CACHE_MAX_SIZE) {
+          const firstKey = Array.from(compileBinaryCache.keys())[0];
+          if (firstKey) {
+            compileBinaryCache.delete(firstKey);
+          }
+        }
+        compileBinaryCache.set(cacheKey, wasmBuffer);
+
         setState((s) => ({ ...s, isCompiling: false }));
         return wasmBuffer;
       } catch (err) {

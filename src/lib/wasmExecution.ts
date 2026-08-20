@@ -1,5 +1,4 @@
 import { WASI_WORKER_CODE } from './workers/wasiWorkerCode';
-import { WASI } from '@bjorn3/browser_wasi_shim';
 
 export type SupportedWasmLanguage = 'c' | 'cpp' | 'go' | 'rust';
 
@@ -40,7 +39,6 @@ type WasmWorkerResponse = {
 };
 
 export class WasmExecutionManager {
-  private wasiWorker: Worker | null = null;
   private wasiWorkerPool: Worker[] = [];
   private poolSize = 2;
   private pendingRequests = new Map<
@@ -71,15 +69,15 @@ export class WasmExecutionManager {
     if (typeof window === 'undefined') return;
 
     try {
-      // Make WASI available globally for workers
-      (globalThis as any).WASI = WASI;
-
       // Create worker pool
       for (let i = 0; i < this.poolSize; i++) {
         const worker = this.createWorkerFromCode(WASI_WORKER_CODE);
         worker.onmessage = this.handleWorkerMessage.bind(this);
         worker.onerror = this.handleWorkerError.bind(this);
         this.wasiWorkerPool.push(worker);
+
+        // Warm up WASI shim: load it from CDN on worker creation so first user execution doesn't pay CDN cost
+        worker.postMessage({ type: 'init' });
       }
     } catch (err) {
       console.error('Failed to initialize WASM/WASI workers:', err);

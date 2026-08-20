@@ -25,7 +25,20 @@ const initWASI = async () => {
 };
 
 self.onmessage = async (event) => {
-  const { id, wasmBuffer, stdin, timeoutMs = 2000 } = event.data;
+  const { type, id, wasmBuffer, stdin, timeoutMs = 2000 } = event.data;
+
+  // Handle warm-up init request
+  if (type === 'init') {
+    try {
+      await initWASI();
+      self.postMessage({ type: 'ready' });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      self.postMessage({ type: 'error', error: msg });
+    }
+    return;
+  }
+
   const startTime = performance.now();
 
   const response = {
