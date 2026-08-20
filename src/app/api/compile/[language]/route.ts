@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit, clientIp } from '@/server/rateLimit';
 
 export const dynamic = 'force-dynamic';
+
+const SUPPORTED_LANGUAGES = ['c', 'cpp', 'go', 'rust', 'java'] as const;
+const MAX_SOURCE_CODE_SIZE = 50 * 1024; // 50 KB
+const COMPILER_URL = process.env.WASM_COMPILER_URL || 'http://localhost:3001';
 
 /**
  * WASM Compilation API Proxy
@@ -9,8 +14,9 @@ export const dynamic = 'force-dynamic';
  * POST /api/compile/cpp - Compile C++ to WASM
  * POST /api/compile/go - Compile Go to WASM
  * POST /api/compile/rust - Compile Rust to WASM
+ * POST /api/compile/java - Compile Java to Bytecode
  *
- * Requires: node scripts/wasmCompiler.mjs running on localhost:3001
+ * Requires: node scripts/wasmCompiler.mjs running at WASM_COMPILER_URL
  */
 
 export async function POST(
@@ -19,13 +25,24 @@ export async function POST(
 ) {
   try {
     const { language } = await params;
+
+    // Validate language against allowlist
+    if (!SUPPORTED_LANGUAGES.includes(language as any)) {
+      return NextResponse.json(
+        {
+          status: 'ERROR',
+          error: `Unsupported language: ${language}. Supported: ${SUPPORTED_LANGUAGES.join(', ')}`,
+        },
+        { status: 400 }
+      );
+    }
+
     const body = await request.json();
     const { sourceCode } = body;
 
     console.log('🔧 [Compile API]', language, {
       sourceCodeLength: sourceCode?.length || 0,
       bodyKeys: Object.keys(body),
-      body: JSON.stringify(body).slice(0, 100),
     });
 
     if (!sourceCode) {
@@ -35,8 +52,43 @@ export async function POST(
       );
     }
 
-    // Proxy to local WASM compiler service
-    const compilerUrl = `http://localhost:3001/compile/${language}`;
+    // Enforce sourceCode size cap
+    if (sourceCode.length > MAX_SOURCE_CODE_SIZE) {
+      return NextResponse.json(
+        {
+          status: 'ERROR',
+          error: `sourceCode exceeds maximum size of ${MAX_SOURCE_CODE_SIZE} bytes (${sourceCode.length} bytes provided)`,
+        },
+        { status: 413 }
+      );
+    }
+
+    // Apply per-IP rate limit: 20 compilations per 60 seconds (only in prod/CF, not in dev)
+    const ip = clientIp(request);
+    const hasCF = request.headers.has('cf-connecting-ip');
+    if (hasCF) {
+      // Only rate limit in CF (has CF-Connecting-IP header)
+      const rateLimitResult = await rateLimit(
+        `compile:ip:${ip}`,
+        20, // limit
+        60 * 1000 // window: 60 seconds
+      );
+      if (!rateLimitResult.ok) {
+        return NextResponse.json(
+          {
+            status: 'ERROR',
+            error: `Rate limit exceeded: ${Math.ceil(rateLimitResult.retryAfterMs / 1000)}s until next compilation allowed`,
+          },
+          {
+            status: 429,
+            headers: { 'Retry-After': String(Math.ceil(rateLimitResult.retryAfterMs / 1000)) },
+          }
+        );
+      }
+    }
+
+    // Proxy to WASM compiler service
+    const compilerUrl = `${COMPILER_URL}/compile/${language}`;
 
     try {
       const response = await fetch(compilerUrl, {
