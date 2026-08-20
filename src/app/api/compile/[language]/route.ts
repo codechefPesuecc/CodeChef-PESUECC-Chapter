@@ -126,9 +126,12 @@ export async function POST(
         headers: { 'Content-Type': 'application/wasm' },
       });
     } catch (err) {
+      // Check for connection refused (compiler service down)
       if (
         err instanceof Error &&
-        err.message.includes('ECONNREFUSED')
+        (err.message.includes('ECONNREFUSED') ||
+          (err as any).cause?.code === 'ECONNREFUSED' ||
+          (err as any).cause?.message?.includes('ECONNREFUSED'))
       ) {
         return NextResponse.json(
           {

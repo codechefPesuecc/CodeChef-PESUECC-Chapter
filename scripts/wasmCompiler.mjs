@@ -95,11 +95,14 @@ class CompilationQueue {
         try {
           const result = await fn();
           resolve(result);
+        } catch (err) {
+          console.error('[CompilationQueue] Job error:', err);
+          resolve(undefined);
         } finally {
           this.active--;
           const next = this.queue.shift();
           if (next) {
-            execute();
+            next();
           }
         }
       };
