@@ -41,12 +41,14 @@ type WasmWorkerResponse = {
 export class WasmExecutionManager {
   private wasiWorkerPool: Worker[] = [];
   private poolSize = 2;
+  private poolIndex = 0; // Round-robin cursor for worker selection
   private pendingRequests = new Map<
     string,
     {
       resolve: (result: WasmExecutionResult) => void;
       reject: (error: Error) => void;
       timeoutHandle: NodeJS.Timeout;
+      workerId: number; // Track which worker this request is assigned to
     }
   >();
 
@@ -84,8 +86,11 @@ export class WasmExecutionManager {
     }
   }
 
-  private getWorker(): Worker | null {
-    return this.wasiWorkerPool[0] || null;
+  private getWorker(): { worker: Worker; id: number } | null {
+    if (this.wasiWorkerPool.length === 0) return null;
+    const id = this.poolIndex % this.poolSize;
+    this.poolIndex++;
+    return { worker: this.wasiWorkerPool[id], id };
   }
 
   private handleWorkerMessage(event: MessageEvent<WasmWorkerResponse>) {
@@ -142,8 +147,8 @@ export class WasmExecutionManager {
   ): Promise<WasmExecutionResult> {
     const { wasmBuffer, stdin, timeoutMs = 2000 } = request;
 
-    const worker = this.getWorker();
-    if (!worker) {
+    const workerInfo = this.getWorker();
+    if (!workerInfo) {
       return {
         status: 'INITIALIZATION_ERROR',
         stdout: '',
@@ -153,16 +158,23 @@ export class WasmExecutionManager {
       };
     }
 
+    const { worker, id: workerId } = workerInfo;
     const id = `wasm-${Date.now()}-${Math.random()}`;
 
     return new Promise((resolve, reject) => {
       const timeoutHandle = setTimeout(() => {
         this.pendingRequests.delete(id);
         try {
+          // Only terminate the specific worker that timed out
           worker.terminate();
-          this.initializeWorkers();
+          // Replace just that worker, not the whole pool
+          this.wasiWorkerPool[workerId] = this.createWorkerFromCode(WASI_WORKER_CODE);
+          this.wasiWorkerPool[workerId].onmessage = this.handleWorkerMessage.bind(this);
+          this.wasiWorkerPool[workerId].onerror = this.handleWorkerError.bind(this);
+          // Warm up the replacement worker
+          this.wasiWorkerPool[workerId].postMessage({ type: 'init' });
         } catch {
-          // Ignore termination errors
+          // Ignore termination/replacement errors
         }
 
         resolve({
@@ -178,6 +190,7 @@ export class WasmExecutionManager {
         resolve,
         reject,
         timeoutHandle,
+        workerId,
       });
 
       // Post message with transferable ArrayBuffer

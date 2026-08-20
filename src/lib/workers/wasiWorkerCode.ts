@@ -146,16 +146,19 @@ self.onmessage = async (event) => {
         console.log('[Worker] Program exited with code:', exitCode);
 
         // Code 0 is success! Anything else is a runtime error.
-        if (exitCode !== 0 && exitCode !== undefined) {
+        if (exitCode === 0 || exitCode === undefined) {
+          response.success = true;
+        } else {
+          response.success = false;
           response.error = 'Process exited with code ' + exitCode;
         }
       } else {
         // This is a real runtime error (e.g., Memory Out of Bounds)
         throw execErr;
       }
+    } else {
+      response.success = true;
     }
-
-    response.success = true;
     response.stdout = new TextDecoder().decode(stdoutFile.data);
     response.stderr = new TextDecoder().decode(stderrFile.data);
   } catch (err) {
