@@ -92,10 +92,13 @@ impl SeccompProfile {
     }
 
     pub fn install(&self) -> Result<(), SeccompError> {
-        // Set NO_NEW_PRIVS to prevent privilege escalation via setuid/setcap
-        unsafe {
-            if libc::prctl(libc::PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0 {
-                return Err(SeccompError::InitError("Failed to set PR_SET_NO_NEW_PRIVS".to_string()));
+        #[cfg(target_os = "linux")]
+        {
+            // Set NO_NEW_PRIVS to prevent privilege escalation via setuid/setcap
+            unsafe {
+                if libc::prctl(libc::PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0 {
+                    return Err(SeccompError::InitError("Failed to set PR_SET_NO_NEW_PRIVS".to_string()));
+                }
             }
         }
 

@@ -1,25 +1,34 @@
-pub mod child;
 pub mod config;
 pub mod result;
-pub mod supervisor;
-pub mod cgroups;
 pub mod seccomp;
+
+#[cfg(target_os = "linux")]
+pub mod child;
+#[cfg(target_os = "linux")]
+pub mod supervisor;
+#[cfg(target_os = "linux")]
+pub mod cgroups;
+#[cfg(target_os = "linux")]
 pub mod fs;
 
-use libc::c_int;
-use nix::unistd::{fork, ForkResult};
-use std::io::Write;
-use std::os::unix::io::FromRawFd;
+#[cfg(target_os = "linux")]
+use {
+    libc::c_int,
+    nix::unistd::{fork, ForkResult},
+    std::io::Write,
+    std::os::unix::io::FromRawFd,
+    tokio::task,
+    child::{setup_child_process, ChildProcessPipes},
+    cgroups::CgroupManager,
+    supervisor::{ProcessSupervisor, read_pipe_output},
+};
+
 use thiserror::Error;
-use tokio::task;
 
 pub use config::SandboxConfig;
 pub use result::{ExecutionResult, SandboxStatus};
 
-use child::{setup_child_process, ChildProcessPipes};
-use cgroups::CgroupManager;
-use supervisor::{ProcessSupervisor, read_pipe_output};
-
+#[cfg(target_os = "linux")]
 #[derive(Debug, Error)]
 pub enum SandboxError {
     #[error("Fork failed: {0}")]
@@ -38,8 +47,16 @@ pub enum SandboxError {
     IoError(#[from] std::io::Error),
 }
 
+#[cfg(not(target_os = "linux"))]
+#[derive(Debug, Error)]
+pub enum SandboxError {
+    #[error("Sandbox is only available on Linux")]
+    PlatformNotSupported,
+}
+
 pub struct Sandbox;
 
+#[cfg(target_os = "linux")]
 impl Sandbox {
     pub async fn execute(config: SandboxConfig) -> Result<ExecutionResult, SandboxError> {
         let pipes = ChildProcessPipes::new()?;
@@ -105,6 +122,14 @@ impl Sandbox {
     }
 }
 
+#[cfg(not(target_os = "linux"))]
+impl Sandbox {
+    pub async fn execute(_config: SandboxConfig) -> Result<ExecutionResult, SandboxError> {
+        Err(SandboxError::PlatformNotSupported)
+    }
+}
+
+#[cfg(target_os = "linux")]
 fn write_all_to_fd(fd: c_int, data: &[u8]) -> std::io::Result<()> {
     unsafe {
         let mut file = std::fs::File::from_raw_fd(fd);
@@ -114,7 +139,7 @@ fn write_all_to_fd(fd: c_int, data: &[u8]) -> std::io::Result<()> {
     Ok(())
 }
 
-#[cfg(test)]
+#[cfg(all(test, target_os = "linux"))]
 mod tests {
     use super::*;
     use std::path::PathBuf;

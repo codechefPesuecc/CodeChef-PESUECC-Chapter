@@ -11,7 +11,6 @@ serde_json = "1.0"
 thiserror = "1.0"
 tempfile = "3.10"
 libc = "0.2"
-seccompiler = "0.4"
 uuid = { version = "1.8", features = ["v4"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
