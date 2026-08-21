@@ -50,6 +50,8 @@ export const PISTON_LANGUAGE: Record<string, string> = {
   go: "go",
   rust: "rust",
   zig: "zig",
+  kotlin: "kotlin",
+  swift: "swift",
 };
 
 export interface PistonRuntime {
