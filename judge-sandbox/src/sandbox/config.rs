@@ -10,6 +10,9 @@ pub struct SandboxConfig {
     pub memory_limit_bytes: u64,
     pub max_output_bytes: usize,
     pub work_dir: Option<PathBuf>,
+    pub enable_fs_isolation: bool,
+    pub fs_readonly_paths: Vec<PathBuf>,
+    pub fs_workdir_size_bytes: u64,
 }
 
 impl SandboxConfig {
@@ -23,6 +26,14 @@ impl SandboxConfig {
             memory_limit_bytes: 256 * 1024 * 1024,
             max_output_bytes: 10 * 1024 * 1024,
             work_dir: None,
+            enable_fs_isolation: true,
+            fs_readonly_paths: vec![
+                PathBuf::from("/usr"),
+                PathBuf::from("/lib"),
+                PathBuf::from("/lib64"),
+                PathBuf::from("/bin"),
+            ],
+            fs_workdir_size_bytes: 16 * 1024 * 1024,
         }
     }
 
@@ -59,6 +70,21 @@ impl SandboxConfig {
 
     pub fn with_work_dir(mut self, dir: PathBuf) -> Self {
         self.work_dir = Some(dir);
+        self
+    }
+
+    pub fn with_fs_isolation(mut self, enabled: bool) -> Self {
+        self.enable_fs_isolation = enabled;
+        self
+    }
+
+    pub fn with_fs_readonly_paths(mut self, paths: Vec<PathBuf>) -> Self {
+        self.fs_readonly_paths = paths;
+        self
+    }
+
+    pub fn with_fs_workdir_size(mut self, bytes: u64) -> Self {
+        self.fs_workdir_size_bytes = bytes;
         self
     }
 }

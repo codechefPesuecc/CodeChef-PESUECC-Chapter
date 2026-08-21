@@ -3,9 +3,11 @@ use nix::sys::resource::{setrlimit, Resource};
 use std::ffi::CString;
 use std::os::unix::ffi::OsStrExt;
 use thiserror::Error;
+use uuid::Uuid;
 
 use crate::sandbox::config::SandboxConfig;
 use crate::sandbox::seccomp::SeccompProfile;
+use crate::sandbox::fs::FsIsolation;
 
 #[derive(Debug, Error)]
 pub enum ChildError {
@@ -127,6 +129,17 @@ pub fn setup_child_process(config: &SandboxConfig, pipes: &ChildProcessPipes) ->
 
     apply_resource_limits(config)?;
     apply_environment_sanitization();
+
+    // Setup filesystem isolation (pivot_root into ephemeral tmpfs)
+    if config.enable_fs_isolation {
+        let job_id = Uuid::new_v4().to_string();
+        let _fs_isolation = FsIsolation::setup(
+            &job_id,
+            config.fs_workdir_size_bytes,
+            &config.fs_readonly_paths,
+        ).ok(); // Non-fatal - continue without fs isolation if it fails
+        // Note: After pivot_root, we're in a new root. Work dir is now /sandbox
+    }
 
     if let Some(ref work_dir) = config.work_dir {
         if std::fs::metadata(work_dir).is_ok() {

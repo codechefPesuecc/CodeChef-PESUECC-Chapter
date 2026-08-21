@@ -4,6 +4,7 @@ pub mod result;
 pub mod supervisor;
 pub mod cgroups;
 pub mod seccomp;
+pub mod fs;
 
 use libc::c_int;
 use nix::unistd::{fork, ForkResult};
@@ -31,6 +32,8 @@ pub enum SandboxError {
     CgroupError(#[from] cgroups::CgroupError),
     #[error("Seccomp error: {0}")]
     SeccompError(#[from] seccomp::SeccompError),
+    #[error("Filesystem error: {0}")]
+    FsError(#[from] fs::FsError),
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
 }
