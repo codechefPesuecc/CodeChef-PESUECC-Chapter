@@ -3,14 +3,17 @@ use crate::sandbox::{Sandbox, SandboxStatus};
 use std::fs;
 use std::path::Path;
 use tempfile::TempDir;
-use uuid::Uuid;
+use tokio::sync::mpsc;
 
-use super::job::{JobRequest, JobResult, JudgeVerdict, TestCaseResult};
+use super::job::{JobRequest, JobResult, JudgeVerdict, TestCaseResult, ProgressEvent};
 
 pub struct ExecutionPipeline;
 
 impl ExecutionPipeline {
-    pub async fn execute(request: &JobRequest) -> Result<JobResult, String> {
+    pub async fn execute(
+        request: &JobRequest,
+        progress: Option<mpsc::UnboundedSender<ProgressEvent>>,
+    ) -> Result<JobResult, String> {
         let language = SupportedLanguage::from_str(&request.language)
             .ok_or_else(|| format!("Unsupported language: {}", request.language))?;
 
@@ -35,6 +38,8 @@ impl ExecutionPipeline {
 
         // Step 2: Compile (if needed)
         if runner.is_compiled() {
+            let _ = progress.as_ref().map(|p| p.send(ProgressEvent::Compiling));
+
             let bin_path = temp_dir.path().join("binary");
 
             if let Some(compile_config) = runner.get_compile_command(&src_path, &bin_path) {
@@ -46,6 +51,9 @@ impl ExecutionPipeline {
                     result.verdict = JudgeVerdict::CompilationError;
                     result.compile_output =
                         Some(String::from_utf8_lossy(&compile_result.stderr).to_string());
+                    let _ = progress.as_ref().map(|p| p.send(ProgressEvent::Finished {
+                        verdict: JudgeVerdict::CompilationError
+                    }));
                     return Ok(result);
                 }
 
@@ -54,10 +62,10 @@ impl ExecutionPipeline {
             }
 
             // Run test cases against compiled binary
-            result = Self::run_tests(&runner, temp_dir.path(), request, result).await?;
+            result = Self::run_tests(&runner, temp_dir.path(), request, result, progress.clone()).await?;
         } else {
             // For interpreted languages, run directly
-            result = Self::run_tests(&runner, temp_dir.path(), request, result).await?;
+            result = Self::run_tests(&runner, temp_dir.path(), request, result, progress.clone()).await?;
         }
 
         Ok(result)
@@ -68,6 +76,7 @@ impl ExecutionPipeline {
         work_dir: &Path,
         request: &JobRequest,
         mut result: JobResult,
+        progress: Option<mpsc::UnboundedSender<ProgressEvent>>,
     ) -> Result<JobResult, String> {
         let bin_path = if runner.is_compiled() {
             work_dir.join("binary")
@@ -76,6 +85,11 @@ impl ExecutionPipeline {
         };
 
         for (idx, test_case) in request.test_cases.iter().enumerate() {
+            let _ = progress.as_ref().map(|p| p.send(ProgressEvent::Running {
+                test_case: idx + 1,
+                total: request.test_cases.len(),
+            }));
+
             let run_config = runner.get_run_command(
                 &bin_path,
                 test_case.input.as_bytes(),
@@ -108,6 +122,13 @@ impl ExecutionPipeline {
             result.total_cpu_time_ms += exec_result.cpu_time_ms;
             result.peak_memory_kb = result.peak_memory_kb.max(exec_result.memory_kb);
 
+            let _ = progress.as_ref().map(|p| p.send(ProgressEvent::TestResult {
+                test_case: idx + 1,
+                verdict,
+                time_ms: exec_result.cpu_time_ms,
+                memory_kb: exec_result.memory_kb,
+            }));
+
             result.test_results.push(TestCaseResult {
                 test_case_index: idx,
                 status: verdict,
@@ -120,6 +141,7 @@ impl ExecutionPipeline {
             // Early exit on first failure
             if verdict != JudgeVerdict::Accepted {
                 result.verdict = verdict;
+                let _ = progress.as_ref().map(|p| p.send(ProgressEvent::Finished { verdict }));
                 break;
             }
         }
@@ -127,6 +149,10 @@ impl ExecutionPipeline {
         if result.test_results.iter().all(|r| r.status == JudgeVerdict::Accepted) {
             result.verdict = JudgeVerdict::Accepted;
         }
+
+        let _ = progress.as_ref().map(|p| p.send(ProgressEvent::Finished {
+            verdict: result.verdict,
+        }));
 
         Ok(result)
     }
@@ -148,5 +174,6 @@ mod tests {
         );
 
         assert_eq!(request.language, "cpp");
+        assert!(!request.job_id.is_empty());
     }
 }

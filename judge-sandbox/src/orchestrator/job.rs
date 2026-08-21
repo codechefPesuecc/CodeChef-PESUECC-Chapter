@@ -1,7 +1,5 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::languages::SupportedLanguage;
-use crate::sandbox::SandboxStatus;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TestCase {
@@ -46,6 +44,19 @@ pub enum JudgeVerdict {
     MemoryLimitExceeded,
     RuntimeError,
     CompilationError,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ProgressEvent {
+    Compiling,
+    Running { test_case: usize, total: usize },
+    TestResult {
+        test_case: usize,
+        verdict: JudgeVerdict,
+        time_ms: u64,
+        memory_kb: u64,
+    },
+    Finished { verdict: JudgeVerdict },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
