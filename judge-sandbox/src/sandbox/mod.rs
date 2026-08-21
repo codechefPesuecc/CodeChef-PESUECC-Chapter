@@ -79,7 +79,8 @@ impl Sandbox {
                 }
             }
             ForkResult::Child => {
-                setup_child_process(&config, &pipes)?;
+                let _ = setup_child_process(&config, &pipes);
+                unsafe { libc::exit(1) };
             }
         }
     }

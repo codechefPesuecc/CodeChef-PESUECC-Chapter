@@ -1,5 +1,4 @@
-use libc::c_int;
-use nix::unistd::execve;
+use libc::{c_int, execve as libc_execve};
 use nix::sys::resource::{setrlimit, Resource};
 use std::ffi::CString;
 use std::os::unix::ffi::OsStrExt;
@@ -16,9 +15,9 @@ pub enum ChildError {
     #[error("Failed to convert path to CString: {0}")]
     PathConversionError(String),
     #[error("Failed to change directory: {0}")]
-    ChdirError(#[from] nix::unistd::ChdirError),
+    ChdirError(String),
     #[error("Failed to execute: {0}")]
-    ExecveError(#[from] nix::unistd::ExecuteError),
+    ExecveError(String),
     #[error("Namespace creation failed: {0}")]
     NamespaceError(String),
 }
@@ -34,13 +33,6 @@ pub struct ChildProcessPipes {
 
 impl ChildProcessPipes {
     pub fn new() -> Result<Self, ChildError> {
-        let stdin_r = unsafe { libc::malloc(0) as c_int };
-        let stdin_w = stdin_r + 1;
-        let stdout_r = unsafe { libc::malloc(0) as c_int };
-        let stdout_w = stdout_r + 1;
-        let stderr_r = unsafe { libc::malloc(0) as c_int };
-        let stderr_w = stderr_r + 1;
-
         unsafe {
             let mut fds: [c_int; 2] = [0; 2];
             if libc::pipe(fds.as_mut_ptr()) == -1 {
@@ -115,7 +107,7 @@ unsafe fn fcntl_set_cloexec(fd: c_int) -> Result<(), ChildError> {
     Ok(())
 }
 
-pub fn setup_child_process(config: &SandboxConfig, pipes: &ChildProcessPipes) -> Result<!, ChildError> {
+pub fn setup_child_process(config: &SandboxConfig, pipes: &ChildProcessPipes) -> Result<(), ChildError> {
     pipes.close_child_ends();
 
     unsafe {
@@ -136,7 +128,18 @@ pub fn setup_child_process(config: &SandboxConfig, pipes: &ChildProcessPipes) ->
     apply_environment_sanitization();
 
     if let Some(ref work_dir) = config.work_dir {
-        nix::unistd::chdir(work_dir)?;
+        if std::fs::metadata(work_dir).is_ok() {
+            unsafe {
+                if libc::chdir(
+                    CString::new(work_dir.as_os_str().as_bytes())
+                        .unwrap()
+                        .as_ptr(),
+                ) == -1
+                {
+                    return Err(ChildError::ChdirError("chdir failed".to_string()));
+                }
+            }
+        }
     }
 
     let executable_cstr = CString::new(config.executable_path.as_os_str().as_bytes())
@@ -155,11 +158,14 @@ pub fn setup_child_process(config: &SandboxConfig, pipes: &ChildProcessPipes) ->
         args_cstr.push(CString::new(arg.as_bytes()).unwrap_or_default());
     }
 
-    let argv: Vec<*const i8> = args_cstr.iter().map(|s| s.as_ptr()).collect();
+    let argv: Vec<*const i8> = args_cstr.iter().map(|s| s.as_ptr()).chain(std::iter::once(std::ptr::null())).collect();
+    let envp: Vec<*const i8> = vec![std::ptr::null()];
 
-    execve(&executable_cstr, &argv).map_err(|e| ChildError::ExecveError(e))?;
-
-    unreachable!()
+    unsafe {
+        libc_execve(executable_cstr.as_ptr(), argv.as_ptr(), envp.as_ptr());
+        libc::perror(b"execve\0".as_ptr() as *const i8);
+        libc::exit(127);
+    }
 }
 
 fn apply_resource_limits(config: &SandboxConfig) -> Result<(), ChildError> {
