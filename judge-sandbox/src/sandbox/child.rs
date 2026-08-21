@@ -5,6 +5,7 @@ use std::os::unix::ffi::OsStrExt;
 use thiserror::Error;
 
 use crate::sandbox::config::SandboxConfig;
+use crate::sandbox::seccomp::SeccompProfile;
 
 #[derive(Debug, Error)]
 pub enum ChildError {
@@ -160,6 +161,13 @@ pub fn setup_child_process(config: &SandboxConfig, pipes: &ChildProcessPipes) ->
 
     let argv: Vec<*const i8> = args_cstr.iter().map(|s| s.as_ptr()).chain(std::iter::once(std::ptr::null())).collect();
     let envp: Vec<*const i8> = vec![std::ptr::null()];
+
+    // Install seccomp filter before execve to restrict syscalls
+    let seccomp_profile = SeccompProfile::standard_runner();
+    if let Err(e) = seccomp_profile.install() {
+        eprintln!("Warning: Failed to install seccomp filter: {}", e);
+        // Continue anyway - seccomp is optional but recommended
+    }
 
     unsafe {
         libc_execve(executable_cstr.as_ptr(), argv.as_ptr(), envp.as_ptr());

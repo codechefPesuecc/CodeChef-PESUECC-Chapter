@@ -2,6 +2,8 @@ pub mod child;
 pub mod config;
 pub mod result;
 pub mod supervisor;
+pub mod cgroups;
+pub mod seccomp;
 
 use libc::c_int;
 use nix::unistd::{fork, ForkResult};
@@ -14,6 +16,7 @@ pub use config::SandboxConfig;
 pub use result::{ExecutionResult, SandboxStatus};
 
 use child::{setup_child_process, ChildProcessPipes};
+use cgroups::CgroupManager;
 use supervisor::{ProcessSupervisor, read_pipe_output};
 
 #[derive(Debug, Error)]
@@ -24,6 +27,10 @@ pub enum SandboxError {
     ChildError(#[from] child::ChildError),
     #[error("Supervisor error: {0}")]
     SupervisorError(#[from] supervisor::SupervisorError),
+    #[error("Cgroup error: {0}")]
+    CgroupError(#[from] cgroups::CgroupError),
+    #[error("Seccomp error: {0}")]
+    SeccompError(#[from] seccomp::SeccompError),
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
 }
@@ -34,11 +41,20 @@ impl Sandbox {
     pub async fn execute(config: SandboxConfig) -> Result<ExecutionResult, SandboxError> {
         let pipes = ChildProcessPipes::new()?;
 
+        // Create cgroup v2 for memory and CPU limits
+        // Errors are non-fatal - continue without cgroups if not available
+        let cgroup = CgroupManager::new(&config).ok();
+
         match unsafe { fork()? } {
             ForkResult::Parent { child } => {
                 pipes.close_parent_ends();
 
-                let supervisor = ProcessSupervisor::new(child, config.clone());
+                // Attach child to cgroup immediately after fork
+                if let Some(ref cg) = cgroup {
+                    let _ = cg.attach_proc(child.as_raw());
+                }
+
+                let supervisor = ProcessSupervisor::new(child, config.clone(), cgroup);
 
                 let stdin_handle = task::spawn_blocking({
                     let stdin_data = config.stdin_data.clone();

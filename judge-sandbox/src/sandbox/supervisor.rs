@@ -10,6 +10,7 @@ use thiserror::Error;
 
 use crate::sandbox::config::SandboxConfig;
 use crate::sandbox::result::{ExecutionResult, SandboxStatus};
+use crate::sandbox::cgroups::CgroupManager;
 
 #[derive(Debug, Error)]
 pub enum SupervisorError {
@@ -25,14 +26,16 @@ pub struct ProcessSupervisor {
     pid: Pid,
     config: SandboxConfig,
     start_time: Instant,
+    cgroup: Option<CgroupManager>,
 }
 
 impl ProcessSupervisor {
-    pub fn new(pid: Pid, config: SandboxConfig) -> Self {
+    pub fn new(pid: Pid, config: SandboxConfig, cgroup: Option<CgroupManager>) -> Self {
         Self {
             pid,
             config,
             start_time: Instant::now(),
+            cgroup,
         }
     }
 
@@ -99,7 +102,17 @@ impl ProcessSupervisor {
             ((user_us + sys_us) / 1000) as u64
         };
 
-        let memory_kb = rusage.ru_maxrss as u64;
+        // Try to get memory from cgroup first (more accurate for physical memory)
+        // Fall back to getrusage if cgroup is not available
+        let memory_kb = if let Some(ref cgroup) = self.cgroup {
+            if let Ok(stats) = cgroup.read_stats() {
+                stats.memory_peak_bytes / 1024
+            } else {
+                rusage.ru_maxrss as u64
+            }
+        } else {
+            rusage.ru_maxrss as u64
+        };
 
         let exit_code = WEXITSTATUS(status) as i32;
 
