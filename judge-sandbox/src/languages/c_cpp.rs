@@ -73,6 +73,7 @@ impl LanguageRunner for Cpp {
                 .with_args(vec![
                     "-O3".to_string(),
                     "-std=c++20".to_string(),
+                    "-ftemplate-depth=128".to_string(),
                     "-o".to_string(),
                     bin_str,
                     src_str,

@@ -134,9 +134,9 @@ pub fn setup_child_process(config: &SandboxConfig, pipes: &ChildProcessPipes) ->
     apply_resource_limits(config)?;
     apply_environment_sanitization();
 
-    // Network isolation: disconnect child from host network stack
+    // Network & IPC isolation: disconnect child from host network stack and shared memory
     if config.enable_network_isolation {
-        let _ = nix::sched::unshare(nix::sched::CloneFlags::CLONE_NEWNET);
+        let _ = nix::sched::unshare(nix::sched::CloneFlags::CLONE_NEWNET | nix::sched::CloneFlags::CLONE_NEWIPC);
     }
 
     // Setup filesystem isolation (pivot_root into ephemeral tmpfs with bind-mounted workspace)
@@ -169,7 +169,7 @@ pub fn setup_child_process(config: &SandboxConfig, pipes: &ChildProcessPipes) ->
     }
 
     let executable_cstr = CString::new(config.executable_path.as_os_str().as_bytes())
-        .map_err(|_| ChildError::PathConversionError("executable path".to_string()))?;
+        .map_err(|_| ChildError::ExecError("Invalid executable path".to_string()))?;
 
     let prog_name = config
         .executable_path
@@ -202,11 +202,17 @@ pub fn setup_child_process(config: &SandboxConfig, pipes: &ChildProcessPipes) ->
         env_gocache.as_ptr(), env_gopath.as_ptr(), std::ptr::null(),
     ];
 
-    // Install seccomp filter only for Run profile (untrusted code)
+    // Install seccomp filter and drop privileges only for Run profile (untrusted code)
     if config.profile == crate::sandbox::config::ExecutionProfile::Run {
         let seccomp_profile = SeccompProfile::standard_runner();
         if let Err(e) = seccomp_profile.install() {
             eprintln!("Warning: Failed to install seccomp filter: {}", e);
+        }
+        
+        unsafe {
+            let uid = libc::getuid();
+            libc::setresgid(uid, uid, uid);
+            libc::setresuid(uid, uid, uid);
         }
     }
 
@@ -228,11 +234,11 @@ fn apply_resource_limits(config: &SandboxConfig) -> Result<(), ChildError> {
     // - RLIMIT_NPROC is per-UID (global across root user) and stars parent server forks.
     // Cgroups v2 memory.max and pids.max enforce physical RAM and PID limits per job subtree.
 
-    // File size limit: generous for compilers (256MB), capped for runners (e.g. 10MB)
+    // File size limit: generous for compilers (256MB), capped for runners (16MB Output Bomb shield)
     let fsize_limit: u64 = if config.profile == crate::sandbox::config::ExecutionProfile::Compile {
         256 * 1024 * 1024
     } else {
-        config.max_output_bytes as u64
+        16 * 1024 * 1024
     };
     setrlimit(Resource::RLIMIT_FSIZE, fsize_limit, fsize_limit)
         .map_err(|e| ChildError::RlimitError(format!("RLIMIT_FSIZE: {}", e)))?;
