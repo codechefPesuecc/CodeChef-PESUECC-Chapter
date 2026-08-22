@@ -105,6 +105,19 @@ const TESTS = [
   },
   {
     category: 'Language Support',
+    name: 'C++ (G++) — AtCoder Library (ACL) & DSU',
+    payload: {
+      job_id: 'suite-cpp-acl',
+      language: 'cpp',
+      source_code: '#include <bits/stdc++.h>\n#include <atcoder/all>\nusing namespace std;\nusing namespace atcoder;\nint main(){\n  dsu d(5);\n  d.merge(1, 2);\n  cout << (d.same(1, 2) ? "YES" : "NO") << "\\n";\n  return 0;\n}',
+      time_limit_ms: 2000,
+      memory_limit_bytes: 268435456,
+      test_cases: [{ input: '', expected_output: 'YES' }],
+    },
+    expectedVerdict: 'Accepted',
+  },
+  {
+    category: 'Language Support',
     name: 'Rust (Rustc) — Zero-Cost Abstractions',
     payload: {
       job_id: 'suite-rust',

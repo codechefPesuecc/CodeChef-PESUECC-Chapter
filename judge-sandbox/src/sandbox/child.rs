@@ -189,7 +189,9 @@ pub fn setup_child_process(config: &SandboxConfig, pipes: &ChildProcessPipes) ->
     let env_lang = CString::new("LANG=C.UTF-8").unwrap();
     let env_home = CString::new("HOME=/tmp").unwrap();
 
-    let gocache_dir = if let Some(ref wd) = config.work_dir {
+    let gocache_dir = if std::path::Path::new("/var/cache/gocache").exists() {
+        std::path::PathBuf::from("/var/cache/gocache")
+    } else if let Some(ref wd) = config.work_dir {
         wd.join(".gocache")
     } else {
         std::path::PathBuf::from("/tmp")

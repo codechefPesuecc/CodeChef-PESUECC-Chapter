@@ -86,6 +86,30 @@ RUN HEADER=$(find /usr/include -name "stdc++.h" | head -n 1) && \
       echo "Precompiled C++ standard header: ${HEADER}.gch ✓"; \
     fi
 
+# ─── Install AtCoder Library (ACL) & Precompile ───
+RUN curl -fsSL https://github.com/atcoder/ac-library/releases/download/v1.5.1/ac-library.zip -o /tmp/acl.zip && \
+    unzip -q /tmp/acl.zip -d /tmp/acl && \
+    cp -r /tmp/acl/atcoder /usr/local/include/ && \
+    g++ -O3 -std=c++20 -ftemplate-depth=128 -x c++-header /usr/local/include/atcoder/all -o /usr/local/include/atcoder/all.gch && \
+    rm -rf /tmp/acl* && \
+    echo "AtCoder Library (ACL) installed & precompiled in /usr/local/include/atcoder ✓"
+
+# ─── Java CDS (Class Data Sharing) Pre-dump for 60% faster JVM startup ───
+RUN java -Xshare:dump && echo "Java CDS Archive generated ✓"
+
+# ─── Python Bytecode Pre-compilation ───
+RUN python3 -m compileall -q /usr/lib/python3* 2>/dev/null || true && \
+    echo "Python standard library pre-compiled to .pyc ✓"
+
+# ─── Go Standard Library Build Cache Pre-warming ───
+RUN mkdir -p /var/cache/gocache && \
+    export GOCACHE=/var/cache/gocache && \
+    echo 'package main; import (_ "fmt"; _ "os"; _ "bufio"; _ "sort"; _ "math"; _ "container/heap"; _ "strings"); func main() {}' > /tmp/warm.go && \
+    go build -o /dev/null /tmp/warm.go && \
+    rm -f /tmp/warm.go && \
+    chmod -R 777 /var/cache/gocache && \
+    echo "Go build cache pre-warmed ✓"
+
 # ─── Copy the judge binary ───
 COPY --from=builder /build/target/release/judge-sandbox /usr/local/bin/judge-sandbox
 
