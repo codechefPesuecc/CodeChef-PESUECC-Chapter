@@ -82,6 +82,34 @@ const PAYLOADS = {
     test_cases: [
       { input: '6 7', expected_output: '13' }
     ]
+  },
+  javascript: {
+    language: 'javascript',
+    source_code: 'const fs = require("fs");\nconst input = fs.readFileSync(0, "utf-8").trim().split(/\\s+/);\nconsole.log(Number(input[0]) + Number(input[1]));',
+    time_limit_ms: 2000,
+    memory_limit_bytes: 268435456,
+    test_cases: [
+      { input: '4 5', expected_output: '9' },
+      { input: '40 50', expected_output: '90' }
+    ]
+  },
+  typescript: {
+    language: 'typescript',
+    source_code: 'import * as fs from "fs";\nconst input: string[] = fs.readFileSync(0, "utf-8").trim().split(/\\s+/);\nconst a: number = Number(input[0]);\nconst b: number = Number(input[1]);\nconsole.log(a + b);',
+    time_limit_ms: 2000,
+    memory_limit_bytes: 268435456,
+    test_cases: [
+      { input: '11 22', expected_output: '33' }
+    ]
+  },
+  sql: {
+    language: 'sql',
+    source_code: 'SELECT 5 + 7 AS result;',
+    time_limit_ms: 2000,
+    memory_limit_bytes: 134217728,
+    test_cases: [
+      { input: '', expected_output: 'result\n12' }
+    ]
   }
 };
 

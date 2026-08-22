@@ -63,12 +63,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     golang-go \
     # Rust compiler (Debian packages rustc -> /usr/bin/rustc)
     rustc \
+    # SQL (SQLite3)
+    sqlite3 \
     # Utilities
-    procps \
+    procps curl ca-certificates unzip \
     && rm -rf /var/lib/apt/lists/*
 
+# ─── Install Bun for JS / TS ───
+RUN curl -fsSL https://bun.sh/install | bash && \
+    cp /root/.bun/bin/bun /usr/local/bin/bun && \
+    chmod +x /usr/local/bin/bun
+
 # ─── Verify all expected binary paths exist ───
-RUN set -e; for bin in gcc g++ python3 rustc go javac java; do \
+RUN set -e; for bin in gcc g++ python3 rustc go javac java sqlite3 bun; do \
       command -v "$bin" || { echo "MISSING: $bin"; exit 1; }; \
     done && echo "All language toolchains verified ✓"
 
@@ -115,9 +122,6 @@ EXPOSE 8080
 
 HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -sf http://localhost:8080/health || exit 1
-
-# Install curl for healthcheck
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["--mode", "server"]

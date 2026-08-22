@@ -7,6 +7,8 @@ pub mod rust;
 pub mod python;
 pub mod java;
 pub mod golang;
+pub mod javascript;
+pub mod sql;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SupportedLanguage {
@@ -16,6 +18,9 @@ pub enum SupportedLanguage {
     Go,
     Python,
     Java,
+    JavaScript,
+    TypeScript,
+    Sql,
 }
 
 impl SupportedLanguage {
@@ -27,6 +32,9 @@ impl SupportedLanguage {
             SupportedLanguage::Go => Box::new(golang::Go),
             SupportedLanguage::Python => Box::new(python::Python),
             SupportedLanguage::Java => Box::new(java::Java),
+            SupportedLanguage::JavaScript => Box::new(javascript::JavaScript),
+            SupportedLanguage::TypeScript => Box::new(javascript::TypeScript),
+            SupportedLanguage::Sql => Box::new(sql::Sql),
         }
     }
 
@@ -38,6 +46,9 @@ impl SupportedLanguage {
             "go" | "golang" => Some(SupportedLanguage::Go),
             "python" | "py" => Some(SupportedLanguage::Python),
             "java" => Some(SupportedLanguage::Java),
+            "javascript" | "js" => Some(SupportedLanguage::JavaScript),
+            "typescript" | "ts" => Some(SupportedLanguage::TypeScript),
+            "sql" | "sqlite" | "sqlite3" => Some(SupportedLanguage::Sql),
             _ => None,
         }
     }
@@ -81,6 +92,9 @@ mod tests {
         );
         assert_eq!(SupportedLanguage::from_str("java"), Some(SupportedLanguage::Java));
         assert_eq!(SupportedLanguage::from_str("go"), Some(SupportedLanguage::Go));
+        assert_eq!(SupportedLanguage::from_str("js"), Some(SupportedLanguage::JavaScript));
+        assert_eq!(SupportedLanguage::from_str("ts"), Some(SupportedLanguage::TypeScript));
+        assert_eq!(SupportedLanguage::from_str("sql"), Some(SupportedLanguage::Sql));
     }
 
     #[test]
@@ -90,5 +104,11 @@ mod tests {
 
         let python_runner = SupportedLanguage::Python.get_runner();
         assert!(!python_runner.is_compiled());
+
+        let js_runner = SupportedLanguage::JavaScript.get_runner();
+        assert!(!js_runner.is_compiled());
+
+        let sql_runner = SupportedLanguage::Sql.get_runner();
+        assert!(!sql_runner.is_compiled());
     }
 }
