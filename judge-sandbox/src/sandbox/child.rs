@@ -169,7 +169,7 @@ pub fn setup_child_process(config: &SandboxConfig, pipes: &ChildProcessPipes) ->
     }
 
     let executable_cstr = CString::new(config.executable_path.as_os_str().as_bytes())
-        .map_err(|_| ChildError::ExecError("Invalid executable path".to_string()))?;
+        .map_err(|_| ChildError::ExecveError("Invalid executable path".to_string()))?;
 
     let prog_name = config
         .executable_path
