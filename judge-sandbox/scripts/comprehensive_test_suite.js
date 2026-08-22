@@ -118,45 +118,6 @@ const TESTS = [
   },
   {
     category: 'Language Support',
-    name: 'Rust (Rustc) — Zero-Cost Abstractions',
-    payload: {
-      job_id: 'suite-rust',
-      language: 'rust',
-      source_code: 'use std::io::{self, Read};\nfn main(){\n  let mut s = String::new();\n  io::stdin().read_to_string(&mut s).unwrap();\n  let nums: Vec<i64> = s.split_whitespace().map(|x| x.parse().unwrap()).collect();\n  println!("{}", nums[0] + nums[1]);\n}',
-      time_limit_ms: 5000,
-      memory_limit_bytes: 536870912,
-      test_cases: [{ input: '1000 2000', expected_output: '3000' }],
-    },
-    expectedVerdict: 'Accepted',
-  },
-  {
-    category: 'Language Support',
-    name: 'Go — Goroutines & Runtime Setup',
-    payload: {
-      job_id: 'suite-go',
-      language: 'go',
-      source_code: 'package main\nimport "fmt"\nfunc main(){\n  var a, b int\n  fmt.Scan(&a, &b)\n  fmt.Println(a + b)\n}',
-      time_limit_ms: 5000,
-      memory_limit_bytes: 536870912,
-      test_cases: [{ input: '77 23', expected_output: '100' }],
-    },
-    expectedVerdict: 'Accepted',
-  },
-  {
-    category: 'Language Support',
-    name: 'Java — OpenJDK 17 Classpath & Memory Bounds',
-    payload: {
-      job_id: 'suite-java',
-      language: 'java',
-      source_code: 'import java.util.Scanner;\npublic class Solution {\n  public static void main(String[] args) {\n    Scanner sc = new Scanner(System.in);\n    System.out.println(sc.nextInt() * sc.nextInt());\n  }\n}',
-      time_limit_ms: 5000,
-      memory_limit_bytes: 536870912,
-      test_cases: [{ input: '9 9', expected_output: '81' }],
-    },
-    expectedVerdict: 'Accepted',
-  },
-  {
-    category: 'Language Support',
     name: 'JavaScript — Bun Runtime Execution',
     payload: {
       job_id: 'suite-js',

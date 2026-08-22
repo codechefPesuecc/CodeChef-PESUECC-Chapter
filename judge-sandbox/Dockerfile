@@ -43,26 +43,18 @@ FROM debian:bookworm-slim AS runtime
 # Avoid interactive prompts during package install
 ENV DEBIAN_FRONTEND=noninteractive
 
-# ─── Install language toolchains ───
+# ─── Install language toolchains (Target Profile: Python, JS, TS, C, C++, SQL) ───
 # The Rust code expects these at /usr/bin/<name>:
 #   /usr/bin/gcc          (C)
 #   /usr/bin/g++          (C++)
 #   /usr/bin/python3      (Python)
-#   /usr/bin/rustc        (Rust)
-#   /usr/bin/go           (Go)
-#   /usr/bin/javac        (Java compile)
-#   /usr/bin/java         (Java run)
+#   /usr/bin/sqlite3      (SQLite3)
+#   /usr/local/bin/bun    (JS / TS)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     # C / C++
     gcc g++ libc6-dev \
     # Python
     python3 \
-    # Java (headless JDK — includes javac + java)
-    default-jdk-headless \
-    # Go (Debian bookworm packages golang-go -> /usr/bin/go)
-    golang-go \
-    # Rust compiler (Debian packages rustc -> /usr/bin/rustc)
-    rustc \
     # SQL (SQLite3)
     sqlite3 \
     # Utilities
@@ -75,9 +67,9 @@ RUN curl -fsSL https://bun.sh/install | bash && \
     chmod +x /usr/local/bin/bun
 
 # ─── Verify all expected binary paths exist ───
-RUN set -e; for bin in gcc g++ python3 rustc go javac java sqlite3 bun; do \
+RUN set -e; for bin in gcc g++ python3 sqlite3 bun; do \
       command -v "$bin" || { echo "MISSING: $bin"; exit 1; }; \
-    done && echo "All language toolchains verified ✓"
+    done && echo "All target language toolchains verified ✓"
 
 # ─── Precompile C++ bits/stdc++.h Header for 6x faster compilation ───
 RUN HEADER=$(find /usr/include -name "stdc++.h" | head -n 1) && \
@@ -94,21 +86,9 @@ RUN curl -fsSL https://github.com/atcoder/ac-library/releases/download/v1.5.1/ac
     rm -rf /tmp/acl* && \
     echo "AtCoder Library (ACL) installed & precompiled in /usr/local/include/atcoder ✓"
 
-# ─── Java CDS (Class Data Sharing) Pre-dump for 60% faster JVM startup ───
-RUN java -Xshare:dump && echo "Java CDS Archive generated ✓"
-
 # ─── Python Bytecode Pre-compilation ───
 RUN python3 -m compileall -q /usr/lib/python3* 2>/dev/null || true && \
     echo "Python standard library pre-compiled to .pyc ✓"
-
-# ─── Go Standard Library Build Cache Pre-warming ───
-RUN mkdir -p /var/cache/gocache && \
-    export GOCACHE=/var/cache/gocache && \
-    echo 'package main; import (_ "fmt"; _ "os"; _ "bufio"; _ "sort"; _ "math"; _ "container/heap"; _ "strings"); func main() {}' > /tmp/warm.go && \
-    go build -o /dev/null /tmp/warm.go && \
-    rm -f /tmp/warm.go && \
-    chmod -R 777 /var/cache/gocache && \
-    echo "Go build cache pre-warmed ✓"
 
 # ─── Copy the judge binary ───
 COPY --from=builder /build/target/release/judge-sandbox /usr/local/bin/judge-sandbox
