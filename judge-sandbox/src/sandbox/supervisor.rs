@@ -83,7 +83,11 @@ impl ProcessSupervisor {
         unsafe {
             let ret = wait4(self.pid.as_raw(), &mut status, libc::WNOHANG, &mut rusage);
             if ret == -1 {
-                return Err(SupervisorError::Wait4Error("wait4 failed".to_string()));
+                let err = std::io::Error::last_os_error();
+                if err.raw_os_error() == Some(libc::ECHILD) {
+                    return Ok(Some(self.build_result(0, rusage)));
+                }
+                return Err(SupervisorError::Wait4Error(format!("wait4 failed: {}", err)));
             }
             if ret == 0 {
                 return Ok(None);
@@ -100,7 +104,11 @@ impl ProcessSupervisor {
         unsafe {
             let ret = wait4(self.pid.as_raw(), &mut status, 0, &mut rusage);
             if ret == -1 {
-                return Err(SupervisorError::Wait4Error("wait4 failed".to_string()));
+                let err = std::io::Error::last_os_error();
+                if err.raw_os_error() == Some(libc::ECHILD) {
+                    return Ok(self.build_result(0, rusage));
+                }
+                return Err(SupervisorError::Wait4Error(format!("wait4 failed: {}", err)));
             }
         }
 

@@ -223,15 +223,10 @@ fn apply_resource_limits(config: &SandboxConfig) -> Result<(), ChildError> {
     setrlimit(Resource::RLIMIT_CPU, time_limit_secs, time_limit_secs)
         .map_err(|e| ChildError::RlimitError(format!("RLIMIT_CPU: {}", e)))?;
 
-    // NOTE: RLIMIT_AS is intentionally NOT set here.
-    // RLIMIT_AS limits virtual address space, not physical memory.
-    // Go (136TB GC arena), JVM (compressed oops), and LLVM (Rust) all need
-    // large virtual mappings. Cgroup memory.max enforces physical memory.
-
-    // Allow process/thread limit according to profile
-    let nproc_limit = config.pids_limit as u64;
-    setrlimit(Resource::RLIMIT_NPROC, nproc_limit, nproc_limit)
-        .map_err(|e| ChildError::RlimitError(format!("RLIMIT_NPROC: {}", e)))?;
+    // NOTE: RLIMIT_AS and RLIMIT_NPROC are intentionally NOT set here.
+    // - RLIMIT_AS limits virtual address space (breaks Go GC arena, JVM, Rust LLVM).
+    // - RLIMIT_NPROC is per-UID (global across root user) and stars parent server forks.
+    // Cgroups v2 memory.max and pids.max enforce physical RAM and PID limits per job subtree.
 
     // File size limit: generous for compilers (256MB), capped for runners (e.g. 10MB)
     let fsize_limit: u64 = if config.profile == crate::sandbox::config::ExecutionProfile::Compile {

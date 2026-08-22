@@ -296,6 +296,15 @@ impl FsIsolation {
         // Lazy unmount old root using libc
         unsafe {
             libc::umount2(b"/.old_root\0".as_ptr() as *const i8, libc::MNT_DETACH);
+
+            // Remount new root as MS_RDONLY to protect system files
+            libc::mount(
+                std::ptr::null(),
+                b"/\0".as_ptr() as *const i8,
+                std::ptr::null(),
+                libc::MS_BIND | libc::MS_REMOUNT | libc::MS_RDONLY,
+                std::ptr::null(),
+            );
         }
 
         // Remove old_root directory marker
