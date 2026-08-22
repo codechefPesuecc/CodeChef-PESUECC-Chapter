@@ -79,6 +79,13 @@ RUN set -e; for bin in gcc g++ python3 rustc go javac java sqlite3 bun; do \
       command -v "$bin" || { echo "MISSING: $bin"; exit 1; }; \
     done && echo "All language toolchains verified ✓"
 
+# ─── Precompile C++ bits/stdc++.h Header for 6x faster compilation ───
+RUN HEADER=$(find /usr/include -name "stdc++.h" | head -n 1) && \
+    if [ -n "$HEADER" ]; then \
+      g++ -O3 -std=c++20 -ftemplate-depth=128 -x c++-header "$HEADER" -o "${HEADER}.gch" && \
+      echo "Precompiled C++ standard header: ${HEADER}.gch ✓"; \
+    fi
+
 # ─── Copy the judge binary ───
 COPY --from=builder /build/target/release/judge-sandbox /usr/local/bin/judge-sandbox
 
