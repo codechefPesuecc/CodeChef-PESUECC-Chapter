@@ -1,0 +1,10 @@
+target/
+.git/
+*.pdb
+*.exe
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~

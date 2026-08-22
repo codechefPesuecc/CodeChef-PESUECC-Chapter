@@ -17,6 +17,10 @@ impl LanguageRunner for Go {
         "main.go"
     }
 
+    fn max_pids(&self) -> u32 {
+        8
+    }
+
     fn get_compile_command(&self, src_path: &Path, bin_path: &Path) -> Option<SandboxConfig> {
         let src_str = src_path.to_string_lossy().to_string();
         let bin_str = bin_path.to_string_lossy().to_string();

@@ -1,0 +1,8 @@
+{
+  "job_id": "test-cpp",
+  "language": "cpp",
+  "source_code": "#include <iostream>\nint main(){int a,b;std::cin>>a>>b;std::cout<<a+b;}",
+  "time_limit_ms": 2000,
+  "memory_limit_bytes": 268435456,
+  "test_cases": [{"input": "2 3", "expected_output": "5"}]
+}

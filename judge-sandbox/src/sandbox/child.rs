@@ -127,18 +127,30 @@ pub fn setup_child_process(config: &SandboxConfig, pipes: &ChildProcessPipes) ->
         libc::close(pipes.stderr_write);
     }
 
+    unsafe {
+        libc::setpgid(0, 0);
+    }
+
     apply_resource_limits(config)?;
     apply_environment_sanitization();
 
-    // Setup filesystem isolation (pivot_root into ephemeral tmpfs)
+    // Network isolation: disconnect child from host network stack
+    if config.enable_network_isolation {
+        let _ = nix::sched::unshare(nix::sched::CloneFlags::CLONE_NEWNET);
+    }
+
+    // Setup filesystem isolation (pivot_root into ephemeral tmpfs with bind-mounted workspace)
     if config.enable_fs_isolation {
+        // Unshare mount namespace so mounts and pivot_root only affect the child process
+        let _ = nix::sched::unshare(nix::sched::CloneFlags::CLONE_NEWNS);
+
         let job_id = Uuid::new_v4().to_string();
         let _fs_isolation = FsIsolation::setup(
             &job_id,
+            config.workspace_dir.as_deref(),
             config.fs_workdir_size_bytes,
             &config.fs_readonly_paths,
         ).ok(); // Non-fatal - continue without fs isolation if it fails
-        // Note: After pivot_root, we're in a new root. Work dir is now /sandbox
     }
 
     if let Some(ref work_dir) = config.work_dir {
@@ -173,13 +185,29 @@ pub fn setup_child_process(config: &SandboxConfig, pipes: &ChildProcessPipes) ->
     }
 
     let argv: Vec<*const i8> = args_cstr.iter().map(|s| s.as_ptr()).chain(std::iter::once(std::ptr::null())).collect();
-    let envp: Vec<*const i8> = vec![std::ptr::null()];
+    let env_path = CString::new("PATH=/usr/bin:/bin:/usr/local/bin").unwrap();
+    let env_lang = CString::new("LANG=C.UTF-8").unwrap();
+    let env_home = CString::new("HOME=/tmp").unwrap();
 
-    // Install seccomp filter before execve to restrict syscalls
-    let seccomp_profile = SeccompProfile::standard_runner();
-    if let Err(e) = seccomp_profile.install() {
-        eprintln!("Warning: Failed to install seccomp filter: {}", e);
-        // Continue anyway - seccomp is optional but recommended
+    let gocache_dir = if let Some(ref wd) = config.work_dir {
+        wd.join(".gocache")
+    } else {
+        std::path::PathBuf::from("/tmp")
+    };
+    let env_gocache = CString::new(format!("GOCACHE={}", gocache_dir.display())).unwrap();
+    let env_gopath = CString::new(format!("GOPATH={}", gocache_dir.join("pkg").display())).unwrap();
+
+    let envp: Vec<*const i8> = vec![
+        env_path.as_ptr(), env_lang.as_ptr(), env_home.as_ptr(),
+        env_gocache.as_ptr(), env_gopath.as_ptr(), std::ptr::null(),
+    ];
+
+    // Install seccomp filter only for Run profile (untrusted code)
+    if config.profile == crate::sandbox::config::ExecutionProfile::Run {
+        let seccomp_profile = SeccompProfile::standard_runner();
+        if let Err(e) = seccomp_profile.install() {
+            eprintln!("Warning: Failed to install seccomp filter: {}", e);
+        }
     }
 
     unsafe {
@@ -195,13 +223,23 @@ fn apply_resource_limits(config: &SandboxConfig) -> Result<(), ChildError> {
     setrlimit(Resource::RLIMIT_CPU, time_limit_secs, time_limit_secs)
         .map_err(|e| ChildError::RlimitError(format!("RLIMIT_CPU: {}", e)))?;
 
-    setrlimit(Resource::RLIMIT_AS, config.memory_limit_bytes, config.memory_limit_bytes)
-        .map_err(|e| ChildError::RlimitError(format!("RLIMIT_AS: {}", e)))?;
+    // NOTE: RLIMIT_AS is intentionally NOT set here.
+    // RLIMIT_AS limits virtual address space, not physical memory.
+    // Go (136TB GC arena), JVM (compressed oops), and LLVM (Rust) all need
+    // large virtual mappings. Cgroup memory.max enforces physical memory.
 
-    setrlimit(Resource::RLIMIT_NPROC, 0, 0)
+    // Allow process/thread limit according to profile
+    let nproc_limit = config.pids_limit as u64;
+    setrlimit(Resource::RLIMIT_NPROC, nproc_limit, nproc_limit)
         .map_err(|e| ChildError::RlimitError(format!("RLIMIT_NPROC: {}", e)))?;
 
-    setrlimit(Resource::RLIMIT_FSIZE, config.max_output_bytes as u64, config.max_output_bytes as u64)
+    // File size limit: generous for compilers (256MB), capped for runners (e.g. 10MB)
+    let fsize_limit: u64 = if config.profile == crate::sandbox::config::ExecutionProfile::Compile {
+        256 * 1024 * 1024
+    } else {
+        config.max_output_bytes as u64
+    };
+    setrlimit(Resource::RLIMIT_FSIZE, fsize_limit, fsize_limit)
         .map_err(|e| ChildError::RlimitError(format!("RLIMIT_FSIZE: {}", e)))?;
 
     let stack_limit = 64 * 1024 * 1024;

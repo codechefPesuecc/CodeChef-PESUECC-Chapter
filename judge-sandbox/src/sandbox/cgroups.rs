@@ -74,9 +74,9 @@ impl CgroupManager {
         let memory_swap_max_path = self.cgroup_path.join("memory.swap.max");
         write_cgroup_file(&memory_swap_max_path, "0")?;
 
-        // Limit process count (1 for single-threaded, higher for Java/Go)
+        // Limit process count dynamically based on language profile
         let pids_max_path = self.cgroup_path.join("pids.max");
-        write_cgroup_file(&pids_max_path, "128")?;
+        write_cgroup_file(&pids_max_path, &config.pids_limit.to_string())?;
 
         // Optional: Set CPU limits if specified
         // cpu.max format: "100000 1000000" = 100ms out of every 1s = 10% CPU
@@ -116,8 +116,14 @@ impl CgroupManager {
         })
     }
 
-    pub fn cleanup(&self) -> Result<(), CgroupError> {
-        // Read and kill any remaining processes
+    pub fn kill_all(&self) {
+        // Cgroups v2 atomic subtree kill (Linux 5.14+)
+        let kill_path = self.cgroup_path.join("cgroup.kill");
+        if let Ok(mut file) = fs::OpenOptions::new().write(true).open(&kill_path) {
+            let _ = file.write_all(b"1\n");
+        }
+
+        // Fallback: iterate and kill any remaining processes in cgroup.procs
         let cgroup_procs_path = self.cgroup_path.join("cgroup.procs");
         if let Ok(contents) = fs::read_to_string(&cgroup_procs_path) {
             for line in contents.lines() {
@@ -126,6 +132,10 @@ impl CgroupManager {
                 }
             }
         }
+    }
+
+    pub fn cleanup(&self) -> Result<(), CgroupError> {
+        self.kill_all();
 
         // Small delay to allow processes to die
         std::thread::sleep(std::time::Duration::from_millis(50));

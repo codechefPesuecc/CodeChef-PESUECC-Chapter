@@ -43,6 +43,13 @@ impl ExecutionPipeline {
             let bin_path = temp_dir.path().join("binary");
 
             if let Some(compile_config) = runner.get_compile_command(&src_path, &bin_path) {
+                let compile_config = compile_config
+                    .with_profile(crate::sandbox::config::ExecutionProfile::Compile)
+                    .with_fs_isolation(false)
+                    .with_network_isolation(false)
+                    .with_pids_limit(128)
+                    .with_work_dir(temp_dir.path().to_path_buf());
+
                 let compile_result = Sandbox::execute(compile_config)
                     .await
                     .map_err(|e| format!("Sandbox error during compilation: {}", e))?;
@@ -78,10 +85,11 @@ impl ExecutionPipeline {
         mut result: JobResult,
         progress: Option<mpsc::UnboundedSender<ProgressEvent>>,
     ) -> Result<JobResult, String> {
-        let bin_path = if runner.is_compiled() {
-            work_dir.join("binary")
+        // Path inside the sandbox jail after pivot_root
+        let sandbox_bin_path = if runner.is_compiled() {
+            Path::new("/sandbox").join("binary")
         } else {
-            work_dir.join(runner.get_source_filename())
+            Path::new("/sandbox").join(runner.get_source_filename())
         };
 
         for (idx, test_case) in request.test_cases.iter().enumerate() {
@@ -91,19 +99,28 @@ impl ExecutionPipeline {
             }));
 
             let run_config = runner.get_run_command(
-                &bin_path,
+                &sandbox_bin_path,
                 test_case.input.as_bytes(),
                 request.time_limit_ms,
                 request.memory_limit_bytes,
-            );
+            )
+            .with_profile(crate::sandbox::config::ExecutionProfile::Run)
+            .with_fs_isolation(true)
+            .with_workspace_dir(work_dir.to_path_buf())
+            .with_work_dir(std::path::PathBuf::from("/sandbox"))
+            .with_network_isolation(true)
+            .with_pids_limit(runner.max_pids());
 
             let exec_result = Sandbox::execute(run_config)
                 .await
                 .map_err(|e| format!("Sandbox error during execution: {}", e))?;
 
+            let memory_limit_kb = request.memory_limit_bytes / 1024;
             let verdict = match exec_result.status {
                 SandboxStatus::Ok => {
-                    if let Some(expected) = &test_case.expected_output {
+                    if memory_limit_kb > 0 && exec_result.memory_kb > memory_limit_kb {
+                        JudgeVerdict::MemoryLimitExceeded
+                    } else if let Some(expected) = &test_case.expected_output {
                         let stdout_str = String::from_utf8_lossy(&exec_result.stdout);
                         if stdout_str.trim() == expected.trim() {
                             JudgeVerdict::Accepted
@@ -116,7 +133,15 @@ impl ExecutionPipeline {
                 }
                 SandboxStatus::TimeLimitExceeded => JudgeVerdict::TimeLimitExceeded,
                 SandboxStatus::MemoryLimitExceeded => JudgeVerdict::MemoryLimitExceeded,
-                _ => JudgeVerdict::RuntimeError,
+                _ => {
+                    if memory_limit_kb > 0 && exec_result.memory_kb > memory_limit_kb {
+                        JudgeVerdict::MemoryLimitExceeded
+                    } else if exec_result.cpu_time_ms >= request.time_limit_ms {
+                        JudgeVerdict::TimeLimitExceeded
+                    } else {
+                        JudgeVerdict::RuntimeError
+                    }
+                }
             };
 
             result.total_cpu_time_ms += exec_result.cpu_time_ms;

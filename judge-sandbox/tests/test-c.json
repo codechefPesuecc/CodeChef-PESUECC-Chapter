@@ -1,0 +1,8 @@
+{
+  "job_id": "test-c",
+  "language": "c",
+  "source_code": "#include <stdio.h>\nint main(){int a,b;scanf(\"%d %d\",&a,&b);printf(\"%d\",a+b);return 0;}",
+  "time_limit_ms": 2000,
+  "memory_limit_bytes": 268435456,
+  "test_cases": [{"input": "2 3", "expected_output": "5"}]
+}

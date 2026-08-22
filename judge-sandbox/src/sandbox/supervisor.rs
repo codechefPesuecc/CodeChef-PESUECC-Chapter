@@ -46,20 +46,34 @@ impl ProcessSupervisor {
             let elapsed_ms = self.start_time.elapsed().as_millis() as u64;
 
             if elapsed_ms >= wall_time_deadline {
-                let _ = kill(self.pid, Signal::SIGKILL);
-                sleep(Duration::from_millis(100)).await;
+                self.kill_process_tree();
+                sleep(Duration::from_millis(50)).await;
                 break;
             }
 
-            let remaining_ms = (wall_time_deadline - elapsed_ms).min(1000);
-            sleep(Duration::from_millis(remaining_ms)).await;
+            let poll_interval = 20; // 20ms fast poll
+            sleep(Duration::from_millis(poll_interval)).await;
 
             if let Some(result) = self.try_wait()? {
+                // When primary process exits, terminate any orphaned background children
+                self.kill_process_tree();
                 return Ok(result);
             }
         }
 
+        self.kill_process_tree();
         self.wait_for_child()
+    }
+
+    fn kill_process_tree(&self) {
+        if let Some(ref cg) = self.cgroup {
+            cg.kill_all();
+        }
+        unsafe {
+            // Signal entire process group (negative PID)
+            libc::kill(-self.pid.as_raw(), libc::SIGKILL);
+            libc::kill(self.pid.as_raw(), libc::SIGKILL);
+        }
     }
 
     fn try_wait(&self) -> Result<Option<ExecutionResult>, SupervisorError> {
@@ -115,22 +129,27 @@ impl ProcessSupervisor {
         };
 
         let exit_code = WEXITSTATUS(status) as i32;
+        let memory_limit_kb = self.config.memory_limit_bytes / 1024;
 
         let sandbox_status = if WIFEXITED(status) {
             if exit_code == 0 {
-                SandboxStatus::Ok
+                if memory_limit_kb > 0 && memory_kb > memory_limit_kb {
+                    SandboxStatus::MemoryLimitExceeded
+                } else {
+                    SandboxStatus::Ok
+                }
             } else {
                 SandboxStatus::RuntimeError(exit_code)
             }
         } else if WIFSIGNALED(status) {
             let sig = WTERMSIG(status);
             if sig == SIGKILL {
-                if cpu_time_ms >= self.config.time_limit_ms {
+                if wall_time_ms >= self.config.wall_time_limit_ms || cpu_time_ms >= self.config.time_limit_ms.saturating_sub(50) {
                     SandboxStatus::TimeLimitExceeded
-                } else if memory_kb > (self.config.memory_limit_bytes / 1024) as u64 {
+                } else if memory_limit_kb > 0 && memory_kb > memory_limit_kb {
                     SandboxStatus::MemoryLimitExceeded
                 } else {
-                    SandboxStatus::Signaled(sig)
+                    SandboxStatus::TimeLimitExceeded
                 }
             } else {
                 SandboxStatus::Signaled(sig)
@@ -148,15 +167,30 @@ impl ProcessSupervisor {
 
 pub async fn read_pipe_output(fd: c_int, max_bytes: usize) -> Result<Vec<u8>, SupervisorError> {
     task::spawn_blocking(move || {
-        unsafe {
-            let mut file = std::fs::File::from_raw_fd(fd);
-            let mut buffer = Vec::with_capacity(max_bytes);
-            file.read_to_end(&mut buffer)?;
-            if buffer.len() > max_bytes {
-                buffer.truncate(max_bytes);
+        let mut buffer = Vec::with_capacity(max_bytes.min(65536));
+        let mut chunk = [0u8; 8192];
+        loop {
+            let ret = unsafe {
+                libc::read(
+                    fd,
+                    chunk.as_mut_ptr() as *mut libc::c_void,
+                    chunk.len(),
+                )
+            };
+            if ret <= 0 {
+                break;
             }
-            Ok(buffer)
+            let bytes_read = ret as usize;
+            if buffer.len() + bytes_read > max_bytes {
+                let remaining = max_bytes - buffer.len();
+                buffer.extend_from_slice(&chunk[..remaining]);
+                break;
+            } else {
+                buffer.extend_from_slice(&chunk[..bytes_read]);
+            }
         }
+        unsafe { libc::close(fd) };
+        Ok(buffer)
     })
     .await
     .map_err(|_| SupervisorError::ReadError(std::io::Error::new(

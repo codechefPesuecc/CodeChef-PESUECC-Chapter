@@ -32,6 +32,7 @@ pub struct FsIsolation {
 impl FsIsolation {
     pub fn setup(
         job_id: &str,
+        host_workspace_dir: Option<&Path>,
         workdir_size_bytes: u64,
         read_only_paths: &[PathBuf],
     ) -> Result<Self, FsError> {
@@ -44,7 +45,7 @@ impl FsIsolation {
         isolation.setup_readonly_mounts(read_only_paths)?;
         isolation.setup_dev()?;
         isolation.setup_proc()?;
-        isolation.setup_workspace()?;
+        isolation.setup_workspace(host_workspace_dir)?;
         isolation.pivot_into_new_root()?;
 
         Ok(isolation)
@@ -103,10 +104,12 @@ impl FsIsolation {
                 continue;
             }
 
-            let filename = source_path
-                .file_name()
-                .ok_or_else(|| FsError::BindMountFailed("Invalid path".to_string()))?;
-            let target_path = self.root_path.join(filename);
+            let rel_path = source_path.strip_prefix("/").unwrap_or(source_path);
+            let target_path = self.root_path.join(rel_path);
+
+            if let Some(parent) = target_path.parent() {
+                let _ = fs::create_dir_all(parent);
+            }
 
             if !target_path.exists() {
                 if source_path.is_dir() {
@@ -213,26 +216,49 @@ impl FsIsolation {
         Ok(())
     }
 
-    fn setup_workspace(&self) -> Result<(), FsError> {
+    fn setup_workspace(&self, host_workspace_dir: Option<&Path>) -> Result<(), FsError> {
         let sandbox_path = self.root_path.join("sandbox");
         fs::create_dir_all(&sandbox_path)
             .map_err(|e| FsError::DirCreationFailed(format!("Failed to create /sandbox: {}", e)))?;
 
-        // Mount in-memory tmpfs for workspace (16 MB) using libc
-        unsafe {
-            let fstype_cstr = std::ffi::CString::new("tmpfs").unwrap();
-            let path_cstr = std::ffi::CString::new(sandbox_path.to_string_lossy().as_bytes()).unwrap();
-            let opts_cstr = std::ffi::CString::new("size=16m,mode=0755").unwrap();
+        if let Some(host_dir) = host_workspace_dir {
+            // Bind-mount host workspace directory directly to /sandbox in the ephemeral root
+            unsafe {
+                let source_cstr = std::ffi::CString::new(host_dir.to_string_lossy().as_bytes()).unwrap();
+                let target_cstr = std::ffi::CString::new(sandbox_path.to_string_lossy().as_bytes()).unwrap();
 
-            if libc::mount(
-                fstype_cstr.as_ptr(),
-                path_cstr.as_ptr(),
-                fstype_cstr.as_ptr(),
-                0,
-                opts_cstr.as_ptr() as *const libc::c_void,
-            ) != 0
-            {
-                return Err(FsError::MountFailed(format!("Failed to mount /sandbox")));
+                if libc::mount(
+                    source_cstr.as_ptr(),
+                    target_cstr.as_ptr(),
+                    std::ptr::null(),
+                    libc::MS_BIND | libc::MS_REC,
+                    std::ptr::null(),
+                ) != 0
+                {
+                    return Err(FsError::BindMountFailed(format!(
+                        "Failed to bind mount workspace {} to {}",
+                        host_dir.display(),
+                        sandbox_path.display()
+                    )));
+                }
+            }
+        } else {
+            // Mount in-memory tmpfs for workspace (16 MB) using libc
+            unsafe {
+                let fstype_cstr = std::ffi::CString::new("tmpfs").unwrap();
+                let path_cstr = std::ffi::CString::new(sandbox_path.to_string_lossy().as_bytes()).unwrap();
+                let opts_cstr = std::ffi::CString::new("size=16m,mode=0755").unwrap();
+
+                if libc::mount(
+                    fstype_cstr.as_ptr(),
+                    path_cstr.as_ptr(),
+                    fstype_cstr.as_ptr(),
+                    0,
+                    opts_cstr.as_ptr() as *const libc::c_void,
+                ) != 0
+                {
+                    return Err(FsError::MountFailed(format!("Failed to mount /sandbox")));
+                }
             }
         }
 

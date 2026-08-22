@@ -17,6 +17,10 @@ impl LanguageRunner for Java {
         "Solution.java"
     }
 
+    fn max_pids(&self) -> u32 {
+        24
+    }
+
     fn get_compile_command(&self, src_path: &Path, _bin_path: &Path) -> Option<SandboxConfig> {
         let src_str = src_path.to_string_lossy().to_string();
 
@@ -43,6 +47,10 @@ impl LanguageRunner for Java {
                 format!("-Xmx{}m", mem_mb),
                 format!("-Xms{}m", mem_mb / 2),
                 "-Xss1m".to_string(),
+                "-XX:ActiveProcessorCount=1".to_string(),
+                "-XX:CICompilerCount=2".to_string(),
+                "-cp".to_string(),
+                "/sandbox".to_string(),
                 "Solution".to_string(),
             ])
             .with_stdin(test_stdin.to_vec())

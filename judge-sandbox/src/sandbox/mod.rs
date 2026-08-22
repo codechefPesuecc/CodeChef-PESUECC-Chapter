@@ -97,7 +97,6 @@ impl Sandbox {
                 );
 
                 let _ = stdin_handle.await;
-                pipes.close_all();
 
                 match (supervise_result, _stdout, _stderr) {
                     (Ok(mut res), Ok(out), Ok(err)) => {
@@ -131,10 +130,19 @@ impl Sandbox {
 
 #[cfg(target_os = "linux")]
 fn write_all_to_fd(fd: c_int, data: &[u8]) -> std::io::Result<()> {
-    unsafe {
-        let mut file = std::fs::File::from_raw_fd(fd);
-        file.write_all(data)?;
-        drop(file);
+    let mut total_written = 0;
+    while total_written < data.len() {
+        let ret = unsafe {
+            libc::write(
+                fd,
+                data[total_written..].as_ptr() as *const libc::c_void,
+                data.len() - total_written,
+            )
+        };
+        if ret <= 0 {
+            break;
+        }
+        total_written += ret as usize;
     }
     Ok(())
 }

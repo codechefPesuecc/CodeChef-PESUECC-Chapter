@@ -47,6 +47,9 @@ pub trait LanguageRunner: Send + Sync {
     fn language(&self) -> SupportedLanguage;
     fn is_compiled(&self) -> bool;
     fn get_source_filename(&self) -> &'static str;
+    fn max_pids(&self) -> u32 {
+        2
+    }
     fn get_compile_command(&self, src_path: &Path, bin_path: &Path) -> Option<SandboxConfig>;
     fn get_run_command(
         &self,
