@@ -150,16 +150,51 @@ export async function judgeExecute(params: {
       test_cases: testCases,
     };
 
-    const res = await fetch(`${JUDGE_URL}/api/v1/submit`, {
-      method: "POST",
-      headers: getHeaders(),
-      cache: "no-store",
-      body: JSON.stringify(payload),
-    });
+    const MAX_RETRIES = 3;
+    let attempt = 0;
+    let res: Response | null = null;
+    let lastErrorText = "";
 
-    if (!res.ok) {
-      const detail = await res.text().catch(() => "");
-      throw new Error(`Judge execution failed (HTTP ${res.status}): ${detail}`);
+    while (attempt <= MAX_RETRIES) {
+      res = await fetch(`${JUDGE_URL}/api/v1/submit`, {
+        method: "POST",
+        headers: getHeaders(),
+        cache: "no-store",
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        break;
+      }
+
+      if (res.status === 503 && attempt < MAX_RETRIES) {
+        let retryAfterMs = 2000;
+        try {
+          const bodyJson = (await res.clone().json()) as { retry_after_secs?: number };
+          if (bodyJson?.retry_after_secs && typeof bodyJson.retry_after_secs === "number") {
+            retryAfterMs = bodyJson.retry_after_secs * 1000;
+          }
+        } catch {
+          // Fallback to backoff
+        }
+        const jitter = Math.floor(Math.random() * 500);
+        const backoffMs = Math.min(6000, retryAfterMs + attempt * 1000 + jitter);
+        await new Promise((r) => setTimeout(r, backoffMs));
+        attempt++;
+        continue;
+      }
+
+      lastErrorText = await res.text().catch(() => "");
+      break;
+    }
+
+    if (!res || !res.ok) {
+      if (res?.status === 503) {
+        throw new Error(
+          "Judge server is currently busy handling heavy contest submissions. Please retry in a few seconds."
+        );
+      }
+      throw new Error(`Judge execution failed (HTTP ${res?.status ?? 500}): ${lastErrorText}`);
     }
 
     const raw = (await res.json()) as RawJobResult;
