@@ -15,6 +15,8 @@ pub struct JudgeWorkerPool {
     sender: mpsc::UnboundedSender<JobEnvelope>,
     num_workers: usize,
     busy_workers: Arc<AtomicUsize>,
+    queued_jobs: Arc<AtomicUsize>,
+    max_queue_size: usize,
 }
 
 impl JudgeWorkerPool {
@@ -25,14 +27,22 @@ impl JudgeWorkerPool {
                 .unwrap_or(4)
         });
 
+        let max_queue = std::env::var("JUDGE_MAX_QUEUE")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(128);
+
         let (sender, receiver) = mpsc::unbounded_channel();
         let busy_workers = Arc::new(AtomicUsize::new(0));
+        let queued_jobs = Arc::new(AtomicUsize::new(0));
 
         (
             Self {
                 sender,
                 num_workers: worker_count,
                 busy_workers,
+                queued_jobs,
+                max_queue_size: max_queue,
             },
             receiver,
         )
@@ -50,11 +60,20 @@ impl JudgeWorkerPool {
         self.num_workers.saturating_sub(self.busy_workers())
     }
 
+    pub fn queued_jobs(&self) -> usize {
+        self.queued_jobs.load(Ordering::Relaxed)
+    }
+
     pub async fn submit(
         &self,
         mut request: JobRequest,
         progress: Option<mpsc::UnboundedSender<ProgressEvent>>,
     ) -> Result<JobResult, String> {
+        // Backpressure defense: reject if queue is saturated
+        if self.queued_jobs.load(Ordering::Relaxed) >= self.max_queue_size {
+            return Err("QUEUE_FULL".to_string());
+        }
+
         // Generate server-side job_id if not present
         if request.job_id.is_empty() {
             request.job_id = uuid::Uuid::new_v4().to_string();
@@ -68,9 +87,12 @@ impl JudgeWorkerPool {
             progress_tx: progress,
         };
 
-        self.sender
-            .send(envelope)
-            .map_err(|_| "Failed to submit job to worker pool".to_string())?;
+        self.queued_jobs.fetch_add(1, Ordering::Relaxed);
+
+        if let Err(_) = self.sender.send(envelope) {
+            self.queued_jobs.fetch_sub(1, Ordering::Relaxed);
+            return Err("Failed to submit job to worker pool".to_string());
+        }
 
         result_rx.await.map_err(|_| "Worker lost connection".to_string())?
     }
@@ -79,10 +101,12 @@ impl JudgeWorkerPool {
         let receiver = Arc::new(tokio::sync::Mutex::new(receiver));
         let mut handles = vec![];
         let busy_workers = self.busy_workers.clone();
+        let queued_jobs = self.queued_jobs.clone();
 
         for worker_id in 0..self.num_workers {
             let receiver_clone = receiver.clone();
             let busy = busy_workers.clone();
+            let queued = queued_jobs.clone();
 
             let handle = tokio::spawn(async move {
                 tracing::info!("Worker {} started", worker_id);
@@ -95,6 +119,7 @@ impl JudgeWorkerPool {
 
                     match envelope {
                         Some(envelope) => {
+                            queued.fetch_sub(1, Ordering::Relaxed);
                             busy.fetch_add(1, Ordering::Relaxed);
                             tracing::info!("Worker {} processing job {}", worker_id, envelope.request.job_id);
 
