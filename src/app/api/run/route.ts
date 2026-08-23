@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         ok: false,
-        error: `Too many runs — try again in ${Math.ceil(limit.retryAfterMs / 1000)}s.`,
+        error: `Too many runs â€” try again in ${Math.ceil(limit.retryAfterMs / 1000)}s.`,
         rateLimited: true,
       },
       { status: 429, headers: { "Retry-After": String(Math.ceil(limit.retryAfterMs / 1000)) } },
@@ -105,7 +105,7 @@ export async function POST(req: Request) {
       language: judgeLang,
       version: "sandbox-native",
       compileFailed,
-      compileStderr: compileFailed ? (firstTc?.stderr || "Compilation Error") : "",
+      compileStderr: compileFailed ? (firstTc?.stderr || result.compile_output || "Compilation Error") : "",
       stdout: firstTc?.stdout ?? "",
       stderr: firstTc?.stderr ?? "",
       exitCode: compileFailed ? 1 : 0,

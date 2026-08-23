@@ -3,7 +3,7 @@ import { sql } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import { judgeQueueStats, judgeHealth } from "@/lib/judge";
 
-// Always run at request time — this checks live dependencies.
+// Always run at request time ï¿½ this checks live dependencies.
 export const dynamic = "force-dynamic";
 
 /**
