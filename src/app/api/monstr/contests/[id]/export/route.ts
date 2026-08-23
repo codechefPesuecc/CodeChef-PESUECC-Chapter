@@ -133,7 +133,7 @@ export async function GET(
       .replace(/[^a-zA-Z0-9_\-]/g, "-")
       .replace(/-+/g, "-");
 
-    return new NextResponse(buffer, {
+    return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type":
           "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

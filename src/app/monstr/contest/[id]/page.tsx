@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/server/auth/session";
 import { getDb } from "@/server/db";
 import { monstrContests, monstrProblems, monstrParticipants } from "@/server/db/schema";
 import MonstrWorkspace from "@/components/monstr/MonstrWorkspace";
+import type { LanguageId } from "@/components/cp-arena/mockData";
 
 export const dynamic = "force-dynamic";
 
@@ -86,9 +87,9 @@ export default async function StudentContestPage({
 
   if (!firstProblemDetail[0]) redirect("/monstr");
 
-  let allowedLanguages: Array<string> = [];
+  let allowedLanguages: Array<LanguageId> = [];
   try {
-    allowedLanguages = JSON.parse(contest.allowedLanguages) as Array<string>;
+    allowedLanguages = JSON.parse(contest.allowedLanguages) as Array<LanguageId>;
   } catch (e) {
     console.error("[StudentContestPage] Failed to parse allowedLanguages:", e);
     redirect("/monstr");
