@@ -44,7 +44,16 @@ runtime, so D1 is only ever migrated out-of-band by the commands above.
 Workers can't run the Docker sandbox. Host the Rust Judge Sandbox on a small VM (Azure,
 Fly.io, Render, a cheap VPS), expose it over HTTPS, and set `JUDGE_URL` to that origin.
 `/api/run` and `/api/submit` read `JUDGE_URL`. Without a reachable judge sandbox,
-Run/Submit return a 503 "judge unreachable" and the rest of the site works.
+Run/Submit return a 502 "execution failed" and the rest of the site works.
+
+**`JUDGE_URL` must be a hostname, not a bare IP.** Cloudflare Workers reject
+`fetch()` to a raw IP address with `403 error code: 1003` ("Direct IP Access Not
+Allowed"), which surfaces as a 502 on Run/Submit. Give the VM a DNS name and serve
+HTTPS. Current setup: the judge runs on an Azure VM (`20.219.186.217:8080`, bound to
+localhost) behind Caddy, which terminates TLS and reverse-proxies to it. `JUDGE_URL`
+is `https://20.219.186.217.nip.io` (nip.io resolves the hostname back to the VM's IP,
+so no DNS records are needed). A Cloudflare Tunnel to `localhost:8080` is an
+alternative that avoids exposing any public port.
 
 ## 4. Challenges (in D1 — seeded)
 
