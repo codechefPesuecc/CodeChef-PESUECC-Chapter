@@ -95,7 +95,7 @@ export default function Navbar() {
     >
       <div className="relative mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         {/* Brand */}
-        <Link href="/" className="flex items-center gap-2.5">
+        <Link href="/" prefetch={false} className="flex items-center gap-2.5">
           <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg border border-hairline bg-white shadow-sm">
             <Image
               src="/logo.svg"
@@ -123,6 +123,7 @@ export default function Navbar() {
             <Link
               key={link.href}
               href={link.href}
+              prefetch={false}
               aria-current={isActive(link.href) ? "page" : undefined}
               className={`rounded-full px-4 py-2 text-sm transition-colors ${
                 isActive(link.href)
@@ -143,6 +144,7 @@ export default function Navbar() {
             <div className="flex items-center gap-2">
               <Link
                 href="/profile"
+                prefetch={false}
                 title={`@${user.username} · your profile`}
                 aria-label="Your profile"
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hairline bg-bronze/10 text-sm font-bold uppercase text-bronze shadow-sm transition-shadow hover:shadow-md"
@@ -152,6 +154,7 @@ export default function Navbar() {
               {user.isAdmin && (
                 <Link
                   href="/admin"
+                  prefetch={false}
                   aria-current={isActive("/admin") ? "page" : undefined}
                   className="hidden rounded-full border border-bronze/50 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-bronze transition-colors hover:bg-bronze/10 sm:inline-block"
                 >
@@ -169,6 +172,7 @@ export default function Navbar() {
           ) : (
             <Link
               href="/login"
+              prefetch={false}
               className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-chocolate ring-1 ring-bronze/50 shadow-sm transition-shadow hover:shadow-md dark:bg-[#241a12] dark:text-cream dark:shadow-[0_4px_20px_-2px_rgba(166,124,82,0.55)] dark:hover:shadow-[0_6px_28px_0_rgba(166,124,82,0.75)]"
             >
               Log in
@@ -210,6 +214,7 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
+                prefetch={false}
                 onClick={() => setOpen(false)}
                 aria-current={isActive(link.href) ? "page" : undefined}
                 className={`rounded-xl px-4 py-2.5 text-sm transition-colors ${
