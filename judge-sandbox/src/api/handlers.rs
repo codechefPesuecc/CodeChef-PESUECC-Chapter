@@ -39,7 +39,7 @@ pub async fn submit(
             StatusCode::BAD_REQUEST,
             Json(json!({
                 "error": format!("Unsupported language: {}", request.language),
-                "supported": ["c", "cpp", "python", "javascript", "typescript", "sql"]
+                "supported": ["c", "cpp", "python", "javascript", "typescript", "sql", "java"]
             })),
         );
     }

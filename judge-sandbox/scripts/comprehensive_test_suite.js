@@ -118,6 +118,19 @@ const TESTS = [
   },
   {
     category: 'Language Support',
+    name: 'Java — OpenJDK 17 Classpath & Memory Bounds',
+    payload: {
+      job_id: 'suite-java',
+      language: 'java',
+      source_code: 'import java.util.Scanner;\npublic class Solution {\n  public static void main(String[] args) {\n    Scanner sc = new Scanner(System.in);\n    System.out.println(sc.nextInt() * sc.nextInt());\n  }\n}',
+      time_limit_ms: 5000,
+      memory_limit_bytes: 536870912,
+      test_cases: [{ input: '9 9', expected_output: '81' }],
+    },
+    expectedVerdict: 'Accepted',
+  },
+  {
+    category: 'Language Support',
     name: 'JavaScript — Bun Runtime Execution',
     payload: {
       job_id: 'suite-js',

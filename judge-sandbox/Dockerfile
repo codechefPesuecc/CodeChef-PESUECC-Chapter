@@ -43,18 +43,22 @@ FROM debian:bookworm-slim AS runtime
 # Avoid interactive prompts during package install
 ENV DEBIAN_FRONTEND=noninteractive
 
-# ─── Install language toolchains (Target Profile: Python, JS, TS, C, C++, SQL) ───
+# ─── Install language toolchains (Target Profile: Python, JS, TS, C, C++, SQL, Java) ───
 # The Rust code expects these at /usr/bin/<name>:
 #   /usr/bin/gcc          (C)
 #   /usr/bin/g++          (C++)
 #   /usr/bin/python3      (Python)
 #   /usr/bin/sqlite3      (SQLite3)
+#   /usr/bin/javac        (Java compile)
+#   /usr/bin/java         (Java run)
 #   /usr/local/bin/bun    (JS / TS)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     # C / C++
     gcc g++ libc6-dev \
     # Python
     python3 \
+    # Java (headless JDK — includes javac + java)
+    default-jdk-headless \
     # SQL (SQLite3)
     sqlite3 \
     # Utilities
@@ -67,7 +71,7 @@ RUN curl -fsSL https://bun.sh/install | bash && \
     chmod +x /usr/local/bin/bun
 
 # ─── Verify all expected binary paths exist ───
-RUN set -e; for bin in gcc g++ python3 sqlite3 bun; do \
+RUN set -e; for bin in gcc g++ python3 javac java sqlite3 bun; do \
       command -v "$bin" || { echo "MISSING: $bin"; exit 1; }; \
     done && echo "All target language toolchains verified ✓"
 
@@ -85,6 +89,9 @@ RUN curl -fsSL https://github.com/atcoder/ac-library/releases/download/v1.5.1/ac
     g++ -O3 -std=c++20 -ftemplate-depth=128 -x c++-header /usr/local/include/atcoder/all -o /usr/local/include/atcoder/all.gch && \
     rm -rf /tmp/acl* && \
     echo "AtCoder Library (ACL) installed & precompiled in /usr/local/include/atcoder ✓"
+
+# ─── Java CDS (Class Data Sharing) Pre-dump for 60% faster JVM startup ───
+RUN java -Xshare:dump && echo "Java CDS Archive generated ✓"
 
 # ─── Python Bytecode Pre-compilation ───
 RUN python3 -m compileall -q /usr/lib/python3* 2>/dev/null || true && \
