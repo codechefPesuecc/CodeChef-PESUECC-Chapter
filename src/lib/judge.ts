@@ -1,6 +1,6 @@
 /**
  * Client for the high-performance self-hosted Rust Judge Sandbox.
- * Reached at JUDGE_URL (defaults to http://localhost:8080).
+ * Reached at JUDGE_URL (defaults to http://localhost:8080 or remote Azure VM).
  */
 import os from "node:os";
 
@@ -47,6 +47,24 @@ export const JUDGE_LANGUAGE: Record<string, string> = {
   java: "java",
 };
 
+export interface RawTestCaseResult {
+  test_case_index: number;
+  status: "Accepted" | "WrongAnswer" | "TimeLimitExceeded" | "MemoryLimitExceeded" | "RuntimeError" | "CompilationError";
+  cpu_time_ms: number;
+  memory_kb: number;
+  stdout: number[] | string;
+  stderr: number[] | string;
+}
+
+export interface RawJobResult {
+  job_id: string;
+  verdict: "Accepted" | "WrongAnswer" | "TimeLimitExceeded" | "MemoryLimitExceeded" | "RuntimeError" | "CompilationError";
+  total_cpu_time_ms: number;
+  peak_memory_kb: number;
+  compile_output?: string | null;
+  test_results: RawTestCaseResult[];
+}
+
 export interface JudgeTestCaseResult {
   test_case_index: number;
   verdict: "Accepted" | "WrongAnswer" | "TimeLimitExceeded" | "MemoryLimitExceeded" | "RuntimeError" | "CompilationError";
@@ -61,6 +79,7 @@ export interface JudgeExecutionResult {
   verdict: "Accepted" | "WrongAnswer" | "TimeLimitExceeded" | "MemoryLimitExceeded" | "RuntimeError" | "CompilationError";
   total_time_ms: number;
   peak_memory_bytes: number;
+  compile_output?: string | null;
   test_case_results: JudgeTestCaseResult[];
   error?: string;
 }
@@ -71,6 +90,15 @@ export interface JudgeHealth {
   busy_workers: number;
   queued_jobs: number;
   uptime_secs: number;
+}
+
+export function decodeOutput(val: number[] | string | undefined | null): string {
+  if (!val) return "";
+  if (typeof val === "string") return val;
+  if (Array.isArray(val)) {
+    return Buffer.from(val).toString("utf-8");
+  }
+  return String(val);
 }
 
 export async function judgeHealth(): Promise<JudgeHealth> {
@@ -96,7 +124,7 @@ export async function judgeExecute(params: {
 
   const testCases = params.testCases && params.testCases.length > 0
     ? params.testCases
-    : [{ input: params.stdin ?? "", expected_output: "" }];
+    : [{ input: params.stdin ?? "", expected_output: undefined }];
 
   await acquireSlot();
   try {
@@ -121,7 +149,25 @@ export async function judgeExecute(params: {
       throw new Error(`Judge execution failed (HTTP ${res.status}): ${detail}`);
     }
 
-    return (await res.json()) as JudgeExecutionResult;
+    const raw = (await res.json()) as RawJobResult;
+    
+    const formattedTestCases: JudgeTestCaseResult[] = (raw.test_results || []).map((t) => ({
+      test_case_index: t.test_case_index,
+      verdict: t.status,
+      time_ms: t.cpu_time_ms,
+      memory_bytes: t.memory_kb * 1024,
+      stdout: decodeOutput(t.stdout),
+      stderr: decodeOutput(t.stderr),
+    }));
+
+    return {
+      job_id: raw.job_id,
+      verdict: raw.verdict,
+      total_time_ms: raw.total_cpu_time_ms,
+      peak_memory_bytes: raw.peak_memory_kb * 1024,
+      compile_output: raw.compile_output,
+      test_case_results: formattedTestCases,
+    };
   } finally {
     releaseSlot();
   }
