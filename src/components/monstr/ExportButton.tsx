@@ -5,10 +5,9 @@ import { useState } from "react";
 interface Props {
   contestId: string;
   contestTitle: string;
-  isEnded: boolean;
 }
 
-export default function ExportButton({ contestId, contestTitle, isEnded }: Props) {
+export default function ExportButton({ contestId, contestTitle }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -33,7 +32,7 @@ export default function ExportButton({ contestId, contestTitle, isEnded }: Props
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-    } catch (err) {
+    } catch {
       setError("An error occurred. Try again.");
     } finally {
       setLoading(false);

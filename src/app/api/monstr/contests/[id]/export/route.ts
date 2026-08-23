@@ -122,7 +122,6 @@ export async function GET(
 
     // Generate Excel
     const buffer = generateContestExcel({
-      contestTitle: contest.title,
       problems,
       results,
     });

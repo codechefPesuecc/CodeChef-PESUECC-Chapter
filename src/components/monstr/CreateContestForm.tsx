@@ -257,7 +257,7 @@ export default function CreateContestForm() {
 
       const data = await res.json();
       router.push(`/monstr/teacher/contests/${data.contestId}`);
-    } catch (err) {
+    } catch {
       setError("An error occurred. Try again.");
     } finally {
       setLoading(false);

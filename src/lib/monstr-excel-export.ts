@@ -18,11 +18,10 @@ export interface ParticipantResult {
  * Returns a Buffer containing the XLSX file data.
  */
 export function generateContestExcel(params: {
-  contestTitle: string;
   problems: Array<{ id: string; title: string }>;
   results: ParticipantResult[];
 }): Buffer {
-  const { contestTitle, problems, results } = params;
+  const { problems, results } = params;
 
   // Build header row
   const headers = [

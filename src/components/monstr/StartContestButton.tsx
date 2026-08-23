@@ -30,7 +30,7 @@ export default function StartContestButton({ contestId, isStarted }: Props) {
       }
 
       router.refresh();
-    } catch (err) {
+    } catch {
       setError("An error occurred. Try again.");
     } finally {
       setLoading(false);

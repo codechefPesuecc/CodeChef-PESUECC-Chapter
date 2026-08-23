@@ -16,6 +16,7 @@ const eslintConfig = defineConfig([
     ".open-next/**",
     ".wrangler/**",
     ".wrangler-dryrun/**",
+    "judge-sandbox/**",
   ]),
 ]);
 

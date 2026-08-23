@@ -18,7 +18,6 @@ interface Props {
   joinCode: string;
   durationMinutes: number;
   startedAt: number | null;
-  endsAt: number | null;
   problems: Problem[];
   joinUrl: string;
 }
@@ -29,7 +28,6 @@ export default function ContestManager({
   joinCode,
   durationMinutes,
   startedAt,
-  endsAt,
   problems,
   joinUrl,
 }: Props) {
@@ -117,7 +115,6 @@ export default function ContestManager({
         <ExportButton
           contestId={contestId}
           contestTitle={title}
-          isEnded={endsAt ? endsAt <= Date.now() : false}
         />
       </section>
     </main>

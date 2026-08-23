@@ -57,7 +57,6 @@ export default async function TeacherContestPage({
       joinCode={contest.joinCode}
       durationMinutes={contest.durationMinutes}
       startedAt={contest.startedAt}
-      endsAt={contest.endsAt}
       problems={problemRows}
       joinUrl={joinUrl}
     />

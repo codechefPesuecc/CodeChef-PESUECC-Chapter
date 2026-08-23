@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { getCurrentUser } from "@/server/auth/session";
 import { getDb } from "@/server/db";
 import { monstrContests, monstrParticipants } from "@/server/db/schema";
-import { rateLimit, clientIp } from "@/server/rateLimit";
+import { rateLimit } from "@/server/rateLimit";
 
 export const dynamic = "force-dynamic";
 

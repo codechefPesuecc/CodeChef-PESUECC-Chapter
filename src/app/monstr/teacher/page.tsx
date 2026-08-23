@@ -18,6 +18,7 @@ export default async function TeacherDashboardPage() {
     .where(eq(monstrContests.teacherId, teacher.id))
     .orderBy(monstrContests.createdAt);
 
+  // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
   const getStatus = (contest: typeof contests[0]) => {
     if (!contest.startedAt) return "Not started";

@@ -22,7 +22,7 @@ interface Props {
   contestId: string;
   startedAt: number | null;
   endsAt: number | null;
-  serverNow: number;
+  serverNow?: number;
   problems: Array<{ id: string; title: string; orderIndex: number }>;
   allowedLanguages: LanguageId[];
   initialProblem: Problem;
@@ -32,7 +32,6 @@ export default function MonstrWorkspace({
   contestId,
   startedAt,
   endsAt,
-  serverNow,
   problems,
   allowedLanguages,
   initialProblem,
@@ -161,7 +160,7 @@ export default function MonstrWorkspace({
 
       const data = await res.json();
       setResult(data);
-    } catch (err) {
+    } catch {
       setResult({ ok: false, error: "Run failed." });
     } finally {
       setLoading(false);
@@ -194,7 +193,7 @@ export default function MonstrWorkspace({
       } else {
         setResult(data);
       }
-    } catch (err) {
+    } catch {
       setResult({ ok: false, error: "Submit failed." });
     } finally {
       setLoading(false);

@@ -8,16 +8,14 @@ interface Props {
 
 export default function MarkdownPreview({ markdown }: Props) {
   const [html, setHtml] = useState("");
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!markdown.trim()) {
-      setHtml("");
-      return;
-    }
+    const timer = setTimeout(async () => {
+      if (!markdown.trim()) {
+        setHtml("");
+        return;
+      }
 
-    const render = async () => {
-      setLoading(true);
       try {
         const res = await fetch("/api/monstr/preview", {
           method: "POST",
@@ -30,12 +28,9 @@ export default function MarkdownPreview({ markdown }: Props) {
         }
       } catch {
         // Silently fail on preview error
-      } finally {
-        setLoading(false);
       }
-    };
+    }, 300);
 
-    const timer = setTimeout(render, 300);
     return () => clearTimeout(timer);
   }, [markdown]);
 

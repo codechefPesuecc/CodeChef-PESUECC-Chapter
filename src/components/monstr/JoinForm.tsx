@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 export default function JoinForm() {
@@ -10,21 +10,7 @@ export default function JoinForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // On mount, check for ?code= and auto-submit
-  useEffect(() => {
-    const queryCode = searchParams.get("code");
-    const storedCode = typeof window !== "undefined" ? sessionStorage.getItem("monstr_pending_code") : null;
-    const codeToUse = queryCode || storedCode;
-
-    if (codeToUse) {
-      setCode(codeToUse);
-      sessionStorage.removeItem("monstr_pending_code");
-      // Auto-submit after a tick so the form is mounted
-      setTimeout(() => handleSubmit(codeToUse), 0);
-    }
-  }, [searchParams]);
-
-  const handleSubmit = async (codeToSubmit?: string) => {
+  const handleSubmit = useCallback(async (codeToSubmit?: string) => {
     const submitCode = codeToSubmit || code;
     if (!submitCode.trim()) {
       setError("Join code is required.");
@@ -58,7 +44,7 @@ export default function JoinForm() {
           setError("Add your SRN in your profile before joining.");
           return;
         }
-        setError(data.error || "Access denied.");
+        setError("You are not authorized to join this contest.");
         return;
       }
 
@@ -70,12 +56,28 @@ export default function JoinForm() {
 
       const data = await res.json();
       router.push(`/monstr/contest/${data.contestId}`);
-    } catch (err) {
+    } catch {
       setError("An error occurred. Try again.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [code, router]);
+
+  // On mount, check for ?code= and auto-submit
+  useEffect(() => {
+    const queryCode = searchParams.get("code");
+    const storedCode = typeof window !== "undefined" ? sessionStorage.getItem("monstr_pending_code") : null;
+    const codeToUse = queryCode || storedCode;
+
+    if (codeToUse) {
+      sessionStorage.removeItem("monstr_pending_code");
+      const timer = setTimeout(() => {
+        setCode(codeToUse);
+        void handleSubmit(codeToUse);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, handleSubmit]);
 
   return (
     <form

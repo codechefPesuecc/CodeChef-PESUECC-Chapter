@@ -95,14 +95,15 @@ export default async function StudentContestPage({
     redirect("/monstr");
   }
 
-  let samples: any[] = [];
+  let samples: Array<{ input: string; output: string }> = [];
   try {
-    samples = JSON.parse(firstProblemDetail[0].samples || "[]");
+    samples = JSON.parse(firstProblemDetail[0].samples || "[]") as Array<{ input: string; output: string }>;
   } catch (e) {
     console.error("[StudentContestPage] Failed to parse samples:", e);
     redirect("/monstr");
   }
 
+  // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
 
   const firstProblemWithParsedSamples = {
