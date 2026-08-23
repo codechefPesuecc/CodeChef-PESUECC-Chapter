@@ -25,9 +25,14 @@ const EVENT_KEY: Record<string, string> = {
   "tab-switch": "tabSwitch",
   "context-menu": "contextMenu",
   screenshot: "screenshot",
+  "window-blur": "windowBlur",
 };
 
-const ZERO = { paste: 0, copy: 0, cut: 0, tabSwitch: 0, contextMenu: 0, screenshot: 0 };
+// Events that DO NOT increment the penalty flag total (`attempts.flags`).
+// They are still recorded in `flagsBreakdown` for server-side review.
+const NON_PENALISED: ReadonlySet<string> = new Set(["window-blur"]);
+
+const ZERO = { paste: 0, copy: 0, cut: 0, tabSwitch: 0, contextMenu: 0, screenshot: 0, windowBlur: 0 };
 type Counts = typeof ZERO;
 
 function parseCounts(json: string | null | undefined): Counts {
@@ -42,6 +47,7 @@ function parseCounts(json: string | null | undefined): Counts {
       tabSwitch: n(o.tabSwitch),
       contextMenu: n(o.contextMenu),
       screenshot: n(o.screenshot),
+      windowBlur: n(o.windowBlur),
     };
   } catch {
     return { ...ZERO };
@@ -72,7 +78,10 @@ export async function GET(req: Request) {
 }
 
 /** POST /api/attempt/flag {slug, event} — atomically increment the authoritative flag
- * count for the user's ranked attempt. No-ops if there's no attempt row. */
+ * count for the user's ranked attempt. No-ops if there's no attempt row.
+ *
+ * Non-penalised events (e.g. "window-blur") are recorded in the JSON breakdown for
+ * server-side review but do NOT increment the `flags` total used for scoring. */
 export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ ok: false, needsAuth: true }, { status: 401 });
@@ -88,7 +97,8 @@ export async function POST(req: Request) {
     body = {};
   }
   const slug = typeof body.slug === "string" ? body.slug : "";
-  const key = EVENT_KEY[body.event ?? ""];
+  const event = body.event ?? "";
+  const key = EVENT_KEY[event];
   if (!slug || !key) {
     return NextResponse.json(
       { ok: false, error: "slug and a valid event are required." },
@@ -98,10 +108,13 @@ export async function POST(req: Request) {
 
   const db = getDb();
   const path = `$.${key}`;
+  const penalise = !NON_PENALISED.has(event);
   await db
     .update(attempts)
     .set({
-      flags: sql`${attempts.flags} + 1`,
+      // Only increment the penalty total for penalised events.
+      flags: penalise ? sql`${attempts.flags} + 1` : attempts.flags,
+      // Always record in the per-category breakdown for server-side review.
       flagsBreakdown: sql`json_set(${attempts.flagsBreakdown}, ${path}, coalesce(json_extract(${attempts.flagsBreakdown}, ${path}), 0) + 1)`,
     })
     .where(and(eq(attempts.userId, user.id), eq(attempts.challengeSlug, slug)));
