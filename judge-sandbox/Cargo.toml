@@ -1,7 +1,11 @@
 [package]
-name = "judge-sandbox"
+name = "akiro"
 version = "0.1.0"
 edition = "2021"
+authors = ["barunaniket <barunaniket@gmail.com>"]
+description = "High-Performance Sandboxed Code Execution Engine in Rust"
+repository = "https://github.com/barunaniket/akiro"
+license = "MIT"
 
 [dependencies]
 nix = { version = "0.29", features = ["process", "resource", "sched", "mount", "signal", "time", "fs"] }

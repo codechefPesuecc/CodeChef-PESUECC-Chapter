@@ -23,30 +23,30 @@ The engine provides multi-layered kernel isolation and resource protection:
 
 ```
                       +----------------------------------------+
-                      ¦          Untrusted Submission          ¦
+                      ï¿½          Untrusted Submission          ï¿½
                       +----------------------------------------+
-                                          ¦
+                                          ï¿½
                                           ?
                       +----------------------------------------+
-                      ¦         Axum REST / WS Gateway         ¦
-                      ¦  - DefaultBodyLimit: 2 MB              ¦
-                      ¦  - Queue Backpressure: max 128 (503)   ¦
+                      ï¿½         Axum REST / WS Gateway         ï¿½
+                      ï¿½  - DefaultBodyLimit: 2 MB              ï¿½
+                      ï¿½  - Queue Backpressure: max 128 (503)   ï¿½
                       +----------------------------------------+
-                                          ¦
+                                          ï¿½
                                           ?
                       +----------------------------------------+
-                      ¦    Adaptive Worker Pool (Tokio)        ¦
-                      ¦    Workers = available_parallelism()   ¦
+                      ï¿½    Adaptive Worker Pool (Tokio)        ï¿½
+                      ï¿½    Workers = available_parallelism()   ï¿½
                       +----------------------------------------+
-                                          ¦
+                                          ï¿½
     +---------------------------------------------------------------------------+
     ?                                     ?                                     ?
 +------------------------+    +------------------------+    +------------------------+
-¦   Linux Namespaces     ¦    ¦       Cgroups v2       ¦    ¦   Seccomp & RLIMITs    ¦
-¦ - CLONE_NEWNET (No net)¦    ¦ - memory.max = 256MB   ¦    ¦ - RLIMIT_FSIZE (16MB)  ¦
-¦ - CLONE_NEWPID (Hidden)¦    ¦ - pids.max (anti-fork) ¦    ¦ - RLIMIT_CPU (Hard kill¦
-¦ - CLONE_NEWNS  (Mount) ¦    ¦ - cgroup.kill cleanup  ¦    ¦ - MS_RDONLY Rootfs     ¦
-¦ - pivot_root isolation ¦    ¦ - memory.swap.max = 0  ¦    ¦ - Blacklisted Syscalls ¦
+ï¿½   Linux Namespaces     ï¿½    ï¿½       Cgroups v2       ï¿½    ï¿½   Seccomp & RLIMITs    ï¿½
+ï¿½ - CLONE_NEWNET (No net)ï¿½    ï¿½ - memory.max = 256MB   ï¿½    ï¿½ - RLIMIT_FSIZE (16MB)  ï¿½
+ï¿½ - CLONE_NEWPID (Hidden)ï¿½    ï¿½ - pids.max (anti-fork) ï¿½    ï¿½ - RLIMIT_CPU (Hard killï¿½
+ï¿½ - CLONE_NEWNS  (Mount) ï¿½    ï¿½ - cgroup.kill cleanup  ï¿½    ï¿½ - MS_RDONLY Rootfs     ï¿½
+ï¿½ - pivot_root isolation ï¿½    ï¿½ - memory.swap.max = 0  ï¿½    ï¿½ - Blacklisted Syscalls ï¿½
 +------------------------+    +------------------------+    +------------------------+
 ```
 
@@ -99,15 +99,15 @@ All runtimes are pre-warmed for competitive programming speed:
 
 ```
 +--------------------------------------------------------------------------------+
-¦ Language / Workload             ¦ Throughput (/sec)  ¦ Avg Latency    ¦ P50    ¦
-+---------------------------------+--------------------+----------------+--------¦
-¦ TypeScript (Bun JIT)            ¦ 26.70 / sec        ¦ 146.1 ms       ¦ 144 ms ¦
-¦ Python 3 (.pyc Bytecode)        ¦ 26.61 / sec        ¦ 146.3 ms       ¦ 145 ms ¦
-¦ SQL (SQLite3 In-Memory)         ¦ 26.40 / sec        ¦ 148.8 ms       ¦ 144 ms ¦
-¦ JavaScript (Bun)                ¦ 21.65 / sec        ¦ 180.9 ms       ¦ 144 ms ¦
-¦ C (GCC -O3)                     ¦ 11.65 / sec        ¦ 170.5 ms       ¦ 167 ms ¦
-¦ C++ (G++ -O3 + PCH)             ¦  2.65 / sec        ¦ 755.0 ms       ¦ 739 ms ¦
-¦ Java (OpenJDK 17 + javac + CDS) ¦  1.38 / sec        ¦ 1432.5 ms      ¦ 1391 ms¦
+ï¿½ Language / Workload             ï¿½ Throughput (/sec)  ï¿½ Avg Latency    ï¿½ P50    ï¿½
++---------------------------------+--------------------+----------------+--------ï¿½
+ï¿½ TypeScript (Bun JIT)            ï¿½ 26.70 / sec        ï¿½ 146.1 ms       ï¿½ 144 ms ï¿½
+ï¿½ Python 3 (.pyc Bytecode)        ï¿½ 26.61 / sec        ï¿½ 146.3 ms       ï¿½ 145 ms ï¿½
+ï¿½ SQL (SQLite3 In-Memory)         ï¿½ 26.40 / sec        ï¿½ 148.8 ms       ï¿½ 144 ms ï¿½
+ï¿½ JavaScript (Bun)                ï¿½ 21.65 / sec        ï¿½ 180.9 ms       ï¿½ 144 ms ï¿½
+ï¿½ C (GCC -O3)                     ï¿½ 11.65 / sec        ï¿½ 170.5 ms       ï¿½ 167 ms ï¿½
+ï¿½ C++ (G++ -O3 + PCH)             ï¿½  2.65 / sec        ï¿½ 755.0 ms       ï¿½ 739 ms ï¿½
+ï¿½ Java (OpenJDK 17 + javac + CDS) ï¿½  1.38 / sec        ï¿½ 1432.5 ms      ï¿½ 1391 msï¿½
 +--------------------------------------------------------------------------------+
 ```
 
@@ -194,22 +194,22 @@ The engine can run as a distributed cluster across multiple servers:
 
 ```
                +------------------------------+
-               ¦    HTTP / Web Frontend       ¦
-               ¦ (Submits code via API / Web) ¦
+               ï¿½    HTTP / Web Frontend       ï¿½
+               ï¿½ (Submits code via API / Web) ï¿½
                +------------------------------+
-                              ¦ XADD judge:jobs
+                              ï¿½ XADD judge:jobs
                               ?
                +------------------------------+
-               ¦     Central Redis Stream     ¦
-               ¦        (`judge:jobs`)        ¦
-               ¦  Consumer Group: `workers`   ¦
+               ï¿½     Central Redis Stream     ï¿½
+               ï¿½        (`judge:jobs`)        ï¿½
+               ï¿½  Consumer Group: `workers`   ï¿½
                +------------------------------+
-                       ¦              ¦
+                       ï¿½              ï¿½
         +----------------------+      +----------------------+
         ?                      ?                     ?       ?
 +----------------+     +----------------+    +----------------+
-¦  Worker Node 1 ¦     ¦  Worker Node 2 ¦     ¦  Worker Node 3 ¦
-¦  (Azure VPS)   ¦     ¦  (Laptop / PC) ¦     ¦  (On-Prem VM)  ¦
+ï¿½  Worker Node 1 ï¿½     ï¿½  Worker Node 2 ï¿½     ï¿½  Worker Node 3 ï¿½
+ï¿½  (Azure VPS)   ï¿½     ï¿½  (Laptop / PC) ï¿½     ï¿½  (On-Prem VM)  ï¿½
 +----------------+     +----------------+    +----------------+
 ```
 
@@ -217,7 +217,7 @@ The engine can run as a distributed cluster across multiple servers:
 2. **Result Cache**: Verdicts are stored in `judge:results:<job_id>` with 24-hour TTL and acknowledged via `XACK`.
 3. **Launch Worker**:
    ```bash
-   judge-sandbox --mode worker --redis redis://<REDIS_HOST>:6379
+   akiro --mode worker --redis redis://<REDIS_HOST>:6379
    ```
 
 ---
@@ -227,7 +227,7 @@ The engine can run as a distributed cluster across multiple servers:
 ### Quick Container Run
 ```bash
 sudo docker run -d \
-  --name judge-server \
+  --name akiro-server \
   --restart always \
   --init \
   --privileged \
@@ -235,11 +235,11 @@ sudo docker run -d \
   -e JUDGE_MODE=server \
   -e JUDGE_PORT=8080 \
   -e JUDGE_MAX_QUEUE=128 \
-  judge-sandbox
+  akiro
 ```
 
 ### Production Systemd Service
-Create `/etc/systemd/system/judge-sandbox.service`:
+Create `/etc/systemd/system/akiro.service`:
 
 ```ini
 [Unit]
@@ -251,10 +251,10 @@ Requires=docker.service
 TimeoutStartSec=0
 Restart=always
 RestartSec=5s
-ExecStartPre=-/usr/bin/docker stop judge-server
-ExecStartPre=-/usr/bin/docker rm judge-server
-ExecStart=/usr/bin/docker run --name judge-server --init --privileged -p 8080:8080 -e RUST_LOG=info -e JUDGE_MODE=server -e JUDGE_PORT=8080 -e JUDGE_MAX_QUEUE=128 judge-sandbox
-ExecStop=/usr/bin/docker stop -t 10 judge-server
+ExecStartPre=-/usr/bin/docker stop akiro-server
+ExecStartPre=-/usr/bin/docker rm akiro-server
+ExecStart=/usr/bin/docker run --name akiro-server --init --privileged -p 8080:8080 -e RUST_LOG=info -e JUDGE_MODE=server -e JUDGE_PORT=8080 -e JUDGE_MAX_QUEUE=128 akiro
+ExecStop=/usr/bin/docker stop -t 10 akiro-server
 
 [Install]
 WantedBy=multi-user.target
@@ -263,8 +263,8 @@ WantedBy=multi-user.target
 Enable and start:
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable judge-sandbox
-sudo systemctl start judge-sandbox
+sudo systemctl enable akiro
+sudo systemctl start akiro
 ```
 
 ---
