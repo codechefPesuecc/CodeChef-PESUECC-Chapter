@@ -98,7 +98,8 @@ RUN python3 -m compileall -q /usr/lib/python3* 2>/dev/null || true && \
     echo "Python standard library pre-compiled to .pyc ✓"
 
 # ─── Copy the judge binary ───
-COPY --from=builder /build/target/release/judge-sandbox /usr/local/bin/judge-sandbox
+COPY --from=builder /build/target/release/akiro /usr/local/bin/akiro
+RUN ln -s /usr/local/bin/akiro /usr/local/bin/judge-sandbox
 
 # ─── Create cgroup v2 parent directory ───
 # The sandbox creates per-job cgroups under /sys/fs/cgroup/judge/<uuid>
