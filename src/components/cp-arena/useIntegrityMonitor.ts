@@ -22,7 +22,8 @@ export type IntegrityEvent =
   | "cut"
   | "tab-switch"
   | "context-menu"
-  | "screenshot";
+  | "screenshot"
+  | "window-blur";
 
 const MESSAGES: Record<IntegrityEvent, string> = {
   paste: "Pasting is disabled in the arena.",
@@ -30,7 +31,8 @@ const MESSAGES: Record<IntegrityEvent, string> = {
   cut: "Cutting is disabled in the arena.",
   "tab-switch": "You left the tab — this is recorded for review.",
   "context-menu": "Right-click is disabled in the arena.",
-  screenshot: "Screen capture / leaving the window is recorded.",
+  screenshot: "Screen capture detected — this is recorded for review.",
+  "window-blur": "You left the window — this is noted for review.",
 };
 
 export interface IntegrityCounts {
@@ -40,6 +42,7 @@ export interface IntegrityCounts {
   tabSwitch: number;
   contextMenu: number;
   screenshot: number;
+  windowBlur: number;
 }
 
 const EMPTY: IntegrityCounts = {
@@ -49,6 +52,7 @@ const EMPTY: IntegrityCounts = {
   tabSwitch: 0,
   contextMenu: 0,
   screenshot: 0,
+  windowBlur: 0,
 };
 
 const KEY: Record<IntegrityEvent, keyof IntegrityCounts> = {
@@ -58,7 +62,20 @@ const KEY: Record<IntegrityEvent, keyof IntegrityCounts> = {
   "tab-switch": "tabSwitch",
   "context-menu": "contextMenu",
   screenshot: "screenshot",
+  "window-blur": "windowBlur",
 };
+
+// Events that count toward the FLAG_LIMIT penalty cap. Window blur is tracked
+// for server-side review but is NOT penalised — it conflates innocuous focus
+// loss (clicking the address bar, alt-tabbing) with actual screen capture.
+const PENALISED: ReadonlySet<IntegrityEvent> = new Set([
+  "paste",
+  "copy",
+  "cut",
+  "tab-switch",
+  "context-menu",
+  "screenshot",
+]);
 
 export function useIntegrityMonitor(active: boolean, slug?: string) {
   const [counts, setCounts] = useState<IntegrityCounts>(EMPTY);
@@ -128,16 +145,19 @@ export function useIntegrityMonitor(active: boolean, slug?: string) {
       if (document.visibilityState === "hidden") leave("tab-switch");
     };
 
-    // Window losing focus while the tab stays visible = an app switch or the OS
-    // snip overlay (Win+Shift+S). Deferred a tick so a tab switch — which also
-    // blurs — is attributed to visibilitychange above, not double-counted here.
+    // Window losing focus while the tab stays visible = an app switch, clicking
+    // the address bar, focusing undocked DevTools, etc. Recorded as a distinct
+    // "window-blur" signal (not "screenshot") so it doesn't penalise legitimate
+    // multitasking.  Deferred a tick so a tab switch — which also blurs — is
+    // attributed to visibilitychange above, not double-counted here.
     const onBlur = () => {
       setTimeout(() => {
-        if (document.visibilityState === "visible") leave("screenshot");
+        if (document.visibilityState === "visible") leave("window-blur");
       }, 0);
     };
 
     // PrintScreen copies without stealing focus, so it only surfaces via keyup.
+    // This is the only event that records as "screenshot".
     const onKeyUp = (e: KeyboardEvent) => {
       if (e.key === "PrintScreen") leave("screenshot");
     };
@@ -152,6 +172,7 @@ export function useIntegrityMonitor(active: boolean, slug?: string) {
     };
   }, [active, record]);
 
+  // Only penalised events count toward the flag cap.
   const total =
     counts.paste +
     counts.copy +
@@ -160,5 +181,5 @@ export function useIntegrityMonitor(active: boolean, slug?: string) {
     counts.contextMenu +
     counts.screenshot;
 
-  return { counts, notice, total, flagged: total > FLAG_LIMIT, record };
+  return { counts, notice, total, flagged: total > FLAG_LIMIT, record, PENALISED };
 }
