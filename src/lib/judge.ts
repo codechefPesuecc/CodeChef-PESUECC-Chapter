@@ -2,8 +2,6 @@
  * Client for the high-performance self-hosted Rust Judge Sandbox.
  * Reached at JUDGE_URL (defaults to http://localhost:8080 or remote Azure VM).
  */
-import os from "node:os";
-
 const JUDGE_URL = process.env.JUDGE_URL ?? "http://localhost:8080";
 const JUDGE_SECRET = process.env.JUDGE_SECRET || process.env.JUDGE_API_SECRET;
 
@@ -18,9 +16,11 @@ function getHeaders(): Record<string, string> {
   return headers;
 }
 
+// Workers run in isolated contexts — no shared state across requests.
+// This limiter only helps during local/Node.js dev; on Workers it's effectively a no-op.
 const MAX_CONCURRENT_JOBS = Math.max(
   1,
-  Number(process.env.JUDGE_CONCURRENCY) || (os.cpus?.().length ?? 4) - 1,
+  Number(process.env.JUDGE_CONCURRENCY) || 4,
 );
 let activeJobs = 0;
 const jobQueue: (() => void)[] = [];
