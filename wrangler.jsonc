@@ -38,9 +38,10 @@
 
   // Workers Logs: capture request logs + errors (viewable in the dashboard under
   // the Worker's Observability tab, and via `wrangler tail`). head_sampling_rate
-  // 1 logs every request — fine at this traffic; lower it if volume grows.
+  // 0.1 samples 10% of requests — enough to diagnose while keeping log volume
+  // (and the free-tier observability-events quota) bounded if traffic spikes.
   "observability": {
     "enabled": true,
-    "head_sampling_rate": 1
+    "head_sampling_rate": 0.1
   }
 }

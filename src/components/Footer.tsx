@@ -91,6 +91,7 @@ export default function Footer() {
                 <li key={link.label}>
                   <Link
                     href={link.href}
+                    prefetch={false}
                     className="text-charcoal/70 transition-colors hover:text-chocolate"
                   >
                     {link.label}
@@ -108,6 +109,7 @@ export default function Footer() {
                 <li key={link.label}>
                   <Link
                     href={link.href}
+                    prefetch={false}
                     className="text-charcoal/70 transition-colors hover:text-chocolate"
                   >
                     {link.label}
