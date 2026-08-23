@@ -5,7 +5,7 @@ use axum::{
 use serde_json::json;
 use std::sync::Arc;
 
-use crate::orchestrator::{JobRequest, JobResult};
+use crate::orchestrator::JobRequest;
 use super::ApiState;
 
 #[derive(serde::Serialize)]

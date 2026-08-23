@@ -5,6 +5,18 @@
 import os from "node:os";
 
 const JUDGE_URL = process.env.JUDGE_URL ?? "http://localhost:8080";
+const JUDGE_SECRET = process.env.JUDGE_SECRET || process.env.JUDGE_API_SECRET;
+
+function getHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (JUDGE_SECRET) {
+    headers["X-Judge-Secret"] = JUDGE_SECRET;
+    headers["Authorization"] = `Bearer ${JUDGE_SECRET}`;
+  }
+  return headers;
+}
 
 const MAX_CONCURRENT_JOBS = Math.max(
   1,
@@ -103,6 +115,7 @@ export function decodeOutput(val: number[] | string | undefined | null): string 
 
 export async function judgeHealth(): Promise<JudgeHealth> {
   const res = await fetch(`${JUDGE_URL}/health`, {
+    headers: getHeaders(),
     cache: "no-store",
   });
   if (!res.ok) throw new Error(`Judge health check failed: HTTP ${res.status}`);
@@ -139,7 +152,7 @@ export async function judgeExecute(params: {
 
     const res = await fetch(`${JUDGE_URL}/api/v1/submit`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getHeaders(),
       cache: "no-store",
       body: JSON.stringify(payload),
     });

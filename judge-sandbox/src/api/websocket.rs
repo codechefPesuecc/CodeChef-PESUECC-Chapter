@@ -6,7 +6,7 @@ use futures_util::{SinkExt, StreamExt};
 use std::sync::Arc;
 use tokio::sync::mpsc;
 
-use crate::orchestrator::{JobRequest, ProgressEvent};
+use crate::orchestrator::JobRequest;
 use super::ApiState;
 
 pub async fn handle_websocket(

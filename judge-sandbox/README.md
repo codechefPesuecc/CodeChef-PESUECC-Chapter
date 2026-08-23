@@ -137,6 +137,7 @@ GET /health
 ```http
 POST /api/v1/submit
 Content-Type: application/json
+X-Judge-Secret: your_secure_random_token  # Required when JUDGE_SECRET is configured
 ```
 **Request Payload:**
 ```json

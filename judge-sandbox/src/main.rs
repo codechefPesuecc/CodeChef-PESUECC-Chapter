@@ -1,5 +1,5 @@
 use clap::{Parser, ValueEnum};
-use judge_sandbox::{JudgeWorkerPool, api, queue::redis::RedisConsumer};
+use akiro::{api, queue::redis::RedisConsumer, JobEnvelope, JudgeWorkerPool};
 use std::sync::Arc;
 use tracing_subscriber::EnvFilter;
 
@@ -14,7 +14,7 @@ enum RunMode {
 }
 
 #[derive(Parser, Debug)]
-#[command(name = "Judge Sandbox")]
+#[command(name = "Akiro")]
 #[command(about = "High-performance online judge executor with Rust")]
 struct Args {
     /// Runtime mode: server, worker, or all
@@ -24,6 +24,10 @@ struct Args {
     /// HTTP server port
     #[arg(long, env = "JUDGE_PORT", default_value = "8080")]
     port: u16,
+
+    /// Optional API secret key for securing endpoints
+    #[arg(long, env = "JUDGE_SECRET")]
+    secret: Option<String>,
 
     /// Number of worker threads (auto-detect if not set)
     #[arg(long, env = "JUDGE_WORKERS")]
@@ -48,16 +52,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match args.mode {
         RunMode::Server => {
-            tracing::info!("Starting Judge Sandbox in SERVER mode on port {}", args.port);
-            run_server(pool, receiver, args.port).await?;
+            tracing::info!("Starting Akiro in SERVER mode on port {}", args.port);
+            run_server(pool, receiver, args.port, args.secret).await?;
         }
         RunMode::Worker => {
-            tracing::info!("Starting Judge Sandbox in WORKER mode (Redis consumer)");
+            tracing::info!("Starting Akiro in WORKER mode (Redis consumer)");
             run_worker(pool, receiver, &args.redis).await?;
         }
         RunMode::All => {
-            tracing::info!("Starting Judge Sandbox in ALL mode (server + worker pool)");
-            run_all(pool, receiver, args.port, &args.redis).await?;
+            tracing::info!("Starting Akiro in ALL mode (server + worker pool)");
+            run_all(pool, receiver, args.port, args.secret, &args.redis).await?;
         }
     }
 
@@ -66,8 +70,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 async fn run_server(
     pool: Arc<JudgeWorkerPool>,
-    receiver: tokio::sync::mpsc::UnboundedReceiver<judge_sandbox::JobEnvelope>,
+    receiver: tokio::sync::mpsc::UnboundedReceiver<JobEnvelope>,
     port: u16,
+    secret: Option<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Spawn worker tasks
     let pool_workers = pool.clone();
@@ -76,7 +81,7 @@ async fn run_server(
     });
 
     // Start HTTP server
-    let router = api::create_router(pool);
+    let router = api::create_router(pool, secret);
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", port)).await?;
 
     tracing::info!("HTTP server listening on port {}", port);
@@ -89,7 +94,7 @@ async fn run_server(
 
 async fn run_worker(
     pool: Arc<JudgeWorkerPool>,
-    receiver: tokio::sync::mpsc::UnboundedReceiver<judge_sandbox::JobEnvelope>,
+    receiver: tokio::sync::mpsc::UnboundedReceiver<JobEnvelope>,
     redis_url: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Spawn worker tasks for local processing
@@ -107,8 +112,9 @@ async fn run_worker(
 
 async fn run_all(
     pool: Arc<JudgeWorkerPool>,
-    receiver: tokio::sync::mpsc::UnboundedReceiver<judge_sandbox::JobEnvelope>,
+    receiver: tokio::sync::mpsc::UnboundedReceiver<JobEnvelope>,
     port: u16,
+    secret: Option<String>,
     redis_url: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Spawn worker tasks
@@ -120,7 +126,7 @@ async fn run_all(
     // Start HTTP server
     let pool_http = pool.clone();
     tokio::spawn(async move {
-        let router = api::create_router(pool_http);
+        let router = api::create_router(pool_http, secret);
         let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", port))
             .await
             .expect("Failed to bind HTTP listener");

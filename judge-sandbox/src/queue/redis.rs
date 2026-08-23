@@ -1,4 +1,4 @@
-use redis::{streams::StreamReadOptions, Commands, Connection};
+use redis::{streams::StreamReadOptions, Commands};
 use std::sync::Arc;
 use std::error::Error;
 use crate::orchestrator::{JobRequest, JudgeWorkerPool};
