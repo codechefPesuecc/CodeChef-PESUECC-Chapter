@@ -1,16 +1,16 @@
-# High-Performance Rust Judge Sandbox container service.
+# High-Performance Akiro Rust Judge Sandbox container service.
+# Standalone Repo: https://github.com/barunaniket/akiro
 # The Next.js app and its SQLite database run natively on Node (npm run dev).
 #
-#   docker compose up -d               # start the judge sandbox
+#   docker compose up -d               # start the akiro sandbox
 #   npm run dev                        # run the app on the host
 #   curl localhost:3000/api/health     # verify app <-> db <-> judge
 services:
   judge:
     build:
-      context: ./judge-sandbox
-      dockerfile: Dockerfile
-    image: judge-sandbox:latest
-    container_name: judge-server
+      context: https://github.com/barunaniket/akiro.git#main
+    image: akiro:latest
+    container_name: akiro-server
     privileged: true
     init: true
     environment:
