@@ -23,7 +23,7 @@ FROM rust:bookworm AS builder
 WORKDIR /build
 
 # Cache dependency compilation: copy manifests first, then source
-COPY Cargo.toml Cargo.lock ./
+COPY Cargo.toml ./
 RUN mkdir src && echo "fn main() {}" > src/main.rs && \
     mkdir -p src/sandbox src/api src/languages src/orchestrator src/queue && \
     touch src/lib.rs src/sandbox/mod.rs src/api/mod.rs src/languages/mod.rs \
