@@ -74,7 +74,10 @@ export const submissions = sqliteTable("submissions", {
   // AC | WA | TLE | RE | CE | pending
   status: text("status").notNull().default("pending"),
   runtimeMs: integer("runtime_ms"),
-  // Client-reported solve duration (indicative). Official ordering uses createdAt.
+  // Server-computed solve duration for ranked submissions: submit time minus the
+  // first-open time recorded in `attempts` — never the client's stopwatch.
+  // Null for practice (past-problem) solves, which carry no attempt clock.
+  // Official ordering still uses createdAt.
   elapsedSeconds: integer("elapsed_seconds"),
   // Integrity signals captured client-side for review.
   flags: integer("flags").notNull().default(0),
