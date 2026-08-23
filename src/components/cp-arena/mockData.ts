@@ -1,6 +1,6 @@
 /**
  * Editor configuration for the Arena workspace: the supported languages, their
- * starter templates, and small formatting helpers. The judge (Piston) and the
+ * starter templates, and small formatting helpers. The judge (Rust Judge Sandbox) and the
  * D1-backed leaderboard are live — the standings come from /api/leaderboard, so
  * there are no mock solvers here.
  */

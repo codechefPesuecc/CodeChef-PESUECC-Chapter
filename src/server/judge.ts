@@ -5,14 +5,12 @@ import {
   type Checker,
   type TestCase,
 } from "@/lib/challenges";
-import { PISTON_LANGUAGE, pistonExecute, pistonRuntimes } from "@/lib/piston";
+import { JUDGE_LANGUAGE, judgeExecute } from "@/lib/judge";
 import type { MonstrProblem } from "@/server/db/schema";
 
 /**
- * Server-side judge: compiles and runs a submission in Piston against every
- * hidden test for a challenge, stopping at the first failure. Hidden test data
- * is never returned to the client — only the verdict and which test index
- * failed.
+ * Server-side judge: compiles and evaluates a submission in the Rust Judge Sandbox
+ * against hidden test cases. Hidden test data is never returned to the client.
  */
 
 export type Verdict = "AC" | "WA" | "TLE" | "MLE" | "RE" | "CE" | "NO_TESTS" | "ERR";
@@ -28,32 +26,10 @@ export interface JudgeResult {
   message?: string;
 }
 
-const FILE_NAME: Record<string, string> = {
-  cpp: "main.cpp",
-  c: "main.c",
-  python: "main.py",
-  java: "Main.java",
-  csharp: "main.cs",
-  javascript: "main.js",
-  go: "main.go",
-  rust: "main.rs",
-  zig: "main.zig",
-};
-
 const MAX_RUN_MS = 10000;
-
 const DEFAULT_MEM_BYTES = 256 * 1024 * 1024;
 const MIN_MEM_BYTES = 32 * 1024 * 1024;
-const MAX_MEM_BYTES = 512 * 1024 * 1024; // must stay <= PISTON_RUN_MEMORY_LIMIT
-
-// Out-of-memory signatures across the supported runtimes — a memory-limited run
-// usually fails to allocate (non-zero exit) rather than being SIGKILLed.
-const OOM_RE =
-  /bad_alloc|OutOfMemoryError|MemoryError|out of memory|cannot allocate memory|memory allocation of|GC overhead limit|fatal error: runtime: out of memory/i;
-
-function looksLikeOom(stderr: string | undefined): boolean {
-  return !!stderr && OOM_RE.test(stderr);
-}
+const MAX_MEM_BYTES = 512 * 1024 * 1024;
 
 /** Compares program output to the expected output per the problem's checker. */
 function outputMatches(got: string, expected: string, checker: Checker): boolean {
@@ -85,8 +61,7 @@ function outputMatches(got: string, expected: string, checker: Checker): boolean
 }
 
 /**
- * Core judging logic: runs code against test cases and returns verdict.
- * Extracted so it can be reused for both CP Arena challenges and Monstr contests.
+ * Core judging logic: runs code against test cases in Rust Sandbox and returns verdict.
  */
 export async function judgeTests(params: {
   tests: TestCase[];
@@ -98,68 +73,63 @@ export async function judgeTests(params: {
 }): Promise<JudgeResult> {
   const { tests, checker, language, code, timeLimitMs, memLimitBytes } = params;
 
-  const pistonLang = PISTON_LANGUAGE[language];
-  if (!pistonLang) {
+  const judgeLang = JUDGE_LANGUAGE[language.toLowerCase()];
+  if (!judgeLang) {
     return { verdict: "ERR", passed: 0, total: tests.length, message: `Unsupported language: ${language}.` };
   }
 
-  let version: string;
-  try {
-    const runtimes = await pistonRuntimes();
-    const runtime = runtimes.find(
-      (r) => r.language === pistonLang || r.aliases?.includes(pistonLang),
-    );
-    if (!runtime) {
-      return { verdict: "ERR", passed: 0, total: tests.length, message: `No ${pistonLang} runtime installed.` };
-    }
-    version = runtime.version;
-  } catch {
-    return { verdict: "ERR", passed: 0, total: tests.length, message: "Judge (Piston) is unreachable." };
-  }
-
-  const fileName = FILE_NAME[language] ?? "main.txt";
   const actualTimeLimit = Math.min(Math.max(timeLimitMs, 500), MAX_RUN_MS);
   const actualMemLimit = Math.min(Math.max(memLimitBytes, MIN_MEM_BYTES), MAX_MEM_BYTES);
 
-  let passed = 0;
-  for (let i = 0; i < tests.length; i++) {
-    const test = tests[i];
-    let result;
-    try {
-      result = await pistonExecute({
-        language: pistonLang,
-        version,
-        files: [{ name: fileName, content: code }],
-        stdin: test.input,
-        runTimeoutMs: actualTimeLimit,
-        runMemoryLimitBytes: actualMemLimit,
-      });
-    } catch (error) {
-      return { verdict: "ERR", passed, total: tests.length, message: String(error) };
+  try {
+    const result = await judgeExecute({
+      language: judgeLang,
+      code,
+      testCases: tests.map((t) => ({ input: t.input, expected_output: t.output })),
+      timeLimitMs: actualTimeLimit,
+      memoryLimitBytes: actualMemLimit,
+    });
+
+    if (result.verdict === "CompilationError") {
+      const firstError = result.test_case_results?.[0]?.stderr || "Compilation failed.";
+      return { verdict: "CE", passed: 0, total: tests.length, detail: firstError };
     }
 
-    if (result.compile && result.compile.code !== 0) {
-      return { verdict: "CE", passed, total: tests.length, detail: result.compile.stderr };
+    let passed = 0;
+    for (let i = 0; i < (result.test_case_results?.length ?? 0); i++) {
+      const tc = result.test_case_results[i];
+      const expected = tests[i]?.output ?? "";
+
+      if (tc.verdict === "TimeLimitExceeded") {
+        return { verdict: "TLE", passed, total: tests.length, failedOn: i + 1 };
+      }
+      if (tc.verdict === "MemoryLimitExceeded") {
+        return { verdict: "MLE", passed, total: tests.length, failedOn: i + 1, detail: tc.stderr };
+      }
+      if (tc.verdict === "RuntimeError") {
+        return { verdict: "RE", passed, total: tests.length, failedOn: i + 1, detail: tc.stderr };
+      }
+
+      // Validate output with custom checker if output is provided
+      if (!outputMatches(tc.stdout, expected, checker)) {
+        return { verdict: "WA", passed, total: tests.length, failedOn: i + 1 };
+      }
+
+      passed++;
     }
-    if (result.run.signal === "SIGKILL") {
-      return { verdict: "TLE", passed, total: tests.length, failedOn: i + 1 };
+
+    if (passed === tests.length) {
+      return { verdict: "AC", passed, total: tests.length };
+    } else {
+      return { verdict: "WA", passed, total: tests.length, failedOn: passed + 1 };
     }
-    if (result.run.code !== 0) {
-      const verdict = looksLikeOom(result.run.stderr) ? "MLE" : "RE";
-      return { verdict, passed, total: tests.length, failedOn: i + 1, detail: result.run.stderr };
-    }
-    if (!outputMatches(result.run.stdout, test.output, checker)) {
-      return { verdict: "WA", passed, total: tests.length, failedOn: i + 1 };
-    }
-    passed++;
+  } catch (error) {
+    return { verdict: "ERR", passed: 0, total: tests.length, message: String(error) };
   }
-
-  return { verdict: "AC", passed, total: tests.length };
 }
 
 /**
  * Judge a CP Arena challenge submission against hidden tests.
- * Thin wrapper around judgeTests that handles challenge lookup and parsing.
  */
 export async function judge(params: {
   slug: string;
@@ -168,8 +138,8 @@ export async function judge(params: {
 }): Promise<JudgeResult> {
   const { slug, language, code } = params;
 
-  const pistonLang = PISTON_LANGUAGE[language];
-  if (!pistonLang) {
+  const judgeLang = JUDGE_LANGUAGE[language.toLowerCase()];
+  if (!judgeLang) {
     return { verdict: "ERR", passed: 0, total: 0, message: `Unsupported language: ${language}.` };
   }
 
@@ -204,7 +174,6 @@ export async function judge(params: {
 
 /**
  * Judge a Monstr contest problem submission.
- * Similar to judge() but reads limits and tests from a MonstrProblem object.
  */
 export async function monstrJudge(params: {
   problem: MonstrProblem;
@@ -213,12 +182,11 @@ export async function monstrJudge(params: {
 }): Promise<JudgeResult> {
   const { problem, language, code } = params;
 
-  const pistonLang = PISTON_LANGUAGE[language];
-  if (!pistonLang) {
+  const judgeLang = JUDGE_LANGUAGE[language.toLowerCase()];
+  if (!judgeLang) {
     return { verdict: "ERR", passed: 0, total: 0, message: `Unsupported language: ${language}.` };
   }
 
-  // Parse tests from JSON
   let tests: TestCase[] = [];
   try {
     tests = JSON.parse(problem.tests || "[]");
@@ -230,7 +198,6 @@ export async function monstrJudge(params: {
     return { verdict: "NO_TESTS", passed: 0, total: 0, message: "No tests for this problem." };
   }
 
-  // Parse checker from JSON
   let checker: Checker = { type: "token" };
   try {
     checker = JSON.parse(problem.checker || '{"type":"token"}');
@@ -238,7 +205,6 @@ export async function monstrJudge(params: {
     checker = { type: "token" };
   }
 
-  // Parse time and memory limits
   const timeLimitMs = Math.min(
     Math.max(parseTimeLimitMs(problem.timeLimit ?? undefined, 2000), 500),
     MAX_RUN_MS,

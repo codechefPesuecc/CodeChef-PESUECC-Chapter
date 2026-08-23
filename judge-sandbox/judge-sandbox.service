@@ -1,0 +1,16 @@
+[Unit]
+Description=CodeChef Judge Sandbox Execution Service
+After=docker.service
+Requires=docker.service
+
+[Service]
+TimeoutStartSec=0
+Restart=always
+RestartSec=5s
+ExecStartPre=-/usr/bin/docker stop judge-server
+ExecStartPre=-/usr/bin/docker rm judge-server
+ExecStart=/usr/bin/docker run --name judge-server --init --privileged -p 8080:8080 -e RUST_LOG=info -e JUDGE_MODE=server -e JUDGE_PORT=8080 -e JUDGE_MAX_QUEUE=128 judge-sandbox
+ExecStop=/usr/bin/docker stop -t 10 judge-server
+
+[Install]
+WantedBy=multi-user.target

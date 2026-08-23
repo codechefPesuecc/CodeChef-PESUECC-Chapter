@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
  * Input-size limits for the code-execution endpoints (/api/run, /api/submit).
  * Untrusted request bodies are otherwise unbounded: without these a single
  * request could push hundreds of MB into the Worker's memory, a D1 row, and the
- * Piston payload. The caps sit far above any real solution or test input.
+ * Judge Sandbox payload. The caps sit far above any real solution or test input.
  */
 
 /** Max source-code length (chars). Real solutions are a few KB. */

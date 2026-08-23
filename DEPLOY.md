@@ -7,8 +7,8 @@ as-is and need decisions up front:
 1. **Database** — the edge has no local SQLite file. Use **Turso** (libSQL over
    HTTP, recommended — zero code change) or **Cloudflare D1** (needs a
    per-request binding refactor).
-2. **Judge (Piston)** — Workers can't run Docker, so the sandbox must be hosted
-   elsewhere and reached over HTTPS. Local Docker Piston stays a dev-only judge.
+2. **Judge Sandbox** — Workers can't run Docker, so the sandbox must be hosted
+   elsewhere (e.g. Azure VM, cheap VPS) and reached over HTTPS. Local Docker Judge Sandbox stays a dev-only judge.
 
 Everything else (auth, sessions, leaderboards, OTP, rate limits) is portable
 with `nodejs_compat`.
@@ -39,12 +39,11 @@ npx wrangler d1 migrations apply pesuecc-arena --local     # local wrangler dev/
 `src/instrumentation.ts` skips the local libSQL auto-migrator on the Workers
 runtime, so D1 is only ever migrated out-of-band by the commands above.
 
-## 3. Judge / Piston
+## 3. Judge Sandbox
 
-Workers can't run the Docker sandbox. Host Piston on a small VM (Fly.io, Render,
-a cheap VPS) exactly as `docker-compose.yml` does, expose it over HTTPS, and set
-`PISTON_URL` to that origin. `/api/run` and `/api/submit` already read
-`PISTON_URL`, so no code change — just the secret. Without a reachable Piston,
+Workers can't run the Docker sandbox. Host the Rust Judge Sandbox on a small VM (Azure,
+Fly.io, Render, a cheap VPS), expose it over HTTPS, and set `JUDGE_URL` to that origin.
+`/api/run` and `/api/submit` read `JUDGE_URL`. Without a reachable judge sandbox,
 Run/Submit return a 503 "judge unreachable" and the rest of the site works.
 
 ## 4. Challenges (in D1 — seeded)
@@ -69,7 +68,7 @@ are selected only by the judge.
 
 ```bash
 npx wrangler secret put AUTH_SECRET
-npx wrangler secret put PISTON_URL
+npx wrangler secret put JUDGE_URL
 # email OTP verification — the Gmail API transport (all three required):
 npx wrangler secret put GMAIL_CLIENT_ID
 npx wrangler secret put GMAIL_CLIENT_SECRET
@@ -102,8 +101,8 @@ npx wrangler dev
   `wrangler d1 migrations apply`) before/at deploy.
 - **Rate limiting is DB-backed** (`src/server/rateLimit.ts` → the `rate_limits`
   table), so limits hold across Worker isolates. Applied to run/submit and the
-  auth endpoints (login/register/forgot/resend). Piston's FIFO job queue is still
-  per-isolate in-memory — acceptable, and only relevant once the judge is live.
+  auth endpoints (login/register/forgot/resend). The judge sandbox queue bounds
+  execution safely across nodes.
 - **Security headers + CSP** ship from `next.config.ts` (`headers()`). The CSP
   uses `'unsafe-inline'` for scripts/styles (Next bootstrap + CodeMirror); tighten
   to nonces later if desired.

@@ -1,31 +1,23 @@
-# The only containerised service is the Piston code-execution sandbox.
+# High-Performance Rust Judge Sandbox container service.
 # The Next.js app and its SQLite database run natively on Node (npm run dev).
 #
-#   docker compose up -d               # start the judge
-#   ./scripts/install-runtimes.sh      # one-time: install language runtimes
+#   docker compose up -d               # start the judge sandbox
 #   npm run dev                        # run the app on the host
-#   curl localhost:3000/api/health     # verify app <-> db <-> piston
+#   curl localhost:3000/api/health     # verify app <-> db <-> judge
 services:
-  piston:
-    image: ghcr.io/engineer-man/piston
-    # Piston needs privileged mode for its sandbox isolation (nsjail).
+  judge:
+    build:
+      context: ./judge-sandbox
+      dockerfile: Dockerfile
+    image: judge-sandbox:latest
+    container_name: judge-server
     privileged: true
+    init: true
     environment:
-      # Raise the per-run cap (default 3000ms) so per-problem time limits up to
-      # 10s are honoured. The submit/run routes pass each problem's own limit.
-      - PISTON_RUN_TIMEOUT=10000
-      - PISTON_COMPILE_TIMEOUT=20000
-      # Ceiling for per-run memory (512 MiB). The judge passes each problem's own
-      # memory limit (default 256 MiB) per request, which must be <= this cap.
-      - PISTON_RUN_MEMORY_LIMIT=536870912
-    # Published on localhost so the Node app and the install script can reach it.
+      - RUST_LOG=info
+      - JUDGE_MODE=server
+      - JUDGE_PORT=8080
+      - JUDGE_MAX_QUEUE=128
     ports:
-      - "127.0.0.1:2000:2000"
-    volumes:
-      - piston-packages:/piston/packages
-    tmpfs:
-      - /tmp:exec
+      - "127.0.0.1:8080:8080"
     restart: unless-stopped
-
-volumes:
-  piston-packages:

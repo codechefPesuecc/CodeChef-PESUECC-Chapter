@@ -55,7 +55,7 @@ A structured grid showcasing both community platforms and competitive events.
     *   *Praxis Hackathon:* Fast-paced AI project building sprint.
 *   **Sub-Section: Engineered Systems Portfolio** (2-Column Deep-Dive Frame)
     *   *Eclipse:* The custom event management infrastructure engineered to scale the Praxis Hackathon.
-    *   *AlgoHunt Base:* The standalone, independent contest engine backed by the Piston compiler engine.
+    *   *AlgoHunt Base:* The standalone, independent contest engine backed by our custom Rust Judge Sandbox engine.
 
 ### 👥 Page 4: Team Registry (`/team`)
 A complete, tiered organizational tree preserving historical and active club engineering tenure.

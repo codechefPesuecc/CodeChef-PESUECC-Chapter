@@ -5,7 +5,7 @@ import { getDb } from "@/server/db";
 import { monstrContests, monstrProblems } from "@/server/db/schema";
 import { generateJoinCode } from "@/lib/monstr-join-code";
 import { renderMarkdown } from "@/lib/markdown";
-import { PISTON_LANGUAGE } from "@/lib/piston";
+import { JUDGE_LANGUAGE } from "@/lib/judge";
 import { bodyTooLarge } from "@/server/limits";
 import type { Checker } from "@/lib/challenges";
 
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
 
   // Validate all languages are supported
   for (const lang of allowedLanguages) {
-    if (!PISTON_LANGUAGE[lang]) {
+    if (!JUDGE_LANGUAGE[lang.toLowerCase()]) {
       return NextResponse.json(
         { ok: false, error: `Unsupported language: ${lang}.` },
         { status: 400 },

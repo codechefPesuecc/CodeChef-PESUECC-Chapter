@@ -43,7 +43,7 @@ type Judgement = {
   // RAN = ran on custom input; CE = compile error; TLE/RE = runtime; ERR = infra
   status: Verdict | "RAN" | "ERR";
   input?: string;
-  output?: string; // real stdout from Piston (run mode)
+  output?: string; // real stdout from Judge Sandbox (run mode)
   stderr?: string; // compiler output (CE) or program stderr (RE)
   message?: string; // error / info text
   passed?: number; // submit: tests passed before failure

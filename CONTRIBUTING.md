@@ -62,7 +62,7 @@ labelled `good first issue`.
   nvm use 22
   ```
 - **Git**.
-- (Optional, only for the code judge) **Docker**, to run the Piston sandbox locally — see
+- (Optional, only for the code judge) **Docker**, to run the Rust Judge Sandbox locally — see
   `docs/backend.md`.
 
 ### First-time setup
@@ -82,7 +82,7 @@ npm run dev
 
 Open <http://localhost:3000>. That's it — you have a working local instance.
 
-The **Run / Submit** buttons need the Piston judge running. If you are not working on the judge, you
+The **Run / Submit** buttons need the Judge Sandbox running. If you are not working on the judge, you
 can ignore the 503s from those endpoints; everything else works without it. To run the judge locally,
 see `docs/backend.md`.
 

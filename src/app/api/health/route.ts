@@ -1,17 +1,23 @@
 import { NextResponse } from "next/server";
 import { sql } from "drizzle-orm";
 import { getDb } from "@/server/db";
-import { pistonQueueStats, pistonRuntimes } from "@/lib/piston";
+import { judgeQueueStats, judgeHealth } from "@/lib/judge";
 
-// Always run at request time â€” this checks live dependencies.
+// Always run at request time — this checks live dependencies.
 export const dynamic = "force-dynamic";
 
 /**
- * Stack health check: verifies the SQLite DB and the Piston sandbox are both
+ * Stack health check: verifies the SQLite DB and the Rust Judge Sandbox are both
  * reachable. Returns 200 only when the whole stack is up, 503 otherwise.
  */
 export async function GET() {
-  const checks = { db: false, piston: false, runtimes: [] as string[] };
+  const checks: {
+    db: boolean;
+    judge: boolean;
+    workers?: number;
+    idleWorkers?: number;
+    queuedJobs?: number;
+  } = { db: false, judge: false };
 
   try {
     const db = getDb();
@@ -22,16 +28,18 @@ export async function GET() {
   }
 
   try {
-    const runtimes = await pistonRuntimes();
-    checks.piston = true;
-    checks.runtimes = runtimes.map((r) => `${r.language}@${r.version}`);
+    const health = await judgeHealth();
+    checks.judge = true;
+    checks.workers = health.total_workers;
+    checks.idleWorkers = health.idle_workers;
+    checks.queuedJobs = health.queued_jobs;
   } catch {
-    checks.piston = false;
+    checks.judge = false;
   }
 
-  const ok = checks.db && checks.piston;
+  const ok = checks.db && checks.judge;
   return NextResponse.json(
-    { ok, ...checks, judgeQueue: pistonQueueStats(), at: new Date().toISOString() },
+    { ok, ...checks, judgeQueue: judgeQueueStats(), at: new Date().toISOString() },
     { status: ok ? 200 : 503 },
   );
 }

@@ -9,7 +9,7 @@ import { judge } from "@/server/judge";
 import { hasSolvedRanked } from "@/server/solves";
 import { rateLimit, clientIp } from "@/server/rateLimit";
 import { verifyTurnstile } from "@/server/turnstile";
-import { PISTON_LANGUAGE } from "@/lib/piston";
+import { JUDGE_LANGUAGE } from "@/lib/judge";
 import { bodyTooLarge, tooLong, MAX_CODE_CHARS } from "@/server/limits";
 
 export const dynamic = "force-dynamic";
@@ -83,7 +83,7 @@ export async function POST(req: Request) {
 
   const codeTooLong = tooLong(code, MAX_CODE_CHARS, "Code");
   if (codeTooLong) return codeTooLong;
-  if (!PISTON_LANGUAGE[language]) {
+  if (!JUDGE_LANGUAGE[language.toLowerCase()]) {
     return NextResponse.json(
       { ok: false, error: `Unsupported language: ${language}.` },
       { status: 400 },

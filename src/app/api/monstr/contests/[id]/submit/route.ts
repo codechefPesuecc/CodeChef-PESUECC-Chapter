@@ -9,7 +9,7 @@ import {
   monstrContests,
   monstrSubmissions,
 } from "@/server/db/schema";
-import { PISTON_LANGUAGE } from "@/lib/piston";
+import { JUDGE_LANGUAGE } from "@/lib/judge";
 import { monstrJudge } from "@/server/judge";
 import { rateLimit } from "@/server/rateLimit";
 import { bodyTooLarge, tooLong, MAX_CODE_CHARS } from "@/server/limits";
@@ -76,7 +76,7 @@ export async function POST(
   const codeTooLong = tooLong(code, MAX_CODE_CHARS, "Code");
   if (codeTooLong) return codeTooLong;
 
-  if (!PISTON_LANGUAGE[language]) {
+  if (!JUDGE_LANGUAGE[language.toLowerCase()]) {
     return NextResponse.json(
       { ok: false, error: `Unsupported language: ${language}.` },
       { status: 400 },

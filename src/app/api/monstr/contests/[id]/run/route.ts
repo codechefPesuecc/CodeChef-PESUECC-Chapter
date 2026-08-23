@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { getCurrentUser } from "@/server/auth/session";
 import { getDb } from "@/server/db";
 import { monstrParticipants, monstrProblems, monstrContests } from "@/server/db/schema";
-import { PISTON_LANGUAGE, pistonExecute, pistonRuntimes } from "@/lib/piston";
+import { JUDGE_LANGUAGE, judgeExecute } from "@/lib/judge";
 import { rateLimit } from "@/server/rateLimit";
 import { bodyTooLarge, tooLong, MAX_CODE_CHARS, MAX_STDIN_CHARS } from "@/server/limits";
 import { parseTimeLimitMs, parseMemoryLimitBytes } from "@/lib/challenges";
@@ -16,18 +16,6 @@ const MAX_RUN_MS = 10000;
 const DEFAULT_MEM_BYTES = 256 * 1024 * 1024;
 const MIN_MEM_BYTES = 32 * 1024 * 1024;
 const MAX_MEM_BYTES = 512 * 1024 * 1024;
-
-const FILE_NAME: Record<string, string> = {
-  cpp: "main.cpp",
-  c: "main.c",
-  python: "main.py",
-  java: "Main.java",
-  csharp: "main.cs",
-  javascript: "main.js",
-  go: "main.go",
-  rust: "main.rs",
-  zig: "main.zig",
-};
 
 /**
  * Run code against sample input. Requires authentication and participation.
@@ -158,32 +146,11 @@ export async function POST(
     }
 
     const problem = problemRows[0];
-    const pistonLang = PISTON_LANGUAGE[language];
-    if (!pistonLang) {
+    const judgeLang = JUDGE_LANGUAGE[language.toLowerCase()];
+    if (!judgeLang) {
       return NextResponse.json(
         { ok: false, error: `Unsupported language: ${language}.` },
         { status: 400 },
-      );
-    }
-
-    // Get runtimes and find version
-    let version: string;
-    try {
-      const runtimes = await pistonRuntimes();
-      const runtime = runtimes.find(
-        (r) => r.language === pistonLang || r.aliases?.includes(pistonLang),
-      );
-      if (!runtime) {
-        return NextResponse.json(
-          { ok: false, error: `No ${pistonLang} runtime installed.` },
-          { status: 503 },
-        );
-      }
-      version = runtime.version;
-    } catch {
-      return NextResponse.json(
-        { ok: false, error: "Judge (Piston) is unreachable." },
-        { status: 503 },
       );
     }
 
@@ -198,31 +165,30 @@ export async function POST(
       ),
       MAX_MEM_BYTES,
     );
-    const fileName = FILE_NAME[language] ?? "main.txt";
 
-    // Execute
-    const result = await pistonExecute({
-      language: pistonLang,
-      version,
-      files: [{ name: fileName, content: code }],
+    // Execute in Rust Sandbox
+    const result = await judgeExecute({
+      language: judgeLang,
+      code,
       stdin: typeof stdin === "string" ? stdin : "",
-      runTimeoutMs: timeLimitMs,
-      runMemoryLimitBytes: memLimitBytes,
+      timeLimitMs,
+      memoryLimitBytes: memLimitBytes,
     });
 
-    const compileFailed = !!result.compile && result.compile.code !== 0;
-    const timedOut = result.run.signal === "SIGKILL";
+    const firstTc = result.test_case_results?.[0];
+    const compileFailed = result.verdict === "CompilationError";
+    const timedOut = result.verdict === "TimeLimitExceeded" || firstTc?.verdict === "TimeLimitExceeded";
 
     return NextResponse.json({
       ok: true,
-      language: pistonLang,
-      version,
+      language: judgeLang,
+      version: "sandbox-native",
       compileFailed,
-      compileStderr: result.compile?.stderr ?? "",
-      stdout: result.run.stdout,
-      stderr: result.run.stderr,
-      exitCode: result.run.code,
-      signal: result.run.signal,
+      compileStderr: compileFailed ? (firstTc?.stderr || "Compilation Error") : "",
+      stdout: firstTc?.stdout ?? "",
+      stderr: firstTc?.stderr ?? "",
+      exitCode: compileFailed ? 1 : 0,
+      signal: timedOut ? "SIGKILL" : null,
       timedOut,
       timeLimitMs,
     });

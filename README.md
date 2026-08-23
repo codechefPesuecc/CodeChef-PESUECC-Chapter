@@ -12,7 +12,7 @@ This repository houses a modern, edge-optimized application engineered using **N
 * **Hosting & Deploy:** **Cloudflare Workers**. Builds run through the OpenNext adapter and deploy with Wrangler (see `DEPLOY.md`).
 * **Database (Edge Storage):** **Cloudflare D1** (Serverless, ultra-low latency SQLite database running natively on Cloudflare's global edge network).
 * **Content Pipeline:** Problems live in **Cloudflare D1** — authored as JSON, validated, and loaded with `npm run challenges:seed`, so publishing a problem needs no redeploy. Hidden tests never enter the repo.
-* **Code Judge Sandbox:** A self-hosted instance of the **Piston Engine / AlgoHunt Base** running on an isolated **Oracle Cloud Infrastructure (OCI) Always Free Ampere A1 Compute Instance** (Configured at 2 OCPUs / 12 GB RAM).
+* **Code Judge Sandbox:** A self-hosted instance of the **Rust Judge Sandbox / AlgoHunt Base** running on an isolated Linux VPS with Cgroups v2, pivot_root, namespaces, and seccomp isolation.
 
 ---
 
@@ -124,7 +124,7 @@ To prevent execution vulnerabilities (Infinite loops, file-system intrusions, fo
    npm run dev
    ```
 
-   For the code judge (Run / Submit), start the Piston sandbox — see `docs/backend.md`. Deploying to Cloudflare (the `pesuecc-arena` D1 database + secrets) is covered in `DEPLOY.md`.
+   For the code judge (Run / Submit), start the Judge Sandbox — see `docs/backend.md`. Deploying to Cloudflare (the `pesuecc-arena` D1 database + secrets) is covered in `DEPLOY.md`.
 
 Open `http://localhost:3000` inside your browser to see your local instance.
 
