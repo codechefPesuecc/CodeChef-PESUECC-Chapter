@@ -1,8 +1,25 @@
 # CodeChef PESUECC Chapter Portal 💻🌾
 
+[![good first issues](https://img.shields.io/github/issues/codechefPesuecc/CodeChef-PESUECC-Chapter/good%20first%20issue.svg?label=good%20first%20issues&color=7057ff)](https://github.com/codechefPesuecc/CodeChef-PESUECC-Chapter/issues?q=is%3Aissue%20is%3Aopen%20label%3A%22good%20first%20issue%22)
+[![help wanted](https://img.shields.io/github/issues/codechefPesuecc/CodeChef-PESUECC-Chapter/help%20wanted.svg?label=help%20wanted&color=008672)](https://github.com/codechefPesuecc/CodeChef-PESUECC-Chapter/issues?q=is%3Aissue%20is%3Aopen%20label%3A%22help%20wanted%22)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
+[![live demo](https://img.shields.io/badge/demo-live-A67C52.svg)](https://codechef.pesuecc.workers.dev)
+
 The official web platform and high-performance competitive programming ecosystem for the **CodeChef PESUECC Chapter**.
 
 This repository houses a modern, edge-optimized application engineered using **Next.js**, **Cloudflare Pages**, and **Cloudflare D1**. It powers our landing page, dynamic student portfolios, a database-backed challenge track, and a live daily contest leaderboard backed by a secure, self-hosted sandboxed code execution microservice.
+
+> ### 🙌 New here? We'd love your help.
+> This is a **real platform our chapter uses every day** — so your PR ships to actual users, not a toy repo. There's a surface for every skill level: UI/UX, edge APIs, tests, docs, problem-setting, and DevOps. You do **not** need to be a competitive-programming or Next.js expert.
+>
+> **Get running in ~60 seconds** — no database or code-judge setup needed for most work:
+> ```bash
+> git clone https://github.com/codechefPesuecc/CodeChef-PESUECC-Chapter.git
+> cd CodeChef-PESUECC-Chapter && npm ci && npm run dev   # → http://localhost:3000
+> ```
+>
+> 👉 Pick a **[good first issue](https://github.com/codechefPesuecc/CodeChef-PESUECC-Chapter/issues?q=is%3Aissue%20is%3Aopen%20label%3A%22good%20first%20issue%22)** · skim the friendly **[Contributing guide](./CONTRIBUTING.md)** · try it live at **[codechef.pesuecc.workers.dev](https://codechef.pesuecc.workers.dev)**.
+> Your first-ever open-source PR? Fixing a typo counts. **You belong here.**
 
 ---
 
