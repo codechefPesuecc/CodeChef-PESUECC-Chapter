@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/AppLink";
 import { redirect } from "next/navigation";
 import { getTeacherUser } from "@/server/auth/session";
 import { getDb } from "@/server/db";

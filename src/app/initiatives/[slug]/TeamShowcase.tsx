@@ -2,7 +2,7 @@
 
 import { motion } from "motion/react";
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/components/AppLink";
 import { LinkIcon } from "lucide-react";
 
 export default function TeamShowcase({ team }: { team: Record<string, unknown>[] }) {

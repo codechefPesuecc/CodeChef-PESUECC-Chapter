@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import Link from "@/components/AppLink";
 import MechaPanel from "@/components/cp-arena/MechaPanel";
 
 const inputCls = "mecha-input";

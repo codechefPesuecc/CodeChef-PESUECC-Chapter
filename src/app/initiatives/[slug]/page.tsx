@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/components/AppLink";
 import manifest from "../initiatives.manifest.json";
 import { ArrowLeft, Calendar, Trophy, Users } from "lucide-react";
 import EventTimeline from "./EventTimeline";

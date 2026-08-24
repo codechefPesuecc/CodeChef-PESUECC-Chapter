@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/AppLink";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import {

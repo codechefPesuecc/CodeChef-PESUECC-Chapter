@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/AppLink";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/server/auth/session";
 import { getUserSubmissions, getProfileStats } from "@/server/profile";

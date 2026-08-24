@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/AppLink";
 import { getReleasedSummaries } from "@/lib/challenges";
 import MechaPanel from "@/components/cp-arena/MechaPanel";
 import NextProblemCountdown from "@/components/cp-arena/NextProblemCountdown";

@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/components/AppLink";
 import CountUp from "@/components/CountUp";
 import Reveal from "@/components/Reveal";
 import MechaPanel from "@/components/cp-arena/MechaPanel";

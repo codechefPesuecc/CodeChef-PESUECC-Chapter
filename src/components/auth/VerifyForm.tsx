@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import Link from "@/components/AppLink";
 import { useUser } from "@/components/auth/useUser";
 import MechaPanel from "@/components/cp-arena/MechaPanel";
 
