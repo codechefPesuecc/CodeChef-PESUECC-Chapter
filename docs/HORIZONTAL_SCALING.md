@@ -78,17 +78,17 @@ Open a **new terminal window** and run:
 # docker build -t akiro:latest https://github.com/barunaniket/akiro.git#main
 
 # 2. Launch worker container with 8 cores (or adjust to match CPU core count):
-docker run -d --name akiro-worker --privileged --restart unless-stopped -e ENABLE_EMBEDDED_REDIS=false akiro:latest --mode worker --redis redis://:ceef3470b081d9f851ea3acc65efc4a0fd61f65d3d426998f49f57e37a945e5f@host.docker.internal:6380 --workers 8
+docker run -d --name akiro-worker --privileged --restart unless-stopped -e ENABLE_EMBEDDED_REDIS=false akiro:latest --mode worker --redis redis://:<JUDGE_SECRET>@host.docker.internal:6380 --workers 8
 ```
 
 #### 🍎 macOS (Apple Silicon / Intel):
 ```bash
-docker run -d --name akiro-worker --privileged --restart unless-stopped -e ENABLE_EMBEDDED_REDIS=false akiro:latest --mode worker --redis redis://:ceef3470b081d9f851ea3acc65efc4a0fd61f65d3d426998f49f57e37a945e5f@host.docker.internal:6380 --workers 8
+docker run -d --name akiro-worker --privileged --restart unless-stopped -e ENABLE_EMBEDDED_REDIS=false akiro:latest --mode worker --redis redis://:<JUDGE_SECRET>@host.docker.internal:6380 --workers 8
 ```
 
 #### 🐧 Linux:
 ```bash
-docker run -d --name akiro-worker --privileged --restart unless-stopped --network host -e ENABLE_EMBEDDED_REDIS=false akiro:latest --mode worker --redis redis://:ceef3470b081d9f851ea3acc65efc4a0fd61f65d3d426998f49f57e37a945e5f@127.0.0.1:6380 --workers 8
+docker run -d --name akiro-worker --privileged --restart unless-stopped --network host -e ENABLE_EMBEDDED_REDIS=false akiro:latest --mode worker --redis redis://:<JUDGE_SECRET>@127.0.0.1:6380 --workers 8
 ```
 
 ---
@@ -119,7 +119,7 @@ INFO akiro::queue::redis: Job bench-job-078-typescript completed and result stor
 Query the public health endpoint to see the aggregated worker count:
 
 ```bash
-curl -sS -H "X-Judge-Secret: ceef3470b081d9f851ea3acc65efc4a0fd61f65d3d426998f49f57e37a945e5f" https://20.219.186.217.nip.io/health
+curl -sS -H "X-Judge-Secret: <JUDGE_SECRET>" https://20.219.186.217.nip.io/health
 ```
 
 Expected JSON response:
