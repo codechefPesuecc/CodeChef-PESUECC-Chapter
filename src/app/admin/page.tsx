@@ -55,6 +55,12 @@ export default async function AdminPage() {
             >
               Teachers
             </Link>
+            <Link
+              href="/admin/users"
+              className="font-mono text-xs uppercase tracking-wider font-medium text-charcoal/60 hover:text-chocolate transition"
+            >
+              Users
+            </Link>
           </nav>
         </div>
 
