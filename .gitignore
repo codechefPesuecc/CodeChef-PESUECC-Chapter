@@ -27,6 +27,7 @@
 
 # production
 /build
+docs/DUAL_TOKEN_ARCHITECTURE.md
 
 # macOS
 # local database (SQLite / libSQL)
