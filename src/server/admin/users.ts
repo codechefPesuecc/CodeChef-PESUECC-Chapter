@@ -88,14 +88,18 @@ export async function deleteUser(userId: string): Promise<DeleteUserResult> {
     };
   }
 
-  // Children first, then the user itself.
-  await db.delete(monstrSubmissions).where(eq(monstrSubmissions.userId, userId));
-  await db.delete(monstrParticipants).where(eq(monstrParticipants.userId, userId));
-  await db.delete(submissions).where(eq(submissions.userId, userId));
-  await db.delete(attempts).where(eq(attempts.userId, userId));
-  await db.delete(passwordResets).where(eq(passwordResets.userId, userId));
-  await db.delete(emailVerifications).where(eq(emailVerifications.userId, userId));
-  await db.delete(users).where(eq(users.id, userId));
+  // Children first, then the user itself — as ONE atomic batch (D1 and libSQL
+  // both run batch() in a transaction), so a mid-way failure can't leave a user's
+  // solve history erased while the account survives.
+  await db.batch([
+    db.delete(monstrSubmissions).where(eq(monstrSubmissions.userId, userId)),
+    db.delete(monstrParticipants).where(eq(monstrParticipants.userId, userId)),
+    db.delete(submissions).where(eq(submissions.userId, userId)),
+    db.delete(attempts).where(eq(attempts.userId, userId)),
+    db.delete(passwordResets).where(eq(passwordResets.userId, userId)),
+    db.delete(emailVerifications).where(eq(emailVerifications.userId, userId)),
+    db.delete(users).where(eq(users.id, userId)),
+  ]);
 
   return { ok: true };
 }

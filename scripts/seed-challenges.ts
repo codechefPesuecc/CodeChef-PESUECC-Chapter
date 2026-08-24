@@ -135,12 +135,16 @@ async function loadRows(): Promise<NewChallengeRow[]> {
   return rows;
 }
 
-/** Columns updated on conflict — everything except the identity (slug) and the
- * immutable created_at, so an edit preserves the original publish timestamp. */
+/** Columns updated on conflict — everything except the identity (slug), the
+ * immutable created_at (preserves the original publish timestamp), and `date`.
+ * `date` is the Problem-of-the-Day schedule, managed in the admin console; a
+ * re-seed with a stale JSON checkout must NOT silently un-schedule/reschedule a
+ * live problem. Seeding sets `date` only on first insert. */
 function updateSet(row: NewChallengeRow) {
-  const { slug: _slug, createdAt: _createdAt, ...rest } = row;
+  const { slug: _slug, createdAt: _createdAt, date: _date, ...rest } = row;
   void _slug;
   void _createdAt;
+  void _date;
   return rest;
 }
 
@@ -176,7 +180,11 @@ function lit(v: string | number | null): string {
 }
 
 function seedRemote(rows: NewChallengeRow[]): void {
-  const updateCols = COLUMNS.filter((c) => c !== "slug" && c !== "created_at");
+  // Exclude `date` too — the POTD schedule is admin-managed; re-seeding must not
+  // reschedule a live problem (see updateSet). `date` is set on first insert only.
+  const updateCols = COLUMNS.filter(
+    (c) => c !== "slug" && c !== "created_at" && c !== "date",
+  );
   const statements = rows.map((r) => {
     const values = [
       r.slug, r.title, r.difficulty ?? "Unrated", r.tags ?? "[]", r.date ?? null,

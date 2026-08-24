@@ -117,6 +117,7 @@ export async function judgeHealth(): Promise<JudgeHealth> {
   const res = await fetch(`${JUDGE_URL}/health`, {
     headers: getHeaders(),
     cache: "no-store",
+    signal: AbortSignal.timeout(10_000),
   });
   if (!res.ok) throw new Error(`Judge health check failed: HTTP ${res.status}`);
   return (await res.json()) as JudgeHealth;
@@ -160,6 +161,9 @@ export async function judgeExecute(params: {
         method: "POST",
         headers: getHeaders(),
         cache: "no-store",
+        // Cap each attempt so a hung/slow judge can't pin the Worker subrequest
+        // indefinitely (a runaway would stall requests and burn the CPU budget).
+        signal: AbortSignal.timeout(30_000),
         body: JSON.stringify(payload),
       });
 
