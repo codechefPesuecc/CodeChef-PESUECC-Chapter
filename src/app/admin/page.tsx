@@ -3,10 +3,11 @@ import Link from "@/components/AppLink";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { getAdminUser } from "@/server/auth/session";
-import { getAdminChallengeList, getDailyChallenge } from "@/lib/challenges";
+import { getAdminChallengeList, todayStr, type AdminChallengeItem } from "@/lib/challenges";
 import { getDb } from "@/server/db";
 import { users } from "@/server/db/schema";
 import DeleteProblemButton from "@/components/admin/DeleteProblemButton";
+import ScheduleControl from "@/components/admin/ScheduleControl";
 
 export const metadata: Metadata = { title: "Admin console" };
 
@@ -19,16 +20,23 @@ export default async function AdminPage() {
   if (!admin) redirect("/");
 
   const db = getDb();
-  const [problems, daily, teacherRows] = await Promise.all([
+  const [problems, teacherRows] = await Promise.all([
     getAdminChallengeList(),
-    getDailyChallenge(),
     db
       .select({ id: users.id })
       .from(users)
       .where(eq(users.isTeacher, true)),
   ]);
-  const dailySlug = daily?.slug ?? null;
   const teacherCount = teacherRows.length;
+  const today = todayStr();
+
+  const pool = problems.filter((p) => p.status === "pool");
+  const live = problems.filter((p) => p.status === "live");
+  // Upcoming: soonest first.
+  const upcoming = problems
+    .filter((p) => p.status === "scheduled")
+    .sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""));
+  const past = problems.filter((p) => p.status === "past");
 
   return (
     <main className="flex-1">
@@ -93,75 +101,115 @@ export default async function AdminPage() {
           </Link>
         </div>
 
-        <div className="mt-6 overflow-hidden rounded-2xl border border-hairline bg-white/60 shadow-sm dark:bg-panel/60">
-          {problems.length === 0 ? (
-            <div className="px-6 py-12 text-center text-sm text-charcoal/60">
-              No problems yet.{" "}
-              <Link href="/admin/problems/new" className="font-semibold text-bronze hover:underline">
-                Add the first one
-              </Link>
-              .
-            </div>
-          ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-hairline text-left font-mono text-[11px] uppercase tracking-wider text-charcoal/45">
-                  <th className="px-4 py-3 font-medium">Problem</th>
-                  <th className="px-4 py-3 font-medium">Date</th>
-                  <th className="hidden px-4 py-3 font-medium sm:table-cell">Difficulty</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 text-right font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-hairline">
-                {problems.map((p) => (
-                  <tr
-                    key={p.slug}
-                    className="transition-colors hover:bg-cream/40 dark:hover:bg-white/[0.02]"
-                  >
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-chocolate">{p.title}</div>
-                      <div className="font-mono text-[11px] text-charcoal/45">{p.slug}</div>
-                    </td>
-                    <td className="px-4 py-3 font-mono text-xs text-charcoal/60">{p.date}</td>
-                    <td className="hidden px-4 py-3 text-charcoal/70 sm:table-cell">
-                      {p.difficulty}
-                    </td>
-                    <td className="px-4 py-3">
-                      {p.slug === dailySlug ? (
-                        <span className="mecha-chip bg-bronze/15 text-bronze">POTD</span>
-                      ) : p.released ? (
-                        <span className="mecha-chip bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
-                          released
-                        </span>
-                      ) : (
-                        <span className="mecha-chip bg-amber-500/15 text-amber-700 dark:text-amber-400">
-                          scheduled
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-4">
-                        <Link
-                          href={`/admin/problems/${p.slug}/edit`}
-                          className="font-mono text-[11px] uppercase tracking-wider text-bronze hover:underline"
-                        >
-                          Edit
-                        </Link>
-                        <DeleteProblemButton
-                          slug={p.slug}
-                          title={p.title}
-                          isDaily={p.slug === dailySlug}
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+        {problems.length === 0 ? (
+          <div className="mt-6 rounded-2xl border border-hairline bg-white/60 px-6 py-12 text-center text-sm text-charcoal/60 dark:bg-panel/60">
+            No problems yet.{" "}
+            <Link href="/admin/problems/new" className="font-semibold text-bronze hover:underline">
+              Add the first one
+            </Link>
+            .
+          </div>
+        ) : (
+          <div className="mt-6 space-y-8">
+            <ProblemGroup
+              title="Live today"
+              hint="The Problem of the Day — visible and ranked right now. Expires at IST midnight."
+              items={live}
+              today={today}
+              empty="No problem is live today. Schedule one from the pool."
+            />
+            <ProblemGroup
+              title={`Question pool · ${pool.length}`}
+              hint="Unscheduled problems. Pick a date to promote one to Problem of the Day."
+              items={pool}
+              today={today}
+              empty="Pool is empty — new problems land here."
+            />
+            <ProblemGroup
+              title="Upcoming"
+              hint="Scheduled for a future day; hidden from users until then."
+              items={upcoming}
+              today={today}
+              empty="Nothing scheduled ahead — tomorrow has no Problem of the Day yet."
+            />
+            <ProblemGroup
+              title="Past · practice archive"
+              hint="Already been live; solvable as unranked practice, kept for history."
+              items={past}
+              today={today}
+              empty="No past problems yet."
+            />
+          </div>
+        )}
       </section>
     </main>
+  );
+}
+
+function ProblemGroup({
+  title,
+  hint,
+  items,
+  today,
+  empty,
+}: {
+  title: string;
+  hint: string;
+  items: AdminChallengeItem[];
+  today: string;
+  empty: string;
+}) {
+  return (
+    <div>
+      <h2 className="font-display text-base font-bold text-chocolate">{title}</h2>
+      <p className="text-xs text-charcoal/55">{hint}</p>
+      <div className="mt-3 overflow-hidden rounded-2xl border border-hairline bg-white/60 shadow-sm dark:bg-panel/60">
+        {items.length === 0 ? (
+          <div className="px-6 py-6 text-center text-xs text-charcoal/50">{empty}</div>
+        ) : (
+          <table className="w-full text-sm">
+            <tbody className="divide-y divide-hairline">
+              {items.map((p) => (
+                <tr
+                  key={p.slug}
+                  className="transition-colors hover:bg-cream/40 dark:hover:bg-white/[0.02]"
+                >
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-chocolate">{p.title}</div>
+                    <div className="font-mono text-[11px] text-charcoal/45">
+                      {p.slug} · {p.difficulty}
+                      {p.date ? ` · ${p.date}` : ""}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <ScheduleControl
+                      slug={p.slug}
+                      date={p.date}
+                      status={p.status}
+                      today={today}
+                    />
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-4">
+                      <Link
+                        href={`/admin/problems/${p.slug}/edit`}
+                        className="font-mono text-[11px] uppercase tracking-wider text-bronze hover:underline"
+                      >
+                        Edit
+                      </Link>
+                      <DeleteProblemButton
+                        slug={p.slug}
+                        title={p.title}
+                        isDaily={p.status === "live"}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
   );
 }

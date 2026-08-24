@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "@/components/AppLink";
-import { getReleasedSummaries } from "@/lib/challenges";
+import { getReleasedSummaries, todayStr } from "@/lib/challenges";
 import MechaPanel from "@/components/cp-arena/MechaPanel";
 import NextProblemCountdown from "@/components/cp-arena/NextProblemCountdown";
 
@@ -22,13 +22,15 @@ const MONTHS_SHORT = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-function formatDateLong(iso: string): string {
+function formatDateLong(iso: string | null): string {
+  if (!iso) return "";
   const [y, m, d] = iso.split("-").map(Number);
   if (!y || !m || !d) return iso;
   return `${MONTHS_LONG[m - 1]} ${d}, ${y}`;
 }
 
-function formatDateShort(iso: string): string {
+function formatDateShort(iso: string | null): string {
+  if (!iso) return "";
   const [y, m, d] = iso.split("-").map(Number);
   if (!y || !m || !d) return iso;
   return `${MONTHS_SHORT[m - 1]} ${d}, ${y}`;
@@ -43,9 +45,11 @@ const DIFFICULTY_STYLES: Record<string, string> = {
 export default async function CpArenaPage() {
   // Summaries only — the listing never needs (or selects) hidden test data.
   const released = await getReleasedSummaries();
-  // The most recent released problem is today's; the rest are past practice.
-  const daily = released[0] ?? null;
-  const pastChallenges = released.slice(1);
+  // Today's problem is the one scheduled for exactly today (IST); if none is
+  // scheduled, there's simply no live problem. Everything else is past practice.
+  const today = todayStr();
+  const daily = released.find((c) => c.date === today) ?? null;
+  const pastChallenges = released.filter((c) => c.date !== today);
 
   return (
     <main className="flex-1">

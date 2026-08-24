@@ -71,6 +71,13 @@
       "when": 1787253944579,
       "tag": "0009_pink_post",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1787585623339,
+      "tag": "0010_sparkling_stephen_strange",
+      "breakpoints": true
     }
   ]
 }

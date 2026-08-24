@@ -67,8 +67,9 @@ for (const file of files.sort()) {
   if (parsed.success) {
     const c = parsed.data;
 
-    // The filename is the slug's source of truth; keep them aligned.
-    if (!stem.startsWith(c.date)) {
+    // The filename is the slug's source of truth; keep them aligned. Pooled
+    // problems (no date) skip this — their filename isn't date-prefixed.
+    if (c.date && !stem.startsWith(c.date)) {
       warnings.push(
         `filename should start with the date — expected "${c.date}-…", got "${stem}"`,
       );

@@ -47,10 +47,14 @@ export const ChallengeSchema = z.object({
   title: z.string().min(1, "is required"),
   difficulty: z.enum(["Easy", "Medium", "Hard", "Unrated"]).optional(),
   tags: z.array(z.string()).optional(),
+  // Omit / null = in the pool (unscheduled). Set = the IST day this problem is
+  // (or was) the Problem of the Day. Live only on the exact day; before it, it's
+  // queued; after it, it drops to the practice archive.
   date: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "must be YYYY-MM-DD")
-    .refine(isRealDate, "must be a real calendar date"),
+    .refine(isRealDate, "must be a real calendar date")
+    .nullish(),
   timeLimit: z
     .string()
     .regex(/^[\d.]+\s*(ms|s)?$/i, 'must look like "1s", "2 s" or "500ms"')

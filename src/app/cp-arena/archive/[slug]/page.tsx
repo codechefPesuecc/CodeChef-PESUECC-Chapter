@@ -17,7 +17,8 @@ const MONTHS = [
   "July", "August", "September", "October", "November", "December",
 ];
 
-function formatDate(iso: string): string {
+function formatDate(iso: string | null): string {
+  if (!iso) return "";
   const [y, m, d] = iso.split("-").map(Number);
   if (!y || !m || !d) return iso;
   return `${MONTHS[m - 1]} ${d}, ${y}`;

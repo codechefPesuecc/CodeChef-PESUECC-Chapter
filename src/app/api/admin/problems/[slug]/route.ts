@@ -5,6 +5,7 @@ import { challenges } from "@/server/db/schema";
 import { getAdminUser } from "@/server/auth/session";
 import { AdminChallengeSchema } from "@/lib/challenge-schema";
 import { toChallengeRow } from "@/lib/challenge-persist";
+import { isDateTaken } from "@/lib/challenges";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +59,14 @@ export async function PUT(
     .limit(1);
   if (!existing[0]) {
     return NextResponse.json({ ok: false, error: "No such problem." }, { status: 404 });
+  }
+
+  // One Problem of the Day per date; allow keeping this problem's own date.
+  if (input.date && (await isDateTaken(input.date, slug))) {
+    return NextResponse.json(
+      { ok: false, error: `${input.date} already has a Problem of the Day scheduled.` },
+      { status: 409 },
+    );
   }
 
   const row = await toChallengeRow(input, {

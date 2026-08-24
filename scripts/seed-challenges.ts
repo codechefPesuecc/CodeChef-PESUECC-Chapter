@@ -179,7 +179,7 @@ function seedRemote(rows: NewChallengeRow[]): void {
   const updateCols = COLUMNS.filter((c) => c !== "slug" && c !== "created_at");
   const statements = rows.map((r) => {
     const values = [
-      r.slug, r.title, r.difficulty ?? "Unrated", r.tags ?? "[]", r.date,
+      r.slug, r.title, r.difficulty ?? "Unrated", r.tags ?? "[]", r.date ?? null,
       r.timeLimit ?? null, r.memoryLimit ?? null, r.author ?? null, r.statement,
       r.inputFormat ?? null, r.outputFormat ?? null, r.constraints ?? null,
       r.samples ?? "[]", r.contentHtml ?? null, r.tests ?? "[]", r.checker ?? '{"type":"token"}',

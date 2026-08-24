@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, unique } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, unique, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 /**
  * Arena persistence (SQLite via libSQL in dev, Cloudflare D1 in prod / Drizzle).
@@ -138,7 +138,11 @@ export const challenges = sqliteTable("challenges", {
   title: text("title").notNull(),
   difficulty: text("difficulty").notNull().default("Unrated"),
   tags: text("tags").notNull().default("[]"), // JSON string[]
-  date: text("date").notNull(), // YYYY-MM-DD (IST) — the release key
+  // YYYY-MM-DD (IST). NULL = in the pool (unscheduled, hidden, unsolvable).
+  // Set = scheduled for that day: == today → live POTD, < today → practice
+  // archive, > today → queued/future. Exactly one problem may hold a given date
+  // (uniqueIndex below); SQLite treats NULLs as distinct so many can pool.
+  date: text("date"),
   timeLimit: text("time_limit"),
   memoryLimit: text("memory_limit"),
   author: text("author"),
@@ -158,7 +162,11 @@ export const challenges = sqliteTable("challenges", {
   schemaVersion: integer("schema_version").notNull().default(1),
   createdAt: integer("created_at").notNull(),
   updatedAt: integer("updated_at").notNull(),
-});
+}, (t) => ({
+  // One problem per calendar day (the Problem of the Day). NULL dates (pool) are
+  // exempt — SQLite unique indexes treat NULLs as distinct, so the pool is unbounded.
+  dateUnique: uniqueIndex("challenges_date_unique").on(t.date),
+}));
 
 export const monstrContests = sqliteTable("monstr_contests", {
   id: text("id").primaryKey(),

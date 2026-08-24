@@ -102,7 +102,6 @@ export default function ProblemForm({ initial }: { initial?: Challenge }) {
 
     const missing: string[] = [];
     if (!str(d.title)) missing.push("title");
-    if (!str(d.date)) missing.push("date");
     if (!str(d.statement)) missing.push("statement");
     if (list(d.samples).length === 0) missing.push("samples (>= 1)");
     if (list(d.tests).length === 0) missing.push("tests (>= 1)");
@@ -185,7 +184,7 @@ export default function ProblemForm({ initial }: { initial?: Challenge }) {
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean),
-      date: date.trim(),
+      date: date.trim() || undefined,
       timeLimit: timeLimit.trim() || undefined,
       memoryLimit: memoryLimit.trim() || undefined,
       author: author.trim() || undefined,
@@ -345,7 +344,7 @@ export default function ProblemForm({ initial }: { initial?: Challenge }) {
           )}
         </div>
         <div>
-          <label className={labelCls}>Release date * (IST)</label>
+          <label className={labelCls}>Problem-of-the-Day date (IST)</label>
           <input
             type="date"
             className={`${inputCls} ${mono}`}
@@ -353,7 +352,8 @@ export default function ProblemForm({ initial }: { initial?: Challenge }) {
             onChange={(e) => setDate(e.target.value)}
           />
           <p className="mt-1 text-[11px] text-charcoal/45">
-            A future date keeps the problem hidden until then.
+            Leave blank to save to the <strong>pool</strong> and schedule it later.
+            A future date queues it (hidden until then); today makes it live now.
           </p>
         </div>
         <div>

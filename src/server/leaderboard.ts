@@ -136,7 +136,7 @@ export async function aggregateLeaderboard(scope: "month" | "all"): Promise<Lead
 
   const displayById = new Map(rows.map((r) => [r.userId, r.srn ?? r.prn]));
 
-  const bySlug = new Map<string, { date: string; acs: ScoreInput[] }>();
+  const bySlug = new Map<string, { date: string | null; acs: ScoreInput[] }>();
   for (const r of rows) {
     const group = bySlug.get(r.challengeSlug) ?? { date: r.date, acs: [] };
     group.acs.push({
@@ -151,7 +151,7 @@ export async function aggregateLeaderboard(scope: "month" | "all"): Promise<Lead
   const ym = istYearMonth();
   const totals = new Map<string, { points: number; solved: number }>();
   for (const [, group] of bySlug) {
-    if (scope === "month" && !group.date.startsWith(ym)) continue;
+    if (scope === "month" && !group.date?.startsWith(ym)) continue;
     for (const [userId, s] of scoreChallenge(group.acs)) {
       const t = totals.get(userId) ?? { points: 0, solved: 0 };
       t.points += s.points;

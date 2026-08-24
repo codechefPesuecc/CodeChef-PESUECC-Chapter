@@ -48,7 +48,7 @@ export interface ChallengeContent {
   title: string;
   difficulty: string;
   tags: string[];
-  date: string; // YYYY-MM-DD
+  date: string | null; // YYYY-MM-DD, or null while in the pool (unscheduled)
   timeLimit?: string;
   memoryLimit?: string;
   author?: string;
@@ -73,7 +73,7 @@ export interface ChallengeSummary {
   title: string;
   difficulty: string;
   tags: string[];
-  date: string;
+  date: string | null;
   author?: string;
 }
 
@@ -99,8 +99,18 @@ export function istYearMonth(): string {
 /** A challenge is live once its date has arrived — future-dated problems (and
  * their hidden tests) are never served, so a problem queued for a later date
  * doesn't leak through the app before then. */
-export function isReleased(c: { date: string }): boolean {
-  return c.date <= todayStr();
+export function isReleased(c: { date: string | null }): boolean {
+  return c.date != null && c.date <= todayStr();
+}
+
+/** The IST day this problem is/was live, if it has one. */
+export function challengeStatus(
+  c: { date: string | null },
+): "pool" | "scheduled" | "live" | "past" {
+  if (c.date == null) return "pool";
+  const today = todayStr();
+  if (c.date === today) return "live";
+  return c.date > today ? "scheduled" : "past";
 }
 
 // ── Row → domain mapping ──────────────────────────────────────────────────
@@ -239,11 +249,13 @@ export async function getReleasedSummaries(): Promise<ChallengeSummary[]> {
 /** The Problem of the Day — the most recent released challenge. */
 export async function getDailyChallenge(): Promise<Challenge | null> {
   const db = getDb();
+  // Exactly the problem scheduled for today (IST). Yesterday's auto-expires — it
+  // no longer matches, so it drops to the practice archive with no cron. `date` is
+  // unique, so at most one row matches.
   const rows = await db
     .select()
     .from(challengesTable)
-    .where(lte(challengesTable.date, todayStr()))
-    .orderBy(desc(challengesTable.date), desc(challengesTable.createdAt))
+    .where(eq(challengesTable.date, todayStr()))
     .limit(1);
   return rows[0] ? rowToChallenge(rows[0]) : null;
 }
@@ -279,9 +291,9 @@ export async function getChallengeForAdmin(slug: string): Promise<Challenge | nu
 export interface AdminChallengeItem {
   slug: string;
   title: string;
-  date: string;
+  date: string | null;
   difficulty: string;
-  released: boolean;
+  status: "pool" | "scheduled" | "live" | "past";
 }
 
 export async function getAdminChallengeList(): Promise<AdminChallengeItem[]> {
@@ -295,14 +307,25 @@ export async function getAdminChallengeList(): Promise<AdminChallengeItem[]> {
     })
     .from(challengesTable)
     .orderBy(desc(challengesTable.date), desc(challengesTable.createdAt));
-  const today = todayStr();
   return rows.map((r) => ({
     slug: r.slug,
     title: r.title,
     date: r.date,
     difficulty: r.difficulty,
-    released: r.date <= today,
+    status: challengeStatus({ date: r.date }),
   }));
+}
+
+/** Is a given IST date already taken by a scheduled/live problem? Optionally
+ * ignore one slug (so re-scheduling the same problem to its own date is allowed). */
+export async function isDateTaken(date: string, ignoreSlug?: string): Promise<boolean> {
+  const db = getDb();
+  const rows = await db
+    .select({ slug: challengesTable.slug })
+    .from(challengesTable)
+    .where(eq(challengesTable.date, date))
+    .limit(1);
+  return rows.some((r) => r.slug !== ignoreSlug);
 }
 
 /** Titles for a set of slugs in one query — for rendering submission history

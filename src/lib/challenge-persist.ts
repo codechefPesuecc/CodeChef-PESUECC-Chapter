@@ -27,7 +27,7 @@ export async function toChallengeRow(
     title: input.title,
     difficulty: input.difficulty ?? "Unrated",
     tags: JSON.stringify(input.tags ?? []),
-    date: input.date,
+    date: input.date ?? null,
     timeLimit: input.timeLimit ?? null,
     memoryLimit: input.memoryLimit ?? null,
     author: input.author ?? null,
