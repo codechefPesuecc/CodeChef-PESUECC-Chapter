@@ -23,7 +23,6 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const user = useUser();
 
-
   // Handle Escape key and focus trapping
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -54,6 +53,7 @@ export default function Navbar() {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [open]);
+
   const logout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
@@ -245,7 +245,7 @@ export default function Navbar() {
       {open && (
         <div className="mx-auto max-w-6xl px-6 md:hidden">
           <nav 
-          ref={menuRef}
+              ref={menuRef}
               id="mobile-menu"
               tabIndex={-1}
               className="flex flex-col gap-1 rounded-2xl border border-hairline bg-white/90 p-2 shadow-lg backdrop-blur dark:bg-panel/95">
