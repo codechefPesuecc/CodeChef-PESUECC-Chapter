@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "@/components/AppLink";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useUser } from "@/components/auth/useUser";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
@@ -18,9 +18,42 @@ const links = [
 export default function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
   const user = useUser();
 
+
+  // Handle Escape key and focus trapping
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!open) return;
+
+      if (e.key === "Escape") {
+        setOpen(false);
+        // Return focus to the toggle button when closed via Escape
+        toggleRef.current?.focus();
+      }
+    };
+
+    if (open) {
+      document.addEventListener("keydown", handleKeyDown);
+      // Move focus into the menu when it opens
+      // We use setTimeout to ensure the DOM has updated before focusing
+      setTimeout(() => {
+        menuRef.current?.focus();
+      }, 0);
+    } else {
+      // If it closes normally, ensure focus returns to the button
+      if (document.activeElement === menuRef.current) {
+        toggleRef.current?.focus();
+      } 
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
   const logout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
@@ -180,10 +213,12 @@ export default function Navbar() {
           )}
 
           <button
+            ref={toggleRef}
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-label="Toggle navigation menu"
             aria-expanded={open}
+            aria-controls="mobile-menu"
             className="flex h-10 w-10 items-center justify-center rounded-full border border-hairline bg-white/70 text-chocolate shadow-sm backdrop-blur md:hidden dark:bg-panel/70"
           >
             <svg
@@ -209,7 +244,11 @@ export default function Navbar() {
       {/* Mobile dropdown */}
       {open && (
         <div className="mx-auto max-w-6xl px-6 md:hidden">
-          <nav className="flex flex-col gap-1 rounded-2xl border border-hairline bg-white/90 p-2 shadow-lg backdrop-blur dark:bg-panel/95">
+          <nav 
+          ref={menuRef}
+              id="mobile-menu"
+              tabIndex={-1}
+              className="flex flex-col gap-1 rounded-2xl border border-hairline bg-white/90 p-2 shadow-lg backdrop-blur dark:bg-panel/95">
             {links.map((link) => (
               <Link
                 key={link.href}
