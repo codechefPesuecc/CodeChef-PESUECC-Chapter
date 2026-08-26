@@ -711,6 +711,30 @@ export default function ArenaWorkspace({
           </div>
         </header>
 
+        {/* Integrity warning banner — persistent while flags are on the record. */}
+        {!practice && integrity.total > 0 && (
+          <div
+            role="status"
+            className={`z-20 flex shrink-0 items-center gap-2 border-b px-4 py-1.5 text-xs font-medium ${
+              integrity.flagged
+                ? "border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-300"
+                : "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+            }`}
+          >
+            <ShieldIcon />
+            {integrity.flagged
+              ? `Removed from today's top 10 — ${integrity.total} integrity flags. An accepted solve now earns only the base points.`
+              : `${integrity.total} integrity flag${integrity.total === 1 ? "" : "s"} recorded — this is visible to staff. Stay under ${FLAG_LIMIT + 1} to keep your speed-bounty eligibility.`}
+          </div>
+        )}
+
+        {/* Transient flag notice — pops up on each blocked/flagged action, auto-dismisses. */}
+        {integrity.notice && (
+          <div className="pointer-events-none absolute bottom-6 left-1/2 z-[75] -translate-x-1/2 rounded-lg bg-charcoal/90 px-4 py-2.5 text-sm font-semibold text-cream shadow-xl dark:bg-black/85">
+            {integrity.notice}
+          </div>
+        )}
+
         {/* ══════════ WORKSPACE — resizable 3-pane grid ══════════ */}
         <div
           ref={splitContainerRef}
