@@ -661,17 +661,20 @@ export default function ArenaWorkspace({
             </span>
             {!practice && (
               <span
-                title="Integrity flags. Over the limit removes today's speed bounty."
-                className={`hidden items-center gap-1 rounded-md border px-2 py-1 font-mono text-[11px] font-semibold sm:inline-flex ${
+                title="Integrity flags recorded for staff. Over the limit removes today's speed bounty."
+                className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1 tabular-nums ${
                   integrity.flagged
-                    ? "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400"
+                    ? "animate-pulse border-red-500/60 bg-red-500/15 text-red-600 dark:text-red-400"
                     : integrity.total > 0
-                      ? "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                      : "border-hairline bg-transparent text-charcoal/45"
+                      ? "border-amber-500/60 bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                      : "border-hairline bg-black/[0.03] text-charcoal/55 dark:bg-white/5 dark:text-cream/60"
                 }`}
               >
-                <ShieldIcon />
-                {integrity.total}
+                <FlagIcon />
+                <span className="text-lg font-extrabold leading-none">{integrity.total}</span>
+                <span className="hidden text-[10px] font-semibold uppercase tracking-wide opacity-70 sm:inline">
+                  {integrity.total === 1 ? "flag" : "flags"}
+                </span>
               </span>
             )}
             <button
@@ -1415,6 +1418,15 @@ function BoltIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z" />
+    </svg>
+  );
+}
+
+function FlagIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V4s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+      <path d="M4 22v-7" />
     </svg>
   );
 }
