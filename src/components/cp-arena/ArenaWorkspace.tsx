@@ -10,7 +10,6 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
-import { createPortal } from "react-dom";
 import Image from "next/image";
 import Link from "@/components/AppLink";
 import CodeEditor from "./CodeEditor";
@@ -588,18 +587,6 @@ export default function ArenaWorkspace({
   }, [running, solved, turnstileToken,  submit]);
   // --- NEW CODE END ---
 
-  const fullscreenBackdrop =
-    editorFullscreen &&
-    typeof document !== "undefined" &&
-    createPortal(
-      <div
-        aria-hidden
-        onClick={() => setEditorFullscreen(false)}
-        className="fixed inset-0 z-[65] bg-black/60 backdrop-blur-sm"
-      />,
-      document.body,
-    );
-
   const isCustomInput =
     customInput.trim() !== "" && customInput.trim() !== sampleInput.trim();
 
@@ -608,9 +595,18 @@ export default function ArenaWorkspace({
 
   return (
     <>
-      {fullscreenBackdrop}
       {/* Full-viewport IDE — covers the global navbar (z-50), HUD frame and footer. */}
       <div className="fixed inset-0 z-[60] flex flex-col bg-cream dark:bg-[#0f0b07]">
+        {/* Editor-maximize backdrop — rendered INSIDE the root so the fixed editor
+            panel (z-70) stacks above it. A portal to <body> would sit above the
+            root's z-60 context and trap the maximized editor underneath it. */}
+        {editorFullscreen && (
+          <div
+            aria-hidden
+            onClick={() => setEditorFullscreen(false)}
+            className="fixed inset-0 z-[65] bg-black/60 backdrop-blur-sm"
+          />
+        )}
         {/* ══════════ NAVBAR (48px) — LeetCode three-zone ══════════ */}
         <header className="relative z-30 flex h-12 shrink-0 items-center gap-2 border-b border-hairline bg-white/90 px-3 backdrop-blur dark:bg-panel/90">
           {/* Left: logo · Problem List (+ contest problem nav slot) */}
