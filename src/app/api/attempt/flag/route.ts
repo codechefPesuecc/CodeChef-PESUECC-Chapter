@@ -30,7 +30,10 @@ const EVENT_KEY: Record<string, string> = {
 
 // Events that DO NOT increment the penalty flag total (`attempts.flags`).
 // They are still recorded in `flagsBreakdown` for server-side review.
-const NON_PENALISED: ReadonlySet<string> = new Set(["window-blur"]);
+// Every event counts toward the penalty total. (Previously window-blur was excluded,
+// but a tab/app switch is often recorded as a blur, which made "leaving" look
+// un-flagged — so it now penalises like the rest.)
+const NON_PENALISED: ReadonlySet<string> = new Set();
 
 const ZERO = { paste: 0, copy: 0, cut: 0, tabSwitch: 0, contextMenu: 0, screenshot: 0, windowBlur: 0 };
 type Counts = typeof ZERO;
