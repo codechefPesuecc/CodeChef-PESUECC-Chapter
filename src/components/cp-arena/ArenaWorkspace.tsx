@@ -393,33 +393,7 @@ export default function ArenaWorkspace({
       ...h,
     ]);
 
-  // --- NEW CODE START: Keyboard shortcut for submit ---
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-        // Prevent firing if user is actively typing in the custom testcase textarea
-        const activeEl = document.activeElement as HTMLElement;
-        if (
-          activeEl &&
-          (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA") &&
-          !activeEl.classList.contains("inputarea") // Monaco editor uses 'inputarea'
-        ) {
-          return;
-        }
-
-        e.preventDefault();
-        
-        // Respect the disabled state of the button
-        if (!running && !(turnstileConfigured && !solved && !turnstileToken)) {
-          submit();
-        }
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  });
-  // --- NEW CODE END ---   
+ 
     const submit = async () => {
     if (running || solved || !user) return;
     if (turnstileConfigured && !turnstileToken) {
@@ -447,6 +421,9 @@ export default function ArenaWorkspace({
           turnstileToken,
         }),
       });
+      
+
+        
       const data = await res.json();
       if (res.status === 429 || data.rateLimited) {
         setJudgement({
@@ -567,6 +544,33 @@ export default function ArenaWorkspace({
       }
     }
   };
+
+  // --- NEW CODE START: Keyboard shortcut for submit ---
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        // Prevent firing if user is actively typing in the custom testcase textarea
+        const activeEl = document.activeElement as HTMLElement;
+        if (
+          activeEl &&
+          (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")
+        ) {
+          return;
+        }
+
+        e.preventDefault();
+        
+        // Respect the disabled state of the button
+        if (!running && !(turnstileConfigured && !solved && !turnstileToken)) {
+          submit();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [running, solved, turnstileToken,  submit]);
+  // --- NEW CODE END ---
 
   const fullscreenBackdrop =
     editorFullscreen &&
