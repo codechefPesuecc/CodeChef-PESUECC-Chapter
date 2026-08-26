@@ -27,6 +27,7 @@ import { FLAG_LIMIT, useIntegrityMonitor } from "./useIntegrityMonitor";
 import { useUser } from "@/components/auth/useUser";
 import { type LeaderRow } from "./LeaderboardTable";
 import Turnstile, { turnstileConfigured } from "./Turnstile";
+import MechaPanel from "./MechaPanel";
 
 
 // Draggable split between the problem and the editor (desktop only). Stored as
@@ -723,7 +724,7 @@ export default function ArenaWorkspace({
           {/* ───── Panel A: Problem (left, 50%) ───── */}
           <div className="relative h-[42vh] w-full shrink-0 lg:h-full lg:w-[var(--arena-left)]">
             <div className="absolute inset-0">
-              <div className="lc-panel flex h-full flex-col overflow-hidden">
+              <MechaPanel className="h-full" bodyClassName="flex h-full flex-col overflow-hidden">
                 <div className="flex h-10 shrink-0 items-center gap-4 border-b border-hairline px-4">
                   <button type="button" onClick={() => setLeftTab("problem")} className={`lc-tab ${leftTab === "problem" ? "lc-tab--active" : ""}`}>
                     <DocIcon /> Description
@@ -763,7 +764,7 @@ export default function ArenaWorkspace({
                     </div>
                   )}
                 </div>
-              </div>
+              </MechaPanel>
             </div>
           </div>
 
@@ -790,7 +791,7 @@ export default function ArenaWorkspace({
             {/* Panel B: Code editor */}
             <div className="relative min-h-0 flex-1" style={editorFullscreen ? undefined : { flex: `${splitHeightPct} 1 0%` }}>
               <div className={editorFullscreen ? "fixed inset-3 z-[70]" : "absolute inset-0"}>
-                <div className="lc-panel lc-panel--ide flex h-full flex-col overflow-hidden">
+                <MechaPanel className="mecha--ide h-full" bodyClassName="flex h-full flex-col overflow-hidden">
                   <div className="flex h-10 shrink-0 items-center gap-2 border-b border-[var(--ide-border)] bg-[var(--ide-bar)] px-3">
                     <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-wider text-emerald-600/90 dark:text-emerald-400/90">
                       <CodeIcon /> Code
@@ -835,7 +836,7 @@ export default function ArenaWorkspace({
                     <span className="inline-flex items-center gap-1.5"><CheckIcon /> Auto-saved</span>
                     <span className="font-mono">{languageLabel(language)}</span>
                   </div>
-                </div>
+                </MechaPanel>
               </div>
             </div>
 
@@ -857,7 +858,7 @@ export default function ArenaWorkspace({
             {!editorFullscreen && (
               <div className="relative min-h-0" style={{ flex: `${100 - splitHeightPct} 1 0%` }}>
                 <div className="absolute inset-0">
-                  <div className="lc-panel lc-panel--ide flex h-full flex-col overflow-hidden">
+                  <MechaPanel className="mecha--ide h-full" bodyClassName="flex h-full flex-col overflow-hidden">
                     <div className="flex h-10 shrink-0 items-center gap-4 border-b border-[var(--ide-border)] bg-[var(--ide-bar)] px-4">
                       <button type="button" onClick={() => setBottomTab("testcase")} className={`lc-tab ${bottomTab === "testcase" ? "lc-tab--active" : ""}`}>Testcase</button>
                       <button type="button" onClick={() => setBottomTab("result")} className={`lc-tab ${bottomTab === "result" ? "lc-tab--active" : ""}`}>Test Result</button>
@@ -910,7 +911,7 @@ export default function ArenaWorkspace({
                         </div>
                       )}
                     </div>
-                  </div>
+                  </MechaPanel>
                 </div>
               </div>
             )}
