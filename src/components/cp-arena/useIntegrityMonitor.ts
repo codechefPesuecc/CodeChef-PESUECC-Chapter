@@ -77,6 +77,19 @@ const PENALISED: ReadonlySet<IntegrityEvent> = new Set([
   "screenshot",
 ]);
 
+// Merge server counts with the local ones, never dropping below the local value.
+// A server sync must never LOWER the shown count — otherwise a flag recorded before
+// the ranked attempt row exists (a load-time race, or a slow /api/attempt/start)
+// would reconcile the badge straight back to zero.
+function mergeMax(local: IntegrityCounts, server: Partial<IntegrityCounts>): IntegrityCounts {
+  const out = { ...local };
+  (Object.keys(EMPTY) as (keyof IntegrityCounts)[]).forEach((k) => {
+    const s = typeof server[k] === "number" ? (server[k] as number) : 0;
+    out[k] = Math.max(local[k], s);
+  });
+  return out;
+}
+
 export function useIntegrityMonitor(active: boolean, slug?: string) {
   const [counts, setCounts] = useState<IntegrityCounts>(EMPTY);
   const [notice, setNotice] = useState<string | null>(null);
@@ -89,7 +102,7 @@ export function useIntegrityMonitor(active: boolean, slug?: string) {
     fetch(`/api/attempt/flag?slug=${encodeURIComponent(slug)}`)
       .then((r) => r.json())
       .then((d) => {
-        if (alive && d?.ok && d.counts) setCounts(d.counts as IntegrityCounts);
+        if (alive && d?.ok && d.counts) setCounts((c) => mergeMax(c, d.counts));
       })
       .catch(() => {});
     return () => {
@@ -103,7 +116,7 @@ export function useIntegrityMonitor(active: boolean, slug?: string) {
       setCounts((c) => ({ ...c, [KEY[event]]: c[KEY[event]] + 1 }));
       setNotice(MESSAGES[event]);
       // …then report to the server, which holds the authoritative count (survives a
-      // refresh). Reconcile from the response so the shown count can't drift below it.
+      // refresh). Reconcile from the response, but never below the local count.
       if (!slug) return;
       fetch("/api/attempt/flag", {
         method: "POST",
@@ -112,7 +125,7 @@ export function useIntegrityMonitor(active: boolean, slug?: string) {
       })
         .then((r) => r.json())
         .then((d) => {
-          if (d?.ok && d.counts) setCounts(d.counts as IntegrityCounts);
+          if (d?.ok && d.counts) setCounts((c) => mergeMax(c, d.counts));
         })
         .catch(() => {});
     },
