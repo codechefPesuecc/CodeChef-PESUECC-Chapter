@@ -281,6 +281,80 @@ button:focus-visible,
   background: color-mix(in oklab, var(--color-bronze) 8%, transparent);
 }
 
+@layer components {
+  /* --- LeetCode-style flat IDE panels (Arena solve workspace) ---
+   * Clean rounded card with a hairline border, replacing the chamfered mecha
+   * chrome inside the workspace. In the components layer so utilities (h-full,
+   * flex, …) applied alongside still win. */
+  .lc-panel {
+    border: 1px solid var(--color-hairline);
+    border-radius: 0.6rem;
+    background: var(--color-panel);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+  }
+
+  .dark .lc-panel {
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+  }
+
+  /* Dark "IDE" surface variant for the editor + console panels. */
+  .lc-panel--ide {
+    background: var(--ide-body);
+    border-color: var(--ide-border);
+  }
+
+  /* A LeetCode tab: subtle, with a bronze underline when active. */
+  .lc-tab {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0 0.15rem;
+    height: 100%;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: color-mix(in oklab, var(--color-charcoal) 55%, transparent);
+    transition: color 150ms ease;
+  }
+
+  .lc-tab:hover {
+    color: var(--color-chocolate);
+  }
+
+  .lc-tab--active {
+    color: var(--color-chocolate);
+    font-weight: 600;
+  }
+
+  .lc-tab--active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--color-bronze);
+  }
+
+  /* Console testcase "Case N" pill. */
+  .lc-case {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.6rem;
+    border-radius: 0.4rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: color-mix(in oklab, var(--color-charcoal) 55%, transparent);
+    transition: all 150ms ease;
+  }
+
+  .lc-case--active {
+    background: color-mix(in oklab, var(--color-bronze) 16%, transparent);
+    color: var(--color-bronze);
+  }
+}
+
 /* Mecha component classes live in the components layer so Tailwind utilities
  * (text-2xl, hidden, flex, …) applied alongside them still win. */
 @layer components {

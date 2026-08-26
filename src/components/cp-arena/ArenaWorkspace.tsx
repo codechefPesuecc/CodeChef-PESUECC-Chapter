@@ -11,6 +11,8 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
+import Image from "next/image";
+import Link from "@/components/AppLink";
 import CodeEditor from "./CodeEditor";
 import ArenaRules from "./ArenaRules";
 import {
@@ -23,9 +25,8 @@ import {
 import { BASE_POINTS, BOUNTY_LADDER, ordinal } from "@/lib/points";
 import { FLAG_LIMIT, useIntegrityMonitor } from "./useIntegrityMonitor";
 import { useUser } from "@/components/auth/useUser";
-import LeaderboardTable, { type LeaderRow } from "./LeaderboardTable";
+import { type LeaderRow } from "./LeaderboardTable";
 import Turnstile, { turnstileConfigured } from "./Turnstile";
-import MechaPanel from "./MechaPanel";
 
 
 // Draggable split between the problem and the editor (desktop only). Stored as
@@ -105,7 +106,7 @@ export default function ArenaWorkspace({
   // Layout: draggable problem/editor split + maximized editor.
   const [splitPct, setSplitPct] = useState(50);
   const [editorFullscreen, setEditorFullscreen] = useState(false);
-  const [splitHeightPct, setSplitHeightPct] = useState(70);
+  const [splitHeightPct, setSplitHeightPct] = useState(60);
   const [bottomTab, setBottomTab] = useState<"testcase" | "result">("testcase");
   const [leftTab, setLeftTab] = useState<"problem" | "rules" | "submissions">("problem");
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -318,6 +319,20 @@ export default function ArenaWorkspace({
     try {
       localStorage.removeItem(codeKey(language));
     } catch {}
+  };
+
+  // Navbar controls (this view is full-viewport and covers the global navbar).
+  const toggleTheme = () => {
+    const isDark = document.documentElement.classList.toggle("dark");
+    try {
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+    } catch {}
+  };
+  const logout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {}
+    window.location.href = "/";
   };
 
   const run = async () => {
@@ -579,454 +594,330 @@ export default function ArenaWorkspace({
       <div
         aria-hidden
         onClick={() => setEditorFullscreen(false)}
-        className="fixed inset-0 z-[95] bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 z-[65] bg-black/60 backdrop-blur-sm"
       />,
       document.body,
     );
 
+  const isCustomInput =
+    customInput.trim() !== "" && customInput.trim() !== sampleInput.trim();
+
+  const runBtnDisabled = running;
+  const submitBtnDisabled = running || (turnstileConfigured && !solved && !turnstileToken);
+
   return (
     <>
-      <style>{`
-        ::-webkit-scrollbar {
-          width: 6px;
-          height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-          background: #403831; /* Subtle dark bronze/brown */
-          border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-          background: #d49942; /* Bronze highlight */
-        }
-      `}</style>
       {fullscreenBackdrop}
-      <div
-        ref={splitContainerRef}
-        className={
-          editorFullscreen
-            ? "fixed inset-4 z-[100] rounded-xl bg-[var(--color-panel)] shadow-2xl dark:bg-[#1c1714] flex flex-row items-start gap-3"
-            : "absolute inset-0 flex flex-col gap-3 lg:flex-row lg:items-start"
-        }
-        style={{ "--arena-left": `${splitPct}%` } as React.CSSProperties}
-      >
-        {/* ────────── LEFT PANE (Problem Statement / Rules / Submissions) ────────── */}
-        <div className={`flex flex-col min-h-0 relative h-full w-full lg:w-[var(--arena-left)] lg:shrink-0 ${editorFullscreen ? "hidden lg:flex" : ""}`}>
-          <div className="flex-1 min-h-0 relative">
-            <div className="absolute inset-0">
-              <MechaPanel
-                className="h-full"
-                bodyClassName="flex flex-col h-full"
+      {/* Full-viewport IDE — covers the global navbar (z-50), HUD frame and footer. */}
+      <div className="fixed inset-0 z-[60] flex flex-col bg-cream dark:bg-[#0f0b07]">
+        {/* ══════════ NAVBAR (48px) — LeetCode three-zone ══════════ */}
+        <header className="relative z-30 flex h-12 shrink-0 items-center gap-2 border-b border-hairline bg-white/90 px-3 backdrop-blur dark:bg-panel/90">
+          {/* Left: logo · Problem List (+ contest problem nav slot) */}
+          <div className="flex min-w-0 items-center gap-1.5">
+            <Link href="/" title="Home" className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-md border border-hairline bg-white shadow-sm">
+              <Image src="/logo.svg" alt="CodeChef PESUECC" width={24} height={24} priority unoptimized className="h-6 w-6 object-contain" />
+            </Link>
+            <Link
+              href="/cp-arena"
+              className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[13px] font-medium text-charcoal/75 transition-colors hover:bg-black/[0.04] hover:text-chocolate dark:text-cream/80 dark:hover:bg-white/5"
+            >
+              <ListIcon />
+              <span className="hidden sm:inline">Problem List</span>
+            </Link>
+            {/* Contest problem pills/arrows live here for Monstr; single daily = none. */}
+          </div>
+
+          {/* Center: Run / Submit */}
+          <div className="absolute left-1/2 flex -translate-x-1/2 items-center gap-2">
+            <button
+              type="button"
+              onClick={run}
+              disabled={runBtnDisabled}
+              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-hairline bg-white px-4 text-[13px] font-medium text-chocolate shadow-sm transition-colors hover:bg-black/[0.04] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#241a12] dark:text-cream dark:hover:bg-white/5"
+            >
+              <PlayIcon />
+              {running ? "Running…" : "Run"}
+            </button>
+            <button
+              type="button"
+              onClick={submit}
+              disabled={submitBtnDisabled}
+              title="Submit — Cmd/Ctrl + Enter"
+              className="inline-flex h-8 items-center gap-1.5 rounded-md bg-bronze px-4 text-[13px] font-semibold text-[#1c1714] shadow-sm transition-colors hover:bg-[#d49942] focus-visible:ring-2 focus-visible:ring-bronze disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <BoltIcon />
+              {solved ? "Solved" : "Submit"}
+            </button>
+          </div>
+
+          {/* Right: status · timer · flags · theme · account */}
+          <div className="ml-auto flex shrink-0 items-center gap-1.5">
+            <span className="hidden rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider sm:inline bg-bronze/12 text-bronze">
+              {practice ? "Practice" : "Arena"}
+            </span>
+            <span
+              title={practice ? "Practice timer (local only)" : "Your solve time"}
+              className="inline-flex items-center gap-1.5 rounded-md bg-black/[0.04] px-2 py-1 font-mono text-[13px] font-semibold tabular-nums text-chocolate dark:bg-white/5 dark:text-cream"
+            >
+              <ClockIcon />
+              {formatClock(elapsed)}
+            </span>
+            {!practice && (
+              <span
+                title="Integrity flags. Over the limit removes today's speed bounty."
+                className={`hidden items-center gap-1 rounded-md border px-2 py-1 font-mono text-[11px] font-semibold sm:inline-flex ${
+                  integrity.flagged
+                    ? "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400"
+                    : integrity.total > 0
+                      ? "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                      : "border-hairline bg-transparent text-charcoal/45"
+                }`}
               >
-                <div className="flex shrink-0 items-center gap-4 border-b border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 h-12">
-                  <button
-                    type="button"
-                    onClick={() => setLeftTab("problem")}
-                    className={`mecha-btn inline-flex h-8 items-center justify-center rounded border px-3 font-mono text-[10px] font-bold uppercase tracking-wider transition-all duration-300 ${
-                      leftTab === "problem" 
-                        ? "border-bronze bg-bronze text-[#1c1714] shadow-[0_0_12px_rgba(212,153,66,0.6)] scale-[1.02]" 
-                        : "border-transparent bg-[var(--ide-border)] text-[var(--ide-ink-dim)] hover:border-bronze/50 hover:bg-[#d49942]/20 hover:text-bronze hover:shadow-[0_0_8px_rgba(212,153,66,0.4)]"
-                    }`}
-                  >
-                    Description
+                <ShieldIcon />
+                {integrity.total}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              title="Toggle theme"
+              className="flex h-8 w-8 items-center justify-center rounded-md text-charcoal/60 transition-colors hover:bg-black/[0.04] hover:text-chocolate dark:text-cream/70 dark:hover:bg-white/5"
+            >
+              <ThemeIcon />
+            </button>
+            {user ? (
+              <div className="flex items-center gap-1.5">
+                <Link
+                  href="/profile"
+                  title={`@${user.username} · your profile`}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hairline bg-bronze/10 text-xs font-bold uppercase text-bronze"
+                >
+                  {user.username.charAt(0).toUpperCase()}
+                </Link>
+                <button
+                  type="button"
+                  onClick={logout}
+                  title="Log out"
+                  className="hidden rounded-md px-2.5 py-1.5 text-[12px] font-medium text-charcoal/70 transition-colors hover:bg-black/[0.04] hover:text-chocolate sm:inline-block dark:text-cream/75 dark:hover:bg-white/5"
+                >
+                  Log out
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                className="rounded-md bg-white px-3 py-1.5 text-[12px] font-semibold text-chocolate ring-1 ring-bronze/50 transition-shadow hover:shadow-sm dark:bg-[#241a12] dark:text-cream"
+              >
+                Log in
+              </Link>
+            )}
+          </div>
+        </header>
+
+        {/* ══════════ WORKSPACE — resizable 3-pane grid ══════════ */}
+        <div
+          ref={splitContainerRef}
+          className="relative flex min-h-0 flex-1 flex-col gap-1 p-1.5 lg:flex-row lg:items-stretch"
+          style={{ "--arena-left": `${splitPct}%` } as CSSProperties}
+        >
+          {/* ───── Panel A: Problem (left, 50%) ───── */}
+          <div className="relative h-[42vh] w-full shrink-0 lg:h-full lg:w-[var(--arena-left)]">
+            <div className="absolute inset-0">
+              <div className="lc-panel flex h-full flex-col overflow-hidden">
+                <div className="flex h-10 shrink-0 items-center gap-4 border-b border-hairline px-4">
+                  <button type="button" onClick={() => setLeftTab("problem")} className={`lc-tab ${leftTab === "problem" ? "lc-tab--active" : ""}`}>
+                    <DocIcon /> Description
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setLeftTab("rules")}
-                    className={`mecha-btn inline-flex h-8 items-center justify-center rounded border px-3 font-mono text-[10px] font-bold uppercase tracking-wider transition-all duration-300 ${
-                      leftTab === "rules" 
-                        ? "border-bronze bg-bronze text-[#1c1714] shadow-[0_0_12px_rgba(212,153,66,0.6)] scale-[1.02]" 
-                        : "border-transparent bg-[var(--ide-border)] text-[var(--ide-ink-dim)] hover:border-bronze/50 hover:bg-[#d49942]/20 hover:text-bronze hover:shadow-[0_0_8px_rgba(212,153,66,0.4)]"
-                    }`}
-                  >
+                  <button type="button" onClick={() => setLeftTab("rules")} className={`lc-tab ${leftTab === "rules" ? "lc-tab--active" : ""}`}>
                     Rules
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setLeftTab("submissions")}
-                    className={`mecha-btn inline-flex h-8 items-center justify-center rounded border px-3 font-mono text-[10px] font-bold uppercase tracking-wider transition-all duration-300 ${
-                      leftTab === "submissions" 
-                        ? "border-bronze bg-bronze text-[#1c1714] shadow-[0_0_12px_rgba(212,153,66,0.6)] scale-[1.02]" 
-                        : "border-transparent bg-[var(--ide-border)] text-[var(--ide-ink-dim)] hover:border-bronze/50 hover:bg-[#d49942]/20 hover:text-bronze hover:shadow-[0_0_8px_rgba(212,153,66,0.4)]"
-                    }`}
-                  >
+                  <button type="button" onClick={() => setLeftTab("submissions")} className={`lc-tab ${leftTab === "submissions" ? "lc-tab--active" : ""}`}>
                     Submissions
                   </button>
-                  
-                  {/* Practice / Arena mode indicator that used to be the MechaPanel label */}
-                  <div className="ml-auto flex items-center gap-2">
-                    <span className="mecha-chip bg-bronze/10 text-bronze">{practice ? "PRACTICE" : "ARENA"}</span>
-                  </div>
                 </div>
-                
-                <div className="flex-1 min-h-0 relative">
-                {leftTab === "problem" && (
-                  <div className="relative h-full">
-                    <div
-                      data-lenis-prevent
-                      className={`arena-no-print h-full overflow-y-auto px-6 py-6 ${practice ? "" : "select-none"}`}
-                      onCopyCapture={practice ? undefined : (e) => { e.preventDefault(); integrity.record("copy"); }}
-                      onCutCapture={practice ? undefined : (e) => { e.preventDefault(); integrity.record("cut"); }}
-                      onContextMenu={practice ? undefined : (e) => { e.preventDefault(); integrity.record("context-menu"); }}
-                    >
-                      {problem}
+                <div className="relative min-h-0 flex-1">
+                  {leftTab === "problem" && (
+                    <div className="relative h-full">
+                      <div
+                        data-lenis-prevent
+                        className={`arena-no-print h-full overflow-y-auto px-6 py-6 ${practice ? "" : "select-none"}`}
+                        onCopyCapture={practice ? undefined : (e) => { e.preventDefault(); integrity.record("copy"); }}
+                        onCutCapture={practice ? undefined : (e) => { e.preventDefault(); integrity.record("cut"); }}
+                        onContextMenu={practice ? undefined : (e) => { e.preventDefault(); integrity.record("context-menu"); }}
+                      >
+                        {problem}
+                      </div>
+                      {!practice && <Watermark tag={`@${user?.username ?? "guest"} · PESUECC Arena`} />}
+                      {!practice && !pageFocused && <ScreenGuard />}
                     </div>
-                    {!practice && <Watermark tag={`@${user?.username ?? "guest"} · PESUECC Arena`} />}
-                    {!practice && !pageFocused && <ScreenGuard />}
-                  </div>
-                )}
-                {leftTab === "rules" && (
-                  <div className="h-full overflow-y-auto px-4 py-4 space-y-6" data-lenis-prevent>
-                    <SpeedBounty />
-                    <ArenaRules defaultOpen noPanel />
-                  </div>
-                )}
-                {leftTab === "submissions" && (
-                  <div className="h-full overflow-y-auto" data-lenis-prevent>
-                    <SubmissionsPanel history={history} />
-                  </div>
-                )}
+                  )}
+                  {leftTab === "rules" && (
+                    <div className="h-full space-y-6 overflow-y-auto px-4 py-4" data-lenis-prevent>
+                      <SpeedBounty />
+                      <ArenaRules defaultOpen noPanel />
+                    </div>
+                  )}
+                  {leftTab === "submissions" && (
+                    <div className="h-full overflow-y-auto" data-lenis-prevent>
+                      <SubmissionsPanel history={history} />
+                    </div>
+                  )}
                 </div>
-              </MechaPanel>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* ────────── HORIZONTAL DIVIDER ────────── */}
-        <div
-          role="separator"
-          aria-orientation="vertical"
-          aria-label="Resize the problem and editor panels"
-          aria-valuemin={SPLIT_MIN}
-          aria-valuemax={SPLIT_MAX}
-          aria-valuenow={Math.round(splitPct)}
-          tabIndex={0}
-          onPointerDown={startResize}
-          onKeyDown={onResizeKey}
-          onDoubleClick={() => setSplitPct(50)}
-          title="Drag to resize · double-click to reset"
-          className="group relative hidden w-1 shrink-0 cursor-col-resize touch-none select-none self-stretch lg:flex items-center justify-center transition-colors z-10"
-        >
-          <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[2px] bg-transparent group-hover:bg-[#d49942] transition-colors duration-200" />
-          <div className="h-8 w-[2px] rounded-full bg-[#403831] group-hover:bg-[#d49942] transition-colors duration-200" />
-        </div>
+          {/* ───── Horizontal gutter (4px) ───── */}
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize the problem and editor"
+            aria-valuemin={SPLIT_MIN}
+            aria-valuemax={SPLIT_MAX}
+            aria-valuenow={Math.round(splitPct)}
+            tabIndex={0}
+            onPointerDown={startResize}
+            onKeyDown={onResizeKey}
+            onDoubleClick={() => setSplitPct(50)}
+            title="Drag to resize · double-click to reset"
+            className="group relative hidden w-1 shrink-0 cursor-col-resize touch-none select-none items-center justify-center self-stretch lg:flex"
+          >
+            <div className="h-10 w-[3px] rounded-full bg-hairline transition-colors group-hover:bg-bronze" />
+          </div>
 
-        {/* ────────── RIGHT PANE (Editor + Test Cases) ────────── */}
-        <section ref={rightPaneRef} className="flex flex-col h-full w-full lg:min-w-0 lg:flex-1">
-          {/* ── TOP: Code Editor ── */}
-          <div className="min-h-0 flex flex-col relative" style={{ flex: `${splitHeightPct} 1 0%` }}>
-
-            <div className="flex-1 min-h-0 relative">
-              <div className="absolute inset-0">
-                <MechaPanel
-                  className="mecha--ide h-full"
-                  bodyClassName="flex flex-col h-full overflow-hidden"
-                >
-                  <div className="flex shrink-0 items-center gap-3 border-b border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 h-12">
-                    <button
-                      type="button"
-                      onClick={() => setEditorFullscreen((prev) => !prev)}
-                      title={editorFullscreen ? "Exit full screen" : "Full screen"}
-                      className="hidden text-[var(--ide-ink-dim)] transition-colors hover:text-[var(--ide-ink)] lg:block shrink-0"
+          {/* ───── Right column: Panel B (editor 60%) + Panel C (console 40%) ───── */}
+          <section ref={rightPaneRef} className="flex min-h-0 w-full flex-1 flex-col gap-1 lg:h-full lg:min-w-0">
+            {/* Panel B: Code editor */}
+            <div className="relative min-h-0 flex-1" style={editorFullscreen ? undefined : { flex: `${splitHeightPct} 1 0%` }}>
+              <div className={editorFullscreen ? "fixed inset-3 z-[70]" : "absolute inset-0"}>
+                <div className="lc-panel lc-panel--ide flex h-full flex-col overflow-hidden">
+                  <div className="flex h-10 shrink-0 items-center gap-2 border-b border-[var(--ide-border)] bg-[var(--ide-bar)] px-3">
+                    <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-wider text-emerald-600/90 dark:text-emerald-400/90">
+                      <CodeIcon /> Code
+                    </span>
+                    <select
+                      value={language}
+                      onChange={(e) => changeLanguage(e.target.value as LanguageId)}
+                      aria-label="Language"
+                      className="ml-2 cursor-pointer rounded-md border border-[var(--ide-border)] bg-[var(--ide-body)] px-2.5 py-1 font-mono text-xs font-medium text-[var(--ide-ink-strong)] outline-none transition-colors hover:border-bronze/60"
                     >
-                      {editorFullscreen ? <CompressIcon /> : <ExpandIcon />}
-                    </button>
-                    
-                    <div className="flex items-center gap-2 px-2 text-[12px] font-bold tracking-wider text-[var(--ide-ink)] uppercase">
-                      Code
-                    </div>
-
-                    {!practice && integrity.total > 0 && (
-                      <div
-                        role="status"
-                        className={`flex shrink-0 items-center gap-1.5 rounded border px-2 py-0.5 text-[10px] font-medium ${
-                          integrity.flagged
-                            ? "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400"
-                            : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                        }`}
-                      >
-                        <ShieldIcon />
-                        <span className="hidden sm:inline">
-                          {integrity.notice ??
-                            (integrity.flagged
-                              ? "Removed from today's top 10 — an accepted solve now earns only the 100-point base."
-                              : "Stay under 5 flags to keep your top-10 bounty eligibility.")}
-                        </span>
-                        <span className="ml-1 shrink-0 font-mono">
-                          {integrity.total}/{FLAG_LIMIT}
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="ml-auto flex items-center gap-3 shrink-0">
-                      <label className="sr-only" htmlFor="language">Language</label>
-                      <select
-                        id="language"
-                        value={language}
-                        onChange={(e) => changeLanguage(e.target.value as LanguageId)}
-                        className="h-7 cursor-pointer appearance-none rounded bg-[var(--ide-border)] py-0 pl-3 pr-7 font-mono text-[11px] font-bold text-[var(--ide-ink)] outline-none hover:bg-bronze hover:text-[#1c1714] transition-colors"
-                        style={{
-                          backgroundImage: `url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2212%22%20height%3D%2212%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M3%205l3%203%203-3%22%20stroke%3D%22currentColor%22%20stroke-width%3D%222%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E")`,
-                          backgroundRepeat: "no-repeat",
-                          backgroundPosition: "right 6px center",
-                        }}
-                      >
-                        {LANGUAGES.map((lang) => (
-                          <option key={lang.id} value={lang.id} className="bg-[var(--ide-bar)] text-chocolate dark:text-cream">
-                            {lang.label}
-                          </option>
-                        ))}
-                      </select>
-
-                      <span
-                        title={practice ? "Practice timer (local only)" : "Indicative timer"}
-                        className="inline-flex items-center gap-1.5 font-mono text-xs text-[var(--ide-ink)]"
-                      >
-                        <ClockIcon />
-                        {formatClock(elapsed)}
-                      </span>
-
-                      {!practice && (
-                        <span
-                          title="Your penalty flags. Each failed submit adds 1 flag."
-                          className={`inline-flex items-center gap-1.5 font-mono text-[11px] ${
-                            integrity.total >= FLAG_LIMIT ? "text-red-500/80" : "text-[var(--ide-ink-dim)]"
-                          }`}
-                        >
-                          🚩 {integrity.total}
-                        </span>
-                      )}
-
-
+                      {LANGUAGES.map((lang) => (
+                        <option key={lang.id} value={lang.id}>{lang.label}</option>
+                      ))}
+                    </select>
+                    <div className="ml-auto flex items-center gap-1">
+                      <button type="button" onClick={() => setShowResetConfirm(true)} title="Reset to starter code" className="flex h-7 w-7 items-center justify-center rounded text-[var(--ide-ink-dim)] transition-colors hover:bg-[var(--ide-border)] hover:text-[var(--ide-ink)]">
+                        <ResetIcon />
+                      </button>
+                      <button type="button" onClick={() => setEditorFullscreen((v) => !v)} title={editorFullscreen ? "Exit full screen (Esc)" : "Full screen editor"} className="hidden h-7 w-7 items-center justify-center rounded text-[var(--ide-ink-dim)] transition-colors hover:bg-[var(--ide-border)] hover:text-[var(--ide-ink)] lg:flex">
+                        {editorFullscreen ? <CompressIcon /> : <ExpandIcon />}
+                      </button>
                     </div>
                   </div>
-
-                  <div className="relative flex-1 min-h-0 bg-[var(--ide-bg)] rounded-xl border border-[var(--ide-border)] overflow-hidden">
+                  <div className="relative min-h-0 flex-1">
                     {showResetConfirm && (
-                      <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                        <div className="rounded-xl border border-[var(--ide-border)] bg-[var(--ide-bg)] p-6 shadow-2xl max-w-sm w-full mx-4">
-                          <h3 className="text-lg font-bold text-[var(--ide-ink)] mb-2">Reset Code?</h3>
-                          <p className="text-sm text-[var(--ide-ink-dim)] mb-6">
-                            This will permanently overwrite your current draft with the starter code. This action cannot be undone.
-                          </p>
+                      <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+                        <div className="w-full max-w-sm rounded-xl border border-[var(--ide-border)] bg-[var(--ide-body)] p-6 shadow-2xl">
+                          <h3 className="mb-2 text-lg font-bold text-[var(--ide-ink-strong)]">Reset code?</h3>
+                          <p className="mb-6 text-sm text-[var(--ide-ink-dim)]">This overwrites your current draft with the starter code. It can&apos;t be undone.</p>
                           <div className="flex justify-end gap-3">
-                            <button
-                              onClick={() => setShowResetConfirm(false)}
-                              className="px-4 py-2 rounded text-sm font-medium text-[var(--ide-ink)] hover:bg-[var(--ide-border)] transition-colors"
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              onClick={() => {
-                                setCode(STARTER_CODE[language]);
-                                setShowResetConfirm(false);
-                              }}
-                              className="px-4 py-2 rounded text-sm font-medium bg-red-500/10 text-red-500 border border-red-500/30 hover:bg-red-500/20 transition-colors"
-                            >
-                              Reset
-                            </button>
+                            <button onClick={() => setShowResetConfirm(false)} className="rounded px-4 py-2 text-sm font-medium text-[var(--ide-ink)] transition-colors hover:bg-[var(--ide-border)]">Cancel</button>
+                            <button onClick={() => { resetCode(); setShowResetConfirm(false); }} className="rounded border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-500/20">Reset</button>
                           </div>
                         </div>
                       </div>
                     )}
-                    <div className="absolute inset-0 p-3" data-lenis-prevent>
-                      <CodeEditor
-                        value={code}
-                        onChange={setCode}
-                        language={language}
-                        lockClipboard
-                        onBlocked={integrity.record}
-                        fullscreen
-                      />
+                    <div className="absolute inset-0 p-1" data-lenis-prevent>
+                      <CodeEditor value={code} onChange={setCode} language={language} lockClipboard onBlocked={integrity.record} fullscreen />
                     </div>
                   </div>
+                  <div className="flex h-7 shrink-0 items-center justify-between border-t border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 text-[11px] text-[var(--ide-ink-dim)]">
+                    <span className="inline-flex items-center gap-1.5"><CheckIcon /> Auto-saved</span>
+                    <span className="font-mono">{languageLabel(language)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-                  <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 py-3">
-                    <div className="flex items-center gap-4">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowResetConfirm(true);
-                        }}
-                        className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[var(--ide-ink-dim)] transition-colors hover:text-[var(--ide-ink)]"
-                      >
-                        <ResetIcon />
-                        Reset
-                      </button>
-                      <span className="flex items-center gap-1.5 text-[11px] text-[var(--ide-ink-dim)]">
-                        <CheckIcon /> Auto-saved
-                      </span>
+            {/* Vertical gutter (4px) */}
+            {!editorFullscreen && (
+              <div
+                role="separator"
+                aria-orientation="horizontal"
+                onPointerDown={startVerticalResize}
+                onDoubleClick={() => setSplitHeightPct(60)}
+                title="Drag to resize · double-click to reset"
+                className="group relative hidden h-1 w-full shrink-0 cursor-row-resize touch-none select-none items-center justify-center lg:flex"
+              >
+                <div className="h-[3px] w-10 rounded-full bg-hairline transition-colors group-hover:bg-bronze" />
+              </div>
+            )}
+
+            {/* Panel C: Testcase & Results */}
+            {!editorFullscreen && (
+              <div className="relative min-h-0" style={{ flex: `${100 - splitHeightPct} 1 0%` }}>
+                <div className="absolute inset-0">
+                  <div className="lc-panel lc-panel--ide flex h-full flex-col overflow-hidden">
+                    <div className="flex h-10 shrink-0 items-center gap-4 border-b border-[var(--ide-border)] bg-[var(--ide-bar)] px-4">
+                      <button type="button" onClick={() => setBottomTab("testcase")} className={`lc-tab ${bottomTab === "testcase" ? "lc-tab--active" : ""}`}>Testcase</button>
+                      <button type="button" onClick={() => setBottomTab("result")} className={`lc-tab ${bottomTab === "result" ? "lc-tab--active" : ""}`}>Test Result</button>
+                      <div className="ml-auto"><VerdictBadge running={running} judgement={judgement} /></div>
                     </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={run}
-                        disabled={running}
-                        className="mecha-btn group inline-flex h-8 items-center gap-2 rounded bg-transparent px-4 font-mono text-xs font-semibold uppercase tracking-wider text-[var(--ide-ink)] hover:bg-[var(--ide-border)] hover:text-white dark:hover:text-black"
-                      >
-                        <PlayIcon />
-                        Run
-                      </button>
-                      
-                      <div className="flex items-center">
-                        <button
-                          type="button"
-                          onClick={submit}
-                          disabled={running || (turnstileConfigured && !solved && !turnstileToken)}
-                          className="mecha-btn group inline-flex h-8 items-center gap-2 rounded bg-bronze px-4 font-mono text-xs font-semibold uppercase tracking-wider text-[#1c1714] shadow hover:bg-[#d49942] focus-visible:ring-2 focus-visible:ring-bronze disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <BoltIcon />
-                          Submit
-                        </button>
-                        <span className="hidden sm:inline-block text-[10px] text-[var(--ide-ink-dim)] font-mono ml-2">
-                          Cmd/Ctrl + Enter
-                        </span>
+                    <div data-lenis-prevent className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
+                      <div className="min-h-0 flex-1">
+                        {bottomTab === "testcase" ? (
+                          <div className="flex h-full flex-col gap-2">
+                            <div className="flex items-center gap-2">
+                              <span className="lc-case lc-case--active">Case 1</span>
+                              {isCustomInput ? (
+                                <button type="button" onClick={() => setCustomInput(sampleInput)} className="text-[11px] font-medium text-bronze hover:underline">Reset to sample</button>
+                              ) : (
+                                <span className="text-[11px] text-[var(--ide-ink-dim)]">using sample</span>
+                              )}
+                            </div>
+                            <textarea
+                              value={customInput}
+                              onChange={(e) => setCustomInput(e.target.value)}
+                              spellCheck={false}
+                              placeholder="Enter stdin to Run against…"
+                              className="min-h-[4rem] w-full flex-1 resize-none rounded-lg border border-[var(--ide-border)] bg-[var(--ide-body)] p-2.5 font-mono text-xs text-[var(--ide-code)] outline-none focus:border-bronze/50"
+                            />
+                            <p className="text-[11px] text-[var(--ide-ink-dim)]">Run uses this input. Submit always judges the hidden tests.</p>
+                          </div>
+                        ) : (
+                          <div className="font-mono text-xs leading-relaxed text-[var(--ide-code)]">
+                            {running ? (
+                              <p className="flex items-center gap-2 text-bronze">
+                                <span className="h-2 w-2 animate-pulse rounded-full bg-bronze" />
+                                {busyLabel}
+                              </p>
+                            ) : !judgement ? (
+                              <p className="text-[var(--ide-ink-dim)]">
+                                Write your solution, then <span className="text-bronze">Run</span> it against the sample or <span className="text-bronze">Submit</span> to the judge&apos;s hidden tests.{" "}
+                                {practice ? "This past problem is for practice — it won't change the leaderboard." : "Faster accepted solves earn more of the daily bounty."}
+                              </p>
+                            ) : judgement.mode === "submit" ? (
+                              <SubmitResult judgement={judgement} myRank={myRank} myPoints={myPoints} flagged={myFlaggedSolve} flagCount={myFlags} practice={practice} solveClock={mySolveSeconds != null ? formatClock(mySolveSeconds) : ""} />
+                            ) : (
+                              <RunResult judgement={judgement} sampleOutput={sampleOutput} />
+                            )}
+                          </div>
+                        )}
                       </div>
-
+                      {turnstileConfigured && !solved && (
+                        <div className="shrink-0 rounded-lg border border-[var(--ide-border)] bg-[var(--ide-bar)] px-3 py-2.5">
+                          <Turnstile key={turnstileNonce} onToken={setTurnstileToken} />
+                        </div>
+                      )}
                     </div>
                   </div>
-                </MechaPanel>
+                </div>
               </div>
-            </div>
-          </div>
-
-          {/* ── VERTICAL DIVIDER ── */}
-          <div
-            role="separator"
-            aria-orientation="horizontal"
-            onPointerDown={startVerticalResize}
-            onDoubleClick={() => setSplitHeightPct(70)}
-            title="Drag to resize · double-click to reset"
-            className="group relative hidden h-2 shrink-0 cursor-row-resize touch-none select-none lg:flex items-center justify-center transition-colors my-1 z-10 w-full"
-          >
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[2px] bg-transparent group-hover:bg-[#d49942] transition-colors duration-200" />
-            <div className="w-8 h-[2px] rounded-full bg-[#403831] group-hover:bg-[#d49942] transition-colors duration-200" />
-          </div>
-
-          {/* ── BOTTOM: Test Cases & Result ── */}
-          <div className="flex flex-col min-h-0 relative" style={{ flex: `${100 - splitHeightPct} 1 0%` }}>
-            <div className="mecha-tabs mb-1.5 shrink-0 flex w-full bg-[var(--ide-bar)] rounded-lg border border-[var(--ide-border)] px-2 pt-1">
-              <button
-                type="button"
-                onClick={() => setBottomTab("testcase")}
-                className={`mecha-tab ${bottomTab === "testcase" ? "mecha-tab--active" : ""}`}
-              >
-                Testcase
-              </button>
-              <button
-                type="button"
-                onClick={() => setBottomTab("result")}
-                className={`mecha-tab ${bottomTab === "result" ? "mecha-tab--active" : ""}`}
-              >
-                Test Result
-              </button>
-            </div>
-            <div className="flex-1 min-h-0 relative">
-              <div className="absolute inset-0 flex flex-col gap-2 overflow-hidden p-0" data-lenis-prevent>
-                {bottomTab === "testcase" ? (
-                  <CustomInputPanel
-                    value={customInput}
-                    onChange={setCustomInput}
-                    onResetToSample={() => setCustomInput(sampleInput)}
-                    isCustom={customInput.trim() !== "" && customInput.trim() !== sampleInput.trim()}
-                  />
-                ) : (
-                  <Console
-                    running={running}
-                    busyLabel={busyLabel}
-                    judgement={judgement}
-                    sampleOutput={sampleOutput}
-                    myRank={myRank}
-                    myPoints={myPoints}
-                    flagged={myFlaggedSolve}
-                    flagCount={myFlags}
-                    practice={practice}
-                    solveClock={mySolveSeconds != null ? formatClock(mySolveSeconds) : ""}
-                  />
-                )}
-
-
-
-                {turnstileConfigured && !solved && (
-                  <div className="shrink-0 border-t border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 py-3 mx-2 mb-2 rounded-lg">
-                    <Turnstile key={turnstileNonce} onToken={setTurnstileToken} />
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
+            )}
+          </section>
+        </div>
       </div>
     </>
-  );
-}
-
-/* --- Console --- */
-
-function Console({
-  running,
-  busyLabel,
-  judgement,
-  sampleOutput,
-  myRank,
-  myPoints,
-  flagged,
-  flagCount,
-  practice,
-  solveClock,
-}: {
-  running: boolean;
-  busyLabel: string;
-  judgement: Judgement;
-  sampleOutput: string;
-  myRank: number | null;
-  myPoints: number | null;
-  flagged: boolean;
-  flagCount: number;
-  practice: boolean;
-  solveClock: string;
-}) {
-  return (
-    <MechaPanel
-      className="mecha--ide h-full"
-      bodyClassName="flex flex-col h-full"
-      label="Console"
-      index={<VerdictBadge running={running} judgement={judgement} />}
-    >
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 font-mono text-xs leading-relaxed text-[var(--ide-code)]">
-        {running ? (
-          <p className="flex items-center gap-2 text-bronze">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-bronze" />
-            {busyLabel}
-          </p>
-        ) : !judgement ? (
-          <p className="text-[var(--ide-ink-dim)]">
-            Write your solution, then{" "}
-            <span className="text-bronze">Run</span> it against the sample or{" "}
-            <span className="text-bronze">Submit </span> to the judge&apos;s hidden
-            tests.{" "}
-            {practice
-              ? "This past problem is for practice — it won't change the leaderboard."
-              : "Faster accepted solves earn more of the daily bounty."}
-          </p>
-        ) : judgement.mode === "submit" ? (
-          <SubmitResult
-            judgement={judgement}
-            myRank={myRank}
-            myPoints={myPoints}
-            flagged={flagged}
-            flagCount={flagCount}
-            practice={practice}
-            solveClock={solveClock}
-          />
-        ) : (
-          <RunResult judgement={judgement} sampleOutput={sampleOutput} />
-        )}
-      </div>
-    </MechaPanel>
   );
 }
 
@@ -1308,55 +1199,6 @@ function VerdictBadge({
   );
 }
 
-/* --- Custom input --- */
-
-function CustomInputPanel({
-  value,
-  onChange,
-  onResetToSample,
-  isCustom,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  onResetToSample: () => void;
-  isCustom: boolean;
-}) {
-  return (
-    <div className="flex flex-col flex-1 min-h-0 h-full rounded-xl border border-[var(--ide-border)] bg-[var(--ide-bg)] overflow-hidden">
-      <div className="flex shrink-0 items-center justify-between border-b border-[var(--ide-border)] bg-[var(--ide-bar)] px-4 py-2">
-        <span className="text-[10px] uppercase tracking-wider text-[var(--ide-ink-dim)]">Custom Input</span>
-        {isCustom ? (
-          <span className="mecha-chip bg-bronze/15 text-bronze">custom</span>
-        ) : (
-          <span className="text-xs text-charcoal/45">using sample</span>
-        )}
-      </div>
-      <div className="flex-1 min-h-0 flex flex-col p-3">
-        <textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          spellCheck={false}
-          placeholder="Enter stdin to Run against…"
-          className="mecha-input flex-1 min-h-0 py-2 font-mono text-xs resize-none"
-        />
-        <div className="mt-2 flex items-center justify-between gap-3 shrink-0">
-          <p className="text-[11px] text-charcoal/50">
-            Run uses this input. Submit always judges the hidden tests.
-          </p>
-          {isCustom && (
-            <button
-              onClick={onResetToSample}
-              className="text-[11px] font-medium text-bronze hover:underline"
-            >
-              Reset to sample
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* --- Submission history --- */
 
 function SubmissionsPanel({ history }: { history: Submission[] }) {
@@ -1498,6 +1340,39 @@ function EyeOffIcon() {
 
 /* --- Icons --- */
 
+function ListIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+    </svg>
+  );
+}
+
+function DocIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6M8 13h8M8 17h6" />
+    </svg>
+  );
+}
+
+function CodeIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="m16 18 6-6-6-6M8 6l-6 6 6 6" />
+    </svg>
+  );
+}
+
+function ThemeIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z" />
+    </svg>
+  );
+}
+
 function ClockIcon() {
   return (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1548,14 +1423,6 @@ function ShieldIcon() {
   );
 }
 
-function ChevronIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m6 9 6 6 6-6" />
-    </svg>
-  );
-}
-
 function ExpandIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1578,13 +1445,3 @@ function CompressIcon() {
   );
 }
 
-// Vertical grip dots for the resize divider.
-function GripDotsIcon() {
-  return (
-    <svg width="8" height="20" viewBox="0 0 8 20" fill="currentColor" aria-hidden>
-      <circle cx="4" cy="4" r="1.4" />
-      <circle cx="4" cy="10" r="1.4" />
-      <circle cx="4" cy="16" r="1.4" />
-    </svg>
-  );
-}
