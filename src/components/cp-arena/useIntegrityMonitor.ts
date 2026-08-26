@@ -32,7 +32,7 @@ const MESSAGES: Record<IntegrityEvent, string> = {
   "tab-switch": "You left the tab — this is recorded for review.",
   "context-menu": "Right-click is disabled in the arena.",
   screenshot: "Screen capture detected — this is recorded for review.",
-  "window-blur": "You left the window — this is noted for review.",
+  "window-blur": "You left the window — this is recorded for review.",
 };
 
 export interface IntegrityCounts {
@@ -65,9 +65,9 @@ const KEY: Record<IntegrityEvent, keyof IntegrityCounts> = {
   "window-blur": "windowBlur",
 };
 
-// Events that count toward the FLAG_LIMIT penalty cap. Window blur is tracked
-// for server-side review but is NOT penalised — it conflates innocuous focus
-// loss (clicking the address bar, alt-tabbing) with actual screen capture.
+// Every recorded event counts toward the FLAG_LIMIT penalty cap, including
+// window-blur — a tab/app switch is often recorded as a blur (event order), so
+// excluding it made "leaving the window" look un-flagged.
 const PENALISED: ReadonlySet<IntegrityEvent> = new Set([
   "paste",
   "copy",
@@ -75,6 +75,7 @@ const PENALISED: ReadonlySet<IntegrityEvent> = new Set([
   "tab-switch",
   "context-menu",
   "screenshot",
+  "window-blur",
 ]);
 
 // Merge server counts with the local ones, never dropping below the local value.
@@ -145,7 +146,9 @@ export function useIntegrityMonitor(active: boolean, slug?: string) {
   // event). Coalesce them within a short window so one action is one flag.
   useEffect(() => {
     if (!active) return;
-    let lastLeaveAt = 0;
+    // Seed with "now" so a focus-settling blur in the first 700ms after the solve
+    // mounts (page finishing load) doesn't record a spurious leave flag.
+    let lastLeaveAt = Date.now();
     const leave = (event: IntegrityEvent) => {
       const now = Date.now();
       if (now - lastLeaveAt < 700) return;
@@ -185,14 +188,17 @@ export function useIntegrityMonitor(active: boolean, slug?: string) {
     };
   }, [active, record]);
 
-  // Only penalised events count toward the flag cap.
+  // Every recorded event counts toward the flag total. window-blur (leaving the
+  // window / switching apps) is included because a tab switch is often recorded as
+  // a blur depending on event order — excluding it made "leaving" look un-flagged.
   const total =
     counts.paste +
     counts.copy +
     counts.cut +
     counts.tabSwitch +
     counts.contextMenu +
-    counts.screenshot;
+    counts.screenshot +
+    counts.windowBlur;
 
   return { counts, notice, total, flagged: total > FLAG_LIMIT, record, PENALISED };
 }
