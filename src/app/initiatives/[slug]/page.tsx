@@ -1,3 +1,4 @@
+import ReactMarkdown from 'react-markdown';
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "@/components/AppLink";
@@ -73,8 +74,9 @@ export default async function InitiativeDetail({ params }: { params: Promise<{ s
 
       {/* Detailed Description */}
       <div className="mx-auto max-w-3xl px-6 lg:px-8 mt-24 text-center">
-        <div className="prose prose-lg dark:prose-invert mx-auto text-chocolate/80 dark:text-cream/80 font-medium leading-relaxed">
-          {event.detailedExplanation}
+
+        <div className="prose prose-lg dark:prose-invert mx-auto text-chocolate/80 dark:text-cream/80 font-medium leading-relaxed text-left">
+          <ReactMarkdown>{event.detailedExplanation}</ReactMarkdown>
         </div>
       </div>
 
