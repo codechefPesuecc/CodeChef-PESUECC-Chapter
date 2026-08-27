@@ -18,6 +18,7 @@ import { useThemeMode } from "./useThemeMode";
 const extensionFor = (language: LanguageId) => {
   switch (language) {
     case "python":
+    case "pypy3":
       return python();
     case "java":
       return java();
@@ -25,10 +26,13 @@ const extensionFor = (language: LanguageId) => {
       return StreamLanguage.define(csharp);
     case "javascript":
       return javascript();
+    case "typescript":
+      return javascript({ typescript: true });
     case "go":
       return go();
     case "rust":
       return rust();
+    case "sql":
     case "zig":
       return [];
     case "c":
