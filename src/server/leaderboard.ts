@@ -80,7 +80,17 @@ export async function todayLeaderboard(): Promise<LeaderRow[]> {
       timeSeconds: first?.elapsedSeconds ?? null,
     };
   });
-  out.sort((a, b) => (a.rank ?? Infinity) - (b.rank ?? Infinity));
+  out.sort((a, b) => {
+    const rankA = a.rank ?? Infinity;
+    const rankB = b.rank ?? Infinity;
+
+    if (rankA !== rankB) {
+      return rankA - rankB;
+    }
+
+    // Deterministic tiebreaker for equal / unranked / flagged rows
+    return a.display.localeCompare(b.display);
+  });
   return out;
 }
 

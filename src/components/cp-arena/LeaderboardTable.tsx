@@ -28,7 +28,7 @@ export default function LeaderboardTable({
 
   if (rows.length === 0) {
     return (
-      <p className="px-6 py-10 text-center text-sm text-charcoal/50">
+      <p className="px-6 py-10 text-center text-sm text-charcoal/50 dark:text-white/50">
         No solvers yet
         {isToday ? " — be the first to crack today's problem." : "."}
       </p>
@@ -39,7 +39,7 @@ export default function LeaderboardTable({
     <div className="overflow-x-auto">
       <table className="w-full min-w-[520px] text-sm">
         <thead>
-          <tr className="text-left font-mono text-[11px] uppercase tracking-wider text-charcoal/45">
+          <tr className="text-left font-mono text-[11px] uppercase tracking-wider text-charcoal/45 dark:text-white/45">
             <th className="px-6 py-3 font-medium">#</th>
             <th className="px-3 py-3 font-medium">Solver</th>
             {isToday ? (
@@ -65,7 +65,7 @@ export default function LeaderboardTable({
                     : r.flagged
                       ? "bg-red-500/10"
                       : i % 2 === 1
-                        ? "bg-cream/40 dark:bg-white/[0.02]"
+                        ? "bg-cream/40 dark:bg-white/[0.04]"
                         : ""
                 }`}
               >
@@ -81,7 +81,7 @@ export default function LeaderboardTable({
                     >
                       {r.display.slice(0, 2).toUpperCase()}
                     </span>
-                    <span className="flex items-center gap-2 font-semibold text-chocolate">
+                    <span className="flex items-center gap-2 font-semibold text-chocolate dark:text-white">
                       {r.display}
                       {r.flagged && (
                         <span className="mecha-chip bg-red-500/15 text-red-600 dark:text-red-400">
@@ -98,19 +98,20 @@ export default function LeaderboardTable({
                 </td>
                 {isToday ? (
                   <>
-                    <td className="px-3 py-3 text-charcoal/70">{r.language}</td>
-                    <td className="px-3 py-3 font-mono text-charcoal/70">
+                    <td className="px-3 py-3 text-charcoal/70 dark:text-white/70">{r.language}</td>
+                    <td className="px-3 py-3 font-mono text-charcoal/70 dark:text-white/70">
                       {r.timeSeconds != null ? formatClock(r.timeSeconds) : "—"}
                     </td>
                   </>
                 ) : (
-                  <td className="px-3 py-3 text-charcoal/70">{r.solved}</td>
+                  <td className="px-3 py-3 text-charcoal/70 dark:text-white/70">{r.solved}</td>
                 )}
-                <td className="px-6 py-3 text-right font-display font-bold text-brown">
+                <td className="px-6 py-3 text-right font-display font-bold text-brown dark:text-[#d49942]">
                   {r.points}
                 </td>
               </tr>
             );
+          
           })}
         </tbody>
       </table>
@@ -136,5 +137,5 @@ function RankBadge({ rank }: { rank: number | null }) {
       </span>
     );
   }
-  return <span className="font-mono text-sm text-charcoal/50">{rank}</span>;
+  return <span className="font-mono text-sm text-charcoal/50 dark:text-white/50">{rank}</span>;
 }
