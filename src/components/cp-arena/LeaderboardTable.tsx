@@ -28,7 +28,7 @@ export default function LeaderboardTable({
 
   if (rows.length === 0) {
     return (
-      <p className="px-6 py-10 text-center text-sm text-charcoal/50 dark:text-white/50">
+      <p className="px-6 py-10 text-center text-sm text-charcoal/50 ">
         No solvers yet
         {isToday ? " — be the first to crack today's problem." : "."}
       </p>
@@ -39,7 +39,7 @@ export default function LeaderboardTable({
     <div className="overflow-x-auto">
       <table className="w-full min-w-[520px] text-sm">
         <thead>
-          <tr className="text-left font-mono text-[11px] uppercase tracking-wider text-charcoal/45 dark:text-white/45">
+          <tr className="text-left font-mono text-[11px] uppercase tracking-wider text-charcoal/45 ">
             <th className="px-6 py-3 font-medium">#</th>
             <th className="px-3 py-3 font-medium">Solver</th>
             {isToday ? (
@@ -81,7 +81,7 @@ export default function LeaderboardTable({
                     >
                       {r.display.slice(0, 2).toUpperCase()}
                     </span>
-                    <span className="flex items-center gap-2 font-semibold text-chocolate dark:text-white">
+                    <span className="flex items-center gap-2 font-semibold text-chocolate ">
                       {r.display}
                       {r.flagged && (
                         <span className="mecha-chip bg-red-500/15 text-red-600 dark:text-red-400">
@@ -98,20 +98,19 @@ export default function LeaderboardTable({
                 </td>
                 {isToday ? (
                   <>
-                    <td className="px-3 py-3 text-charcoal/70 dark:text-white/70">{r.language}</td>
-                    <td className="px-3 py-3 font-mono text-charcoal/70 dark:text-white/70">
+                    <td className="px-3 py-3 text-charcoal/70 ">{r.language}</td>
+                    <td className="px-3 py-3 font-mono text-charcoal/70 ">
                       {r.timeSeconds != null ? formatClock(r.timeSeconds) : "—"}
                     </td>
                   </>
                 ) : (
-                  <td className="px-3 py-3 text-charcoal/70 dark:text-white/70">{r.solved}</td>
+                  <td className="px-3 py-3 text-charcoal/70 ">{r.solved}</td>
                 )}
-                <td className="px-6 py-3 text-right font-display font-bold text-brown dark:text-[#d49942]">
+                <td className="px-6 py-3 text-right font-display font-bold text-brown ">
                   {r.points}
                 </td>
               </tr>
             );
-          
           })}
         </tbody>
       </table>
@@ -124,9 +123,9 @@ function RankBadge({ rank }: { rank: number | null }) {
     return <span className="font-mono text-sm text-red-500">—</span>;
   }
   const styles: Record<number, string> = {
-    1: "bg-[#d9a441]/20 text-[#b7842a]",
-    2: "bg-[#b9b4ad]/25 text-[#7d7a76]",
-    3: "bg-[#c08457]/20 text-[#a5623a]",
+    1: "bg-[#d9a441]/20 text-[#b7842a] dark:text-[#fcdb94]",
+    2: "bg-[#b9b4ad]/25 text-[#7d7a76] dark:text-[#d1cfcd]",
+    3: "bg-[#c08457]/20 text-[#a5623a] dark:text-[#d9a282]",
   };
   if (rank <= 3) {
     return (
@@ -137,5 +136,5 @@ function RankBadge({ rank }: { rank: number | null }) {
       </span>
     );
   }
-  return <span className="font-mono text-sm text-charcoal/50 dark:text-white/50">{rank}</span>;
+  return <span className="font-mono text-sm text-charcoal/50 ">{rank}</span>;
 }
