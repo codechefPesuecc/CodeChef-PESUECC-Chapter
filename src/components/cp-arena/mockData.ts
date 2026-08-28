@@ -1,28 +1,32 @@
 /**
  * Editor configuration for the Arena workspace: the supported languages, their
- * starter templates, and small formatting helpers. The judge (Rust Judge Sandbox) and the
- * D1-backed leaderboard are live — the standings come from /api/leaderboard, so
- * there are no mock solvers here.
+ * starter templates, and formatting helpers.
  */
 
 export type LanguageId =
   | "cpp"
   | "python"
+  | "pypy3"
   | "java"
   | "c"
   | "csharp"
   | "javascript"
+  | "typescript"
+  | "sql"
   | "go"
   | "rust"
   | "zig";
 
 export const LANGUAGES: { id: LanguageId; label: string }[] = [
   { id: "cpp", label: "C++" },
-  { id: "python", label: "Python" },
+  { id: "python", label: "Python 3" },
+  { id: "pypy3", label: "PyPy 3" },
   { id: "java", label: "Java" },
   { id: "c", label: "C" },
-  { id: "csharp", label: "C#" },
   { id: "javascript", label: "JavaScript" },
+  { id: "typescript", label: "TypeScript" },
+  { id: "sql", label: "SQL" },
+  { id: "csharp", label: "C#" },
   { id: "go", label: "Go" },
   { id: "rust", label: "Rust" },
   { id: "zig", label: "Zig" },
@@ -36,80 +40,120 @@ export const STARTER_CODE: Record<LanguageId, string> = {
   cpp: `#include <bits/stdc++.h>
 using namespace std;
 
-int main() {
-    int n;
-    cin >> n;
-    vector<long long> r(n);
-    for (auto &x : r) cin >> x;
+void solve() {
+    // Write your solution here
+    
+}
 
-    // TODO: compute the minimum number of candies and print it.
+int main() {
+    // Fast I/O
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+
+    int t = 1;
+    // cin >> t; // Uncomment if problem contains multiple test cases
+    while (t--) {
+        solve();
+    }
 
     return 0;
 }
 `,
   python: `import sys
 
-def main():
-    data = sys.stdin.buffer.read().split()
-    n = int(data[0])
-    r = list(map(int, data[1:1 + n]))
+def solve():
+    # Read all input tokens from standard input
+    input_data = sys.stdin.read().split()
+    if not input_data:
+        return
 
-    # TODO: compute the minimum number of candies and print it.
+    # Write your solution here
+
 
 if __name__ == "__main__":
-    main()
+    solve()
+`,
+  pypy3: `import sys
+
+def solve():
+    # Fast I/O for PyPy 3
+    input_data = sys.stdin.read().split()
+    if not input_data:
+        return
+
+    # Write your solution here
+
+
+if __name__ == "__main__":
+    solve()
 `,
   java: `import java.util.*;
 import java.io.*;
 
 public class Solution {
     public static void main(String[] args) throws IOException {
+        // Fast I/O using BufferedReader
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        int n = Integer.parseInt(br.readLine().trim());
-        StringTokenizer st = new StringTokenizer(br.readLine());
-        long[] r = new long[n];
-        for (int i = 0; i < n; i++) r[i] = Long.parseLong(st.nextToken());
+        PrintWriter out = new PrintWriter(System.out);
 
-        // TODO: compute the minimum number of candies and print it.
+        String line = br.readLine();
+        if (line != null && !line.trim().isEmpty()) {
+            StringTokenizer st = new StringTokenizer(line);
+            
+            // Write your solution here
+
+        }
+
+        out.flush();
     }
 }
 `,
   c: `#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 int main(void) {
-    int n;
-    if (scanf("%d", &n) != 1) return 0;
-    long long *r = malloc(sizeof(long long) * n);
-    for (int i = 0; i < n; i++) scanf("%lld", &r[i]);
-
-    // TODO: compute the minimum number of candies and print it.
-
-    free(r);
+    // Write your solution here
+    
     return 0;
 }
 `,
+  javascript: `const fs = require("fs");
+
+function solve() {
+    const input = fs.readFileSync(0, "utf-8").trim();
+    if (!input) return;
+
+    // Write your solution here
+
+}
+
+solve();
+`,
+  typescript: `import * as fs from "fs";
+
+function solve(): void {
+    const input: string = fs.readFileSync(0, "utf-8").trim();
+    if (!input) return;
+
+    // Write your solution here
+
+}
+
+solve();
+`,
+  sql: `-- Write your SQL query here
+SELECT * FROM table_name;
+`,
   csharp: `using System;
-using System.Linq;
+using System.Collections.Generic;
 
 class Program {
     static void Main() {
-        int n = int.Parse(Console.ReadLine().Trim());
-        long[] r = Console.ReadLine()
-            .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
-            .Select(long.Parse).ToArray();
-
-        // TODO: compute the minimum number of candies and print it.
+        // Write your solution here
+        
     }
 }
-`,
-  javascript: `const data = require("fs").readFileSync(0, "utf8").split(/\\s+/).filter(Boolean);
-let idx = 0;
-const n = Number(data[idx++]);
-const r = data.slice(idx, idx + n).map(Number);
-idx += n;
-
-// TODO: compute the minimum number of candies and print it with console.log.
 `,
   go: `package main
 
@@ -121,14 +165,9 @@ import (
 
 func main() {
 	reader := bufio.NewReader(os.Stdin)
-	var n int
-	fmt.Fscan(reader, &n)
-	r := make([]int64, n)
-	for i := 0; i < n; i++ {
-		fmt.Fscan(reader, &r[i])
-	}
+	_ = reader
 
-	// TODO: compute the minimum number of candies and print it.
+	// Write your solution here
 }
 `,
   rust: `use std::io::{self, Read};
@@ -136,20 +175,19 @@ func main() {
 fn main() {
     let mut input = String::new();
     io::stdin().read_to_string(&mut input).unwrap();
-    let mut it = input.split_whitespace();
-    let n: usize = it.next().unwrap().parse().unwrap();
-    let r: Vec<i64> = (0..n).map(|_| it.next().unwrap().parse().unwrap()).collect();
+    if input.trim().is_empty() {
+        return;
+    }
 
-    // TODO: compute the minimum number of candies and print it.
-    let _ = r;
+    // Write your solution here
 }
 `,
   zig: `const std = @import("std");
 
 pub fn main() !void {
     const stdout = std.io.getStdOut().writer();
-    // TODO: read from stdin and print your answer.
-    try stdout.print("", .{});
+    _ = stdout;
+    // Write your solution here
 }
 `,
 };

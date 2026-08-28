@@ -156,22 +156,18 @@
 
     const sample = challenge.samples[0];
 
-    return (
-      <main className="flex-1 flex flex-col h-[calc(100dvh-6rem)] max-h-[calc(100dvh-6rem)] overflow-hidden">
-        <style dangerouslySetInnerHTML={{ __html: `
-          footer { display: none !important; }
-        `}} />
-        <section className="mx-auto w-full px-2 py-2 lg:px-4 lg:py-4 flex-1 flex flex-col min-h-0">
-  <div className="flex-1 min-h-0 relative">
-            <ArenaWorkspace
-              slug={challenge.slug}
-              problem={<ProblemStatement challenge={toPublicContent(challenge)} />}
-              sampleInput={sample?.input ?? ""}
-              sampleOutput={sample?.output ?? ""}
-              {...(!isLive && { practice: true })}
-            />
-          </div>
-        </section>
-      </main>
-    );
-  }
+  // The workspace is a full-viewport IDE (fixed inset-0), so it owns the screen —
+  // no page shell needed. Footer hidden so nothing scrolls behind the overlay.
+  return (
+    <>
+      <style dangerouslySetInnerHTML={{ __html: `footer { display: none !important; }` }} />
+      <ArenaWorkspace
+        slug={challenge.slug}
+        problem={<ProblemStatement challenge={toPublicContent(challenge)} />}
+        sampleInput={sample?.input ?? ""}
+        sampleOutput={sample?.output ?? ""}
+        {...(!isLive && { practice: true })}
+      />
+    </>
+  );
+}

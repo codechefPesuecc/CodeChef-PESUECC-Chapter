@@ -7,7 +7,7 @@
 
 The official web platform and high-performance competitive programming ecosystem for the **CodeChef PESUECC Chapter**.
 
-This repository houses a modern, edge-optimized application engineered using **Next.js**, **Cloudflare Pages**, and **Cloudflare D1**. It powers our landing page, dynamic student portfolios, a database-backed challenge track, and a live daily contest leaderboard backed by a secure, self-hosted sandboxed code execution microservice.
+This repository houses a modern, edge-optimized application engineered using **Next.js** (App Router) on **Cloudflare Workers** (via the OpenNext adapter) with **Cloudflare D1**. It powers our landing page, dynamic student portfolios, a database-backed daily challenge arena with an in-browser admin console, and a live contest leaderboard backed by a secure, self-hosted sandboxed code-execution service.
 
 > ### 🙌 New here? We'd love your help.
 > This is a **real platform our chapter uses every day** — so your PR ships to actual users, not a toy repo. There's a surface for every skill level: UI/UX, edge APIs, tests, docs, problem-setting, and DevOps. You do **not** need to be a competitive-programming or Next.js expert.
@@ -28,27 +28,29 @@ This repository houses a modern, edge-optimized application engineered using **N
 * **Frontend Framework:** Next.js (App Router) built for Cloudflare Workers via the OpenNext adapter (`@opennextjs/cloudflare`).
 * **Hosting & Deploy:** **Cloudflare Workers**. Builds run through the OpenNext adapter and deploy with Wrangler (see `DEPLOY.md`).
 * **Database (Edge Storage):** **Cloudflare D1** (Serverless, ultra-low latency SQLite database running natively on Cloudflare's global edge network).
-* **Content Pipeline:** Problems live in **Cloudflare D1** — authored as JSON, validated, and loaded with `npm run challenges:seed`, so publishing a problem needs no redeploy. Hidden tests never enter the repo.
-* **Code Judge Sandbox:** A self-hosted instance of the **Rust Judge Sandbox / AlgoHunt Base** running on an isolated Linux VPS with Cgroups v2, pivot_root, namespaces, and seccomp isolation.
+* **Content Pipeline:** Problems live in **Cloudflare D1**, authored either in the in-browser **admin console** (`/admin`) or as validated JSON seeded with `npm run challenges:seed` — so publishing needs no redeploy. Admins keep an unscheduled **question pool** and promote one problem per day to the Problem of the Day. Hidden tests never enter the repo.
+* **Code Judge:** A self-hosted, sandboxed **Rust** code-execution service on an isolated Linux VM, fronted by an HTTPS reverse proxy. Each submission runs in its own process under strict per-run time/memory limits and returns `AC` / `WA` / `TLE` / `MLE` / `RE` / `CE` verdicts.
 
 ---
 
 ## 📂 Repository Directory Tree
 
 ```text
-├── .github/workflows/       # CI: typecheck, lint, test, build
+├── .github/workflows/   # CI: typecheck, lint, test, build
 ├── src/
-│   ├── app/                 # Next.js App Router (Pages & Edge API Routes)
-│   │   ├── api/             # Edge backends (/api/submit, /api/leaderboard)
-│   │   ├── cp-arena/        # Daily challenge engine & live standings
-│   │   ├── initiatives/     # Events & Engineered Systems portfolio
-│   │   └── team/            # Core and Alumni registry pages
-│   ├── components/          # Reusable UI modules (CodeChef Brand System)
-│   └── styles/              # Global layout design variables
-├── challenges/              # Problem authoring source (JSON) — seeded into D1, not committed
-├── migrations/              # Cloudflare D1 SQLite database schemas
-├── wrangler.jsonc            # Cloudflare Workers & D1 binding configuration
-└── README.md
+│   ├── app/             # Next.js App Router (pages + edge API routes)
+│   │   ├── api/         # Edge backends (/api/submit, /api/leaderboard, /api/auth/*, ...)
+│   │   ├── admin/       # Admin console: problems, question pool, scheduling, users
+│   │   ├── cp-arena/    # The arena: problem listing, solve view, live standings
+│   │   ├── initiatives/ # Events & engineered-systems portfolio
+│   │   └── team/        # Core & alumni registry
+│   ├── components/      # Reusable UI (CodeChef brand system)
+│   ├── server/          # Server-only logic: auth, db, rate limiting, leaderboard, email
+│   └── lib/             # Shared helpers, challenge loading/validation
+├── challenges/          # Problem authoring source (JSON) — seeded into D1, not committed
+├── migrations/          # Cloudflare D1 (SQLite) migrations
+├── scripts/             # Build/validate/seed scripts (challenges, team, etc.)
+└── wrangler.jsonc       # Cloudflare Workers & D1 binding configuration
 ```
 
 ---
@@ -68,7 +70,7 @@ The interface utilizes the formal, premium CodeChef corporate visual palette to 
 
 ## 📝 Problem Setters' Workflow
 
-Problems live in the database, not the repo. A problem is authored as one **JSON** file, validated, then loaded into D1 with the seed script — **publishing is a database write, not a redeploy** — and hidden tests never enter the public repository. (An in-browser admin dashboard for authoring is planned; until then, the seed script is the publish path.)
+Problems live in the database, not the repo. There are two ways to author one: the in-browser **admin console** (`/admin`) — which also manages the **question pool**, per-day **scheduling**, and users — or a **JSON** file validated and loaded with the seed script. Either way, **publishing is a database write, not a redeploy**, and hidden tests never enter the public repository.
 
 ### Challenge file format (`YYYY-MM-DD-slug.json`)
 
@@ -97,8 +99,8 @@ Each problem is a single JSON object. The authoritative shape is enforced by the
 ### How a problem goes live
 
 1. Author `YYYY-MM-DD-slug.json` and validate it: `npm run challenges:validate`.
-2. Seed it into the database — local dev: `npm run challenges:seed`; production D1: `npm run challenges:seed -- --target remote`.
-3. It's live immediately: the Problem of the Day is the most recent released challenge whose `date` (IST) is on or before today. No deploy required.
+2. Seed it — local dev: `npm run challenges:seed`; production D1: `npm run challenges:seed -- --target remote`. A problem with no `date` lands in the **pool** (unscheduled, hidden).
+3. Schedule it — from the admin console, or by giving the JSON a `date` — for a specific IST day. It is the **Problem of the Day only on that exact day**, then automatically expires into the practice archive at IST midnight. No deploy required. (Scheduling is admin-managed; re-seeding never changes an already-set date.)
 
 ---
 
@@ -107,9 +109,9 @@ Each problem is a single JSON object. The authoritative shape is enforced by the
 To prevent execution vulnerabilities (Infinite loops, file-system intrusions, fork bombs), arbitrary user code submitted to the site is entirely isolated from Cloudflare components:
 
 1. **Submission Event:** A student writes a solution on the portal frontend and clicks **Submit**.
-2. **Edge Proxying:** The Cloudflare Edge API captures the request, assigns it a secure verification tracking token inside Cloudflare D1, and securely dispatches an HTTP POST payload to the remote **Oracle Cloud Linux VPS**.
-3. **Container Sandboxing:** The Oracle Cloud VPS runs a fast code runner container. It spins up an ephemeral, isolated container shell, parses the student's script code against hidden validation vectors, tracks time limits, and calculates the response flag (`AC` (Accepted), `WA` (Wrong Answer), `TLE` (Time Limit Exceeded)).
-4. **Result Callback:** The VPS safely relays the status state back to the Cloudflare API endpoint, which updates the live Cloudflare D1 database records and adjusts leaderboard positions in real-time.
+2. **Edge Proxying:** The Cloudflare Worker records a verification token in D1 and dispatches the submission over HTTPS (via a reverse proxy) to the self-hosted judge service on an isolated Linux VM.
+3. **Sandboxed Execution:** The judge runs the code in an ephemeral, resource-limited sandbox against the hidden tests — enforcing per-run time and memory limits — and computes the verdict (`AC`, `WA`, `TLE`, `MLE`, `RE`, `CE`).
+4. **Result Callback:** The verdict returns to the Worker, which updates the D1 records and adjusts the live leaderboard in real time.
 
 ---
 
@@ -117,8 +119,8 @@ To prevent execution vulnerabilities (Infinite loops, file-system intrusions, fo
 
 ### Prerequisites
 
-* Node.js v18+
-* Cloudflare Wrangler CLI installed globally (`npm install -g wrangler`)
+* **Node.js 22.x** — match CI; see [CONTRIBUTING.md §3](./CONTRIBUTING.md#3-the-golden-rule-about-package-lockjson) for why the major version matters.
+* **Git.** (Wrangler ships as a dev dependency — no global install needed.)
 
 ### Step-by-Step Installation
 
@@ -129,10 +131,10 @@ To prevent execution vulnerabilities (Infinite loops, file-system intrusions, fo
    cd CodeChef-PESUECC-Chapter
    ```
 
-2. **Install project node components:**
+2. **Install dependencies exactly as locked** — use `npm ci`, **not** `npm install` (running `npm install` on the wrong Node/npm rewrites `package-lock.json` and breaks CI — see [CONTRIBUTING.md §3](./CONTRIBUTING.md#3-the-golden-rule-about-package-lockjson)):
 
    ```bash
-   npm install
+   npm ci
    ```
 
 3. **Run the app** — no database setup needed. `npm run dev` uses a local SQLite file (`./data/arena.db`) and auto-applies the migrations in `/migrations` on startup:
