@@ -177,7 +177,7 @@ export async function aggregateLeaderboard(scope: "month" | "all"): Promise<Lead
     solved: t.solved,
     flagged: false,
   }));
-  out.sort((a, b) => b.points - a.points || (b.solved ?? 0) - (a.solved ?? 0));
+  out.sort((a, b) => b.points - a.points || (b.solved ?? 0) - (a.solved ?? 0) || a.display.localeCompare(b.display));
   out.forEach((r, i) => (r.rank = i + 1));
   return out;
 }
