@@ -196,7 +196,7 @@ function EventBlueprintCard({
               <div className="mt-8 flex flex-col items-start gap-3">
                 {event.highlights.map((highlight) => (
                   <div
-                    key={highlight}
+                    key={highlight || index}
                     className="inline-flex w-fit items-center gap-3 rounded-full bg-transparent border border-brown/30 dark:border-[#3B2F26] px-4 py-1.5 transition-colors hover:bg-brown/5"
                   >
                     <span className="font-mono text-[11px] font-bold text-brown dark:text-[#D98A53]">+</span>
