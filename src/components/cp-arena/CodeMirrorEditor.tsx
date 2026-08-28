@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import CodeMirror, { EditorView } from "@uiw/react-codemirror";
 import { cpp } from "@codemirror/lang-cpp";
 import { python } from "@codemirror/lang-python";
@@ -46,8 +47,10 @@ const extensionFor = (language: LanguageId) => {
  * The actual CodeMirror instance. Touches the DOM on init, so it is only ever
  * imported through the `ssr: false` dynamic wrapper in CodeEditor.
  *
- * When `lockClipboard` is set, paste/copy/cut/drag are blocked inside the editor
- * and each attempt is reported via `onBlocked` for the integrity monitor.
+ * When `lockClipboard` is set, copy/cut are captured so the candidate can move
+ * their own code around, but a paste whose text did NOT originate from this editor
+ * (an outside solution) is blocked and reported via `onBlocked`. Right-click and
+ * drag-and-drop stay blocked too, since a drop is another way to inject outside text.
  */
 export default function CodeMirrorEditor({
   value,
@@ -66,22 +69,64 @@ export default function CodeMirrorEditor({
   fullscreen?: boolean;
 }) {
   const mode = useThemeMode();
+
+  // Snapshots of text copied/cut FROM this editor. A paste is allowed only when the
+  // incoming clipboard text matches one of these — i.e. it came from here — so the
+  // candidate can move their own code around but can't paste in an outside solution.
+  // We keep a short history rather than a single value so the OS clipboard history
+  // (e.g. Windows Win+V re-pasting an earlier copy) doesn't trip a false block.
+  const internalCopies = useRef<string[]>([]);
+  const normalize = (s: string) => s.replace(/\r\n?/g, "\n");
+  const remember = (text: string) => {
+    const n = normalize(text);
+    if (!n) return;
+    const next = internalCopies.current.filter((t) => t !== n);
+    next.push(n);
+    internalCopies.current = next.slice(-15); // keep only the most recent handful
+  };
+  // What CodeMirror would put on the clipboard: the selected text, or the whole
+  // current line when the selection is empty (mirrors the default copy behaviour).
+  const copyText = (view: EditorView) => {
+    const { state } = view;
+    return state.selection.ranges
+      .map((r) => (r.empty ? state.doc.lineAt(r.head).text : state.sliceDoc(r.from, r.to)))
+      .join("\n");
+  };
+
   const guards = lockClipboard
     ? [
+        // The ref is only read inside these DOM event handlers (at event time),
+        // never during render — safe, but the rule can't see the deferred closures.
+        // eslint-disable-next-line react-hooks/refs
         EditorView.domEventHandlers({
           paste(event) {
+            const incoming = normalize(event.clipboardData?.getData("text") ?? "");
+            // Only accept clipboard content that was copied from within this editor;
+            // let CodeMirror insert it natively. Anything else is outside text.
+            if (incoming && internalCopies.current.includes(incoming)) {
+              return false;
+            }
             event.preventDefault();
             onBlocked?.("paste");
             return true;
           },
-          copy(event) {
+          copy(event, view) {
+            // Take control so the snapshot exactly equals what lands on the clipboard.
+            const text = copyText(view);
+            event.clipboardData?.setData("text/plain", text);
             event.preventDefault();
-            onBlocked?.("copy");
+            remember(text);
             return true;
           },
-          cut(event) {
+          cut(event, view) {
+            const text = copyText(view);
+            event.clipboardData?.setData("text/plain", text);
             event.preventDefault();
-            onBlocked?.("cut");
+            remember(text);
+            // Remove the selection (a cut with no selection leaves the doc as-is).
+            if (view.state.selection.ranges.some((r) => !r.empty)) {
+              view.dispatch(view.state.replaceSelection(""));
+            }
             return true;
           },
           contextmenu(event) {
