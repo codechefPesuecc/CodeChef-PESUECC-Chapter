@@ -49,7 +49,7 @@ function EventBlueprintCard({
   event: (typeof events)[number];
   index: number;
 }) {
-  const cover = event.gallery[0];
+  const cover = event.gallery?.[0] || { src: event.image || '/dev-team.jpg', caption: event.title };
 
   return (
     <article id={event.id} className="relative w-full isolate group scroll-mt-24">
