@@ -26,7 +26,7 @@ export type IntegrityEvent =
   | "window-blur";
 
 const MESSAGES: Record<IntegrityEvent, string> = {
-  paste: "Pasting is disabled in the arena.",
+  paste: "Only code copied from the editor can be pasted.",
   copy: "Copying is disabled during a live solve.",
   cut: "Cutting is disabled in the arena.",
   "tab-switch": "You left the tab — this is recorded for review.",
