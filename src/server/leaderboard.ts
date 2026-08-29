@@ -6,10 +6,10 @@ import { scoreChallenge, type ScoreInput } from "@/lib/scoring";
 
 /**
  * Leaderboards derived from persisted submissions (the scoring rules live in
- * `@/lib/scoring`). Today's Problem of the Day ranks live solves by finish order —
- * the server timestamp of the first Accepted submission, so it can't be spoofed —
- * and freezes on its own at IST midnight once a newer problem becomes the POTD.
- * Solving a past problem earns a flat base score.
+ * `@/lib/scoring`). Today's Problem of the Day ranks live solves by elapsed solve
+ * time — the server-computed arena timer (submit time minus the immutable first-open
+ * time), so it can't be spoofed — and freezes on its own at IST midnight once a newer
+ * problem becomes the POTD. Solving a past problem earns a flat base score.
  */
 
 export interface LeaderRow {
@@ -24,9 +24,9 @@ export interface LeaderRow {
   timeSeconds?: number | null; // today (server-computed solve duration)
 }
 
-/** Today's problem: finish-order standings with the speed-bounty points. Only
- * live (ranked) accepted solves count — a past-problem practice solve of the same
- * slug never appears here. */
+/** Today's problem: solve-time standings with the speed-bounty points (fastest arena
+ * timer ranks first). Only live (ranked) accepted solves count — a past-problem
+ * practice solve of the same slug never appears here. */
 export async function todayLeaderboard(): Promise<LeaderRow[]> {
   const daily = await getDailyChallenge();
   if (!daily) return [];
@@ -64,6 +64,7 @@ export async function todayLeaderboard(): Promise<LeaderRow[]> {
     rows.map((r) => ({
       userId: r.userId,
       createdAt: r.createdAt,
+      elapsedSeconds: r.elapsedSeconds,
       flags: r.flags,
       ranked: true,
     })),
@@ -110,6 +111,7 @@ function fetchAggregateRows() {
       userId: submissions.userId,
       challengeSlug: submissions.challengeSlug,
       createdAt: submissions.createdAt,
+      elapsedSeconds: submissions.elapsedSeconds,
       flags: submissions.flags,
       ranked: submissions.ranked,
       date: challenges.date,
@@ -152,6 +154,7 @@ export async function aggregateLeaderboard(scope: "month" | "all"): Promise<Lead
     group.acs.push({
       userId: r.userId,
       createdAt: r.createdAt,
+      elapsedSeconds: r.elapsedSeconds,
       flags: r.flags,
       ranked: r.ranked,
     });
