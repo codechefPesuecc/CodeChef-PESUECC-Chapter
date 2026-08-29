@@ -399,6 +399,7 @@ export default function ArenaWorkspace({
       });
     } finally {
       setRunning(false);
+      setBottomTab("result");
     }
   };
 
@@ -552,6 +553,7 @@ export default function ArenaWorkspace({
       });
     } finally {
       setRunning(false);
+      setBottomTab("result");
       // Turnstile tokens are single-use — refresh the widget for a next attempt.
       if (turnstileConfigured) {
         setTurnstileToken(null);
