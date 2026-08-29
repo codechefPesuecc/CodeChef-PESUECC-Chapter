@@ -36,75 +36,85 @@ export function languageLabel(id: LanguageId): string {
   return LANGUAGES.find((l) => l.id === id)?.label ?? id;
 }
 
+// The Arena offers a focused set of judge-supported CP languages, each labelled
+// with its runtime so competitors know exactly what they're compiled/run against.
+// Monstr keeps the full LANGUAGES list (a contest creator picks the allowed subset).
+export const ARENA_LANGUAGES: { id: LanguageId; label: string }[] = [
+  { id: "cpp", label: "C++ (g++ 20)" },
+  { id: "c", label: "C (gcc 17)" },
+  { id: "java", label: "Java (OpenJDK 17)" },
+  { id: "python", label: "Python 3 (CPython)" },
+  { id: "pypy3", label: "PyPy 3 (Fast JIT)" },
+  { id: "javascript", label: "JavaScript (Bun)" },
+  { id: "typescript", label: "TypeScript (Bun)" },
+];
+
+// Generic competitive-programming starters: fast I/O wired up, an empty `solve()`
+// to fill in, and a commented multi-test-case loop — usable as-is for any problem.
 export const STARTER_CODE: Record<LanguageId, string> = {
   cpp: `#include <bits/stdc++.h>
 using namespace std;
 
 void solve() {
-    // Write your solution here
-    
+    // your solution here
+
 }
 
 int main() {
-    // Fast I/O
     ios_base::sync_with_stdio(false);
-    cin.tie(NULL);
+    cin.tie(nullptr);
 
     int t = 1;
-    // cin >> t; // Uncomment if problem contains multiple test cases
+    // cin >> t; // uncomment for multiple test cases
     while (t--) {
         solve();
     }
-
     return 0;
 }
 `,
   python: `import sys
+input = sys.stdin.readline
 
 def solve():
-    # Read all input tokens from standard input
-    input_data = sys.stdin.read().split()
-    if not input_data:
-        return
+    # your solution here
+    pass
 
-    # Write your solution here
-
-
-if __name__ == "__main__":
+t = 1
+# t = int(input()) # uncomment for multiple test cases
+for _ in range(t):
     solve()
 `,
   pypy3: `import sys
+input = sys.stdin.readline
 
 def solve():
-    # Fast I/O for PyPy 3
-    input_data = sys.stdin.read().split()
-    if not input_data:
-        return
+    # your solution here
+    pass
 
-    # Write your solution here
-
-
-if __name__ == "__main__":
+t = 1
+# t = int(input()) # uncomment for multiple test cases
+for _ in range(t):
     solve()
 `,
   java: `import java.util.*;
 import java.io.*;
 
 public class Solution {
+    static BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    static StringBuilder sb = new StringBuilder();
+
+    static void solve() throws IOException {
+        // your solution here
+
+    }
+
     public static void main(String[] args) throws IOException {
-        // Fast I/O using BufferedReader
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        PrintWriter out = new PrintWriter(System.out);
-
-        String line = br.readLine();
-        if (line != null && !line.trim().isEmpty()) {
-            StringTokenizer st = new StringTokenizer(line);
-            
-            // Write your solution here
-
+        int t = 1;
+        // t = Integer.parseInt(br.readLine().trim()); // uncomment for multiple test cases
+        while (t-- > 0) {
+            solve();
         }
-
-        out.flush();
+        System.out.print(sb);
     }
 }
 `,
@@ -112,35 +122,59 @@ public class Solution {
 #include <stdlib.h>
 #include <string.h>
 
+void solve(void) {
+    // your solution here
+
+}
+
 int main(void) {
-    // Write your solution here
-    
+    int t = 1;
+    // scanf("%d", &t); // uncomment for multiple test cases
+    while (t--) {
+        solve();
+    }
     return 0;
 }
 `,
-  javascript: `const fs = require("fs");
+  javascript: `const data = require("fs").readFileSync(0, "utf8").split(/\\s+/).filter(Boolean);
+let pos = 0;
+const next = () => data[pos++];
+const nextInt = () => parseInt(next(), 10);
+const out = [];
 
 function solve() {
-    const input = fs.readFileSync(0, "utf-8").trim();
-    if (!input) return;
-
-    // Write your solution here
+    // read tokens with next() / nextInt(); collect answers in out
+    // your solution here
 
 }
 
-solve();
+let t = 1;
+// t = nextInt(); // uncomment for multiple test cases
+while (t--) {
+    solve();
+}
+console.log(out.join("\\n"));
 `,
   typescript: `import * as fs from "fs";
 
-function solve(): void {
-    const input: string = fs.readFileSync(0, "utf-8").trim();
-    if (!input) return;
+const data: string[] = fs.readFileSync(0, "utf8").split(/\\s+/).filter(Boolean);
+let pos = 0;
+const next = (): string => data[pos++];
+const nextInt = (): number => parseInt(next(), 10);
+const out: string[] = [];
 
-    // Write your solution here
+function solve(): void {
+    // read tokens with next() / nextInt(); collect answers in out
+    // your solution here
 
 }
 
-solve();
+let t = 1;
+// t = nextInt(); // uncomment for multiple test cases
+while (t--) {
+    solve();
+}
+console.log(out.join("\\n"));
 `,
   sql: `-- Write your SQL query here
 SELECT * FROM table_name;
@@ -151,7 +185,7 @@ using System.Collections.Generic;
 class Program {
     static void Main() {
         // Write your solution here
-        
+
     }
 }
 `,
