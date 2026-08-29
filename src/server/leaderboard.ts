@@ -80,7 +80,17 @@ export async function todayLeaderboard(): Promise<LeaderRow[]> {
       timeSeconds: first?.elapsedSeconds ?? null,
     };
   });
-  out.sort((a, b) => (a.rank ?? Infinity) - (b.rank ?? Infinity));
+  out.sort((a, b) => {
+    const rankA = a.rank ?? Infinity;
+    const rankB = b.rank ?? Infinity;
+
+    if (rankA !== rankB) {
+      return rankA - rankB;
+    }
+
+    // Deterministic tiebreaker for equal / unranked / flagged rows
+    return a.display.localeCompare(b.display);
+  });
   return out;
 }
 
@@ -167,7 +177,7 @@ export async function aggregateLeaderboard(scope: "month" | "all"): Promise<Lead
     solved: t.solved,
     flagged: false,
   }));
-  out.sort((a, b) => b.points - a.points || (b.solved ?? 0) - (a.solved ?? 0));
+  out.sort((a, b) => b.points - a.points || (b.solved ?? 0) - (a.solved ?? 0) || a.display.localeCompare(b.display));
   out.forEach((r, i) => (r.rank = i + 1));
   return out;
 }
