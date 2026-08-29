@@ -5,17 +5,55 @@ import { BASE_POINTS } from "./points";
 function ac(
   userId: string,
   createdAt: number,
-  opts: { flags?: number; ranked?: boolean } = {},
+  opts: { flags?: number; ranked?: boolean; elapsedSeconds?: number | null } = {},
 ): ScoreInput {
-  return { userId, createdAt, flags: opts.flags ?? 0, ranked: opts.ranked ?? true };
+  return {
+    userId,
+    createdAt,
+    // Default the arena timer to createdAt so cases that only vary finish order
+    // read naturally; solve-time-specific cases pass elapsedSeconds explicitly.
+    elapsedSeconds: opts.elapsedSeconds === undefined ? createdAt : opts.elapsedSeconds,
+    flags: opts.flags ?? 0,
+    ranked: opts.ranked ?? true,
+  };
 }
 
 describe("scoreChallenge", () => {
-  it("awards speed-bounty points by live finish order", () => {
+  it("awards speed-bounty points by fastest solve time", () => {
     const r = scoreChallenge([ac("a", 1), ac("b", 2), ac("c", 3)]);
     expect(r.get("a")).toMatchObject({ rank: 1, points: 1000 });
     expect(r.get("b")).toMatchObject({ rank: 2, points: 800 });
     expect(r.get("c")).toMatchObject({ rank: 3, points: 600 });
+  });
+
+  it("ranks by elapsed solve time (the arena timer), not wall-clock finish order", () => {
+    // b submits first in wall-clock (createdAt 5 < 10) but took longer on the
+    // arena timer (50s vs 30s), so a — the faster solve — ranks above b.
+    const r = scoreChallenge([
+      ac("a", 10, { elapsedSeconds: 30 }),
+      ac("b", 5, { elapsedSeconds: 50 }),
+    ]);
+    expect(r.get("a")).toMatchObject({ rank: 1, points: 1000 });
+    expect(r.get("b")).toMatchObject({ rank: 2, points: 800 });
+  });
+
+  it("sorts a missing solve clock (null elapsed) last among eligible solvers", () => {
+    // a has no attempt clock; despite finishing first it ranks below b's real time.
+    const r = scoreChallenge([
+      ac("a", 1, { elapsedSeconds: null }),
+      ac("b", 2, { elapsedSeconds: 20 }),
+    ]);
+    expect(r.get("b")).toMatchObject({ rank: 1, points: 1000 });
+    expect(r.get("a")).toMatchObject({ rank: 2, points: 800 });
+  });
+
+  it("orders two null-elapsed solvers deterministically by finish order", () => {
+    const r = scoreChallenge([
+      ac("late", 2, { elapsedSeconds: null }),
+      ac("early", 1, { elapsedSeconds: null }),
+    ]);
+    expect(r.get("early")).toMatchObject({ rank: 1 });
+    expect(r.get("late")).toMatchObject({ rank: 2 });
   });
 
   it("uses a user's earliest live AC", () => {

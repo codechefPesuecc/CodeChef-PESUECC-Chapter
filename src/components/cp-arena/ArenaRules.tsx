@@ -4,18 +4,19 @@
  * re-themes in dark mode automatically.
  */
 import MechaPanel from "./MechaPanel";
-const RULES: string[] = [
-  "One Problem of the Day. Read the statement on the left and solve it in the browser editor on the right.",
-  "Points are awarded by speed: the faster your first Accepted submission, the higher you rank on the daily board (1000 for 1st down to 100 for 10th and beyond).",
-  "The on-screen timer is only indicative — your official solve time is recorded on the server the moment your submission is Accepted.",
-  "Only your first Accepted submission counts. Once you've solved today's problem it's locked and hidden — you can review it in the archive after the next problem goes live.",
-  "The daily board is final at IST midnight: the next problem takes over and today's standings freeze for good.",
-  "Past problems stay open for practice. An accepted practice solve earns a flat 100 points toward your all-time total — but never a speed bounty.",
-  "Copy, paste and right-click are disabled inside the arena. Switching tabs or windows and taking screen captures during a live solve are recorded for review — each counts as one integrity flag.",
-  "Accumulating more than 5 integrity flags (blocked paste/copy attempts, tab/window switches, screen captures) removes you from that day's top 10 — an accepted solve then earns only the 100-point base.",
-  "The problem statement can't be selected or copied, it's watermarked with your identity, and it blurs when you leave the tab — leaked problems are traceable back to you.",
-  "Write your own code. Plagiarism, sharing solutions, or automating submissions leads to disqualification and forfeiting the bounty.",
-  "Don't probe or exploit the judge, and don't attempt to extract the hidden test cases.",
+interface Rule { text: string; highlight?: boolean }
+const RULES: Rule[] = [
+  { text: "One Problem of the Day. Read the statement on the left and solve it in the browser editor on the right." },
+  { text: "Points are awarded by speed: the faster your first Accepted submission, the higher you rank on the daily board (1000 for 1st down to 100 for 10th and beyond)." },
+  { text: "The on-screen timer is only indicative — your official solve time is recorded on the server the moment your submission is Accepted." },
+  { text: "Only your first Accepted submission counts. Once you've solved today's problem it's locked and hidden — you can review it in the archive after the next problem goes live." },
+  { text: "The daily board is final at IST midnight: the next problem takes over and today's standings freeze for good." },
+  { text: "Past problems stay open for practice. An accepted practice solve earns a flat 100 points toward your all-time total — but never a speed bounty." },
+  { text: "Copy, paste and right-click are disabled inside the arena. You may only use copy-paste within the browser editor itself — pasting code from outside (other editors, browsers, AI tools, etc.) is blocked, and each blocked attempt counts as an integrity flag. Switching tabs or windows and taking screen captures during a live solve are also recorded for review — each counts as one integrity flag.", highlight: true },
+  { text: "Accumulating more than 5 integrity flags (blocked paste/copy attempts, tab/window switches, screen captures) removes you from that day's top 10 — an accepted solve then earns only the 100-point base.", highlight: true },
+  { text: "The problem statement can't be selected or copied, it's watermarked with your identity, and it blurs when you leave the tab — leaked problems are traceable back to you." },
+  { text: "Write your own code. Plagiarism, sharing solutions, or automating submissions leads to disqualification and forfeiting the bounty." },
+  { text: "Don't probe or exploit the judge, and don't attempt to extract the hidden test cases." },
 ];
 
 export default function ArenaRules({ defaultOpen, noPanel }: { defaultOpen?: boolean; noPanel?: boolean }) {
@@ -37,11 +38,24 @@ export default function ArenaRules({ defaultOpen, noPanel }: { defaultOpen?: boo
       </summary>
       <ol className="space-y-3 border-t border-hairline px-6 py-5">
         {RULES.map((rule, i) => (
-          <li key={i} className="flex gap-3 text-sm leading-6 text-charcoal/80">
-            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-bronze/15 font-mono text-[11px] font-bold text-bronze">
+          <li
+            key={i}
+            className={`flex gap-3 text-sm leading-6 rounded-lg ${
+              rule.highlight
+                ? "bg-amber-50 border border-amber-300 px-3 py-2.5 text-amber-900 font-semibold"
+                : "text-charcoal/80"
+            }`}
+          >
+            <span
+              className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-mono text-[11px] font-bold ${
+                rule.highlight
+                  ? "bg-amber-400/30 text-amber-700"
+                  : "bg-bronze/15 text-bronze"
+              }`}
+            >
               {i + 1}
             </span>
-            {rule}
+            {rule.text}
           </li>
         ))}
       </ol>

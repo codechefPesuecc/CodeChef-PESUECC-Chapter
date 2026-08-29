@@ -108,11 +108,11 @@ export default function LeaderboardView() {
   }, [rows, scope, sortKey, ascending, languageFilter]);
 
   function changeScope(nextScope: LeaderScope) {
-  setScope(nextScope);
-  setSortKey("points");
-  setAscending(false);
-  setLanguageFilter("all");
-}
+    setScope(nextScope);
+    setSortKey("points");
+    setAscending(false);
+    setLanguageFilter("all");
+  }
 
   function changeSort(nextSort: SortKey) {
     if (sortKey === nextSort) {
@@ -142,14 +142,14 @@ export default function LeaderboardView() {
 
       {rows !== undefined && !errors[scope] && (
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          <label className="text-xs font-semibold uppercase tracking-wider text-charcoal/50">
+          <label className="text-xs font-semibold uppercase tracking-wider text-charcoal/50 dark:text-white/50">
             Sort
           </label>
 
           <select
             value={sortKey}
             onChange={(e) => changeSort(e.target.value as SortKey)}
-            className="rounded border border-hairline bg-cream px-3 py-2 text-sm text-chocolate"
+            className="rounded border border-hairline bg-cream px-3 py-2 text-sm text-chocolate dark:bg-white/5 dark:text-white dark:border-white/10"
           >
             <option value="points">Points</option>
             <option value="solver">Solver</option>
@@ -171,14 +171,14 @@ export default function LeaderboardView() {
 
           {scope === "today" && languages.length > 0 && (
             <>
-              <label className="text-xs font-semibold uppercase tracking-wider text-charcoal/50">
+              <label className="text-xs font-semibold uppercase tracking-wider text-charcoal/50 dark:text-white/50">
                 Language
               </label>
 
               <select
                 value={languageFilter}
                 onChange={(e) => setLanguageFilter(e.target.value)}
-                className="rounded border border-hairline bg-cream px-3 py-2 text-sm text-chocolate"
+                className="rounded border border-hairline bg-cream px-3 py-2 text-sm text-chocolate dark:bg-white/5 dark:text-white dark:border-white/10"
               >
                 <option value="all">All languages</option>
 
@@ -196,7 +196,7 @@ export default function LeaderboardView() {
       <MechaPanel className="mt-4" label={activeLabel} ticks>
         {errors[scope] ? (
           <div className="px-6 py-10 text-center">
-            <p className="text-sm font-semibold text-charcoal/80">
+            <p className="text-sm font-semibold text-charcoal/80 dark:text-white/80">
               {errors[scope]}
             </p>
 
@@ -212,7 +212,7 @@ export default function LeaderboardView() {
             </button>
           </div>
         ) : processedRows === undefined ? (
-          <p className="px-6 py-10 text-center text-sm text-charcoal/50">
+          <p className="px-6 py-10 text-center text-sm text-charcoal/50 dark:text-white/50">
             Loading…
           </p>
         ) : (
