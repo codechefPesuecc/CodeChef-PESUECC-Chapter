@@ -15,7 +15,7 @@ import Link from "@/components/AppLink";
 import CodeEditor from "./CodeEditor";
 import ArenaRules from "./ArenaRules";
 import {
-  LANGUAGES,
+  ARENA_LANGUAGES,
   STARTER_CODE,
   formatClock,
   languageLabel,
@@ -827,7 +827,7 @@ export default function ArenaWorkspace({
                       aria-label="Language"
                       className="ml-2 cursor-pointer rounded-md border border-[var(--ide-border)] bg-[var(--ide-body)] px-2.5 py-1 font-mono text-xs font-medium text-[var(--ide-ink-strong)] outline-none transition-colors hover:border-bronze/60"
                     >
-                      {LANGUAGES.map((lang) => (
+                      {ARENA_LANGUAGES.map((lang) => (
                         <option key={lang.id} value={lang.id}>{lang.label}</option>
                       ))}
                     </select>
