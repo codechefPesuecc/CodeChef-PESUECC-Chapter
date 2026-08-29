@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import CodeMirror, { EditorView } from "@uiw/react-codemirror";
+import CodeMirror, { EditorView, EditorState } from "@uiw/react-codemirror";
 import { cpp } from "@codemirror/lang-cpp";
 import { python } from "@codemirror/lang-python";
 import { java } from "@codemirror/lang-java";
@@ -12,6 +12,7 @@ import { StreamLanguage } from "@codemirror/language";
 import { csharp } from "@codemirror/legacy-modes/mode/clike";
 import type { LanguageId } from "./mockData";
 import type { IntegrityEvent } from "./useIntegrityMonitor";
+import { isDisallowedPaste, isBulkInjection, normalizeClip } from "./pasteGuard";
 import { useThemeMode } from "./useThemeMode";
 
 // C and C++ share the cpp highlighter; Kotlin/C# use the legacy clike modes;
@@ -51,6 +52,10 @@ const extensionFor = (language: LanguageId) => {
  * their own code around, but a paste whose text did NOT originate from this editor
  * (an outside solution) is blocked and reported via `onBlocked`. Right-click and
  * drag-and-drop stay blocked too, since a drop is another way to inject outside text.
+ *
+ * The block is enforced twice: a DOM `paste`/`drop` handler (fast path) AND a
+ * CodeMirror `transactionFilter` one layer deeper, so it still fires if the DOM
+ * handler is disabled from devtools. See `pasteGuard.ts`.
  */
 export default function CodeMirrorEditor({
   value,
@@ -76,9 +81,8 @@ export default function CodeMirrorEditor({
   // We keep a short history rather than a single value so the OS clipboard history
   // (e.g. Windows Win+V re-pasting an earlier copy) doesn't trip a false block.
   const internalCopies = useRef<string[]>([]);
-  const normalize = (s: string) => s.replace(/\r\n?/g, "\n");
   const remember = (text: string) => {
-    const n = normalize(text);
+    const n = normalizeClip(text);
     if (!n) return;
     const next = internalCopies.current.filter((t) => t !== n);
     next.push(n);
@@ -100,7 +104,7 @@ export default function CodeMirrorEditor({
         // eslint-disable-next-line react-hooks/refs
         EditorView.domEventHandlers({
           paste(event) {
-            const incoming = normalize(event.clipboardData?.getData("text") ?? "");
+            const incoming = normalizeClip(event.clipboardData?.getData("text") ?? "");
             // Only accept clipboard content that was copied from within this editor;
             // let CodeMirror insert it natively. Anything else is outside text.
             if (incoming && internalCopies.current.includes(incoming)) {
@@ -130,8 +134,10 @@ export default function CodeMirrorEditor({
             return true;
           },
           contextmenu(event) {
+            // Right-click is blocked and flagged once at the workspace root
+            // (ArenaWorkspace's onContextMenu); here we only suppress the editor's
+            // own menu so the event isn't recorded twice.
             event.preventDefault();
-            onBlocked?.("context-menu");
             return true;
           },
           dragstart(event) {
@@ -142,6 +148,22 @@ export default function CodeMirrorEditor({
             event.preventDefault();
             return true;
           },
+        }),
+        // State-layer backstop: cancels an outside paste/drop even if the DOM
+        // handlers above were disabled from devtools, and records the flag. The
+        // ref is only read at transaction time, never during render.
+        // eslint-disable-next-line react-hooks/refs
+        EditorState.transactionFilter.of((tr) => {
+          if (
+            isDisallowedPaste(tr, internalCopies.current) ||
+            isBulkInjection(tr, internalCopies.current)
+          ) {
+            // Deferred so the flag's React state update runs in a clean task,
+            // not inside this transaction computation.
+            setTimeout(() => onBlocked?.("paste"), 0);
+            return [];
+          }
+          return tr;
         }),
       ]
     : [];

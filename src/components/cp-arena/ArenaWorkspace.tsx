@@ -597,8 +597,17 @@ export default function ArenaWorkspace({
 
   return (
     <>
-      {/* Full-viewport IDE — covers the global navbar (z-50), HUD frame and footer. */}
-      <div className="fixed inset-0 z-[60] flex flex-col bg-cream dark:bg-[#0f0b07]">
+      {/* Full-viewport IDE — covers the global navbar (z-50), HUD frame and footer.
+          Right-click is disabled across the whole workspace (the context menu is a
+          copy/paste/inspect vector); a right-click during a ranked solve is recorded
+          like the other integrity signals. */}
+      <div
+        className="fixed inset-0 z-[60] flex flex-col bg-cream dark:bg-[#0f0b07]"
+        onContextMenu={(e) => {
+          e.preventDefault();
+          if (!practice) integrity.record("context-menu");
+        }}
+      >
         {/* Editor-maximize backdrop — rendered INSIDE the root so the fixed editor
             panel (z-70) stacks above it. A portal to <body> would sit above the
             root's z-60 context and trap the maximized editor underneath it. */}
@@ -769,7 +778,6 @@ export default function ArenaWorkspace({
                         className={`arena-no-print h-full overflow-y-auto px-6 py-6 ${practice ? "" : "select-none"}`}
                         onCopyCapture={practice ? undefined : (e) => { e.preventDefault(); integrity.record("copy"); }}
                         onCutCapture={practice ? undefined : (e) => { e.preventDefault(); integrity.record("cut"); }}
-                        onContextMenu={practice ? undefined : (e) => { e.preventDefault(); integrity.record("context-menu"); }}
                       >
                         {problem}
                       </div>
