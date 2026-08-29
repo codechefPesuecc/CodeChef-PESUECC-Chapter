@@ -23,7 +23,7 @@ export default function LeaderboardView() {
     Partial<Record<LeaderScope, LeaderRow[]>>
   >({});
   const [errors, setErrors] = useState<
-    Partial<Record<LeaderScope, boolean>>
+    Partial<Record<LeaderScope, string | null>>
   >({});
   const fetched = useRef<Set<LeaderScope>>(new Set());
 
@@ -37,18 +37,22 @@ export default function LeaderboardView() {
     let alive = true;
 
     fetch(`/api/leaderboard?scope=${scope}`)
-      .then((r) => r.json())
+      .then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || "Failed to load standings.");
+        return d;
+      })
       .then((d) => {
         if (!alive) return;
 
         fetched.current.add(scope);
-        setErrors((e) => ({ ...e, [scope]: false }));
+        setErrors((e) => ({ ...e, [scope]: null }));
         setCache((c) => ({ ...c, [scope]: d.rows ?? [] }));
       })
-      .catch(() => {
+      .catch((err) => {
         if (!alive) return;
 
-        setErrors((e) => ({ ...e, [scope]: true }));
+        setErrors((e) => ({ ...e, [scope]: err.message }));
       });
 
     return () => {
@@ -192,14 +196,14 @@ export default function LeaderboardView() {
       <MechaPanel className="mt-4" label={activeLabel} ticks>
         {errors[scope] ? (
           <div className="px-6 py-10 text-center">
-            <p className="text-sm text-charcoal/50 dark:text-white/50">
-              Failed to load standings.
+            <p className="text-sm font-semibold text-charcoal/80 dark:text-white/80">
+              {errors[scope]}
             </p>
 
             <button
               onClick={() => {
                 fetched.current.delete(scope);
-                setErrors((e) => ({ ...e, [scope]: false }));
+                setErrors((e) => ({ ...e, [scope]: null }));
                 setScope(scope);
               }}
               className="mt-3 text-xs font-semibold text-bronze hover:underline"
