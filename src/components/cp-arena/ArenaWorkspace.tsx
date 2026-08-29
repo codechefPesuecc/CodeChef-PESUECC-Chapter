@@ -1281,7 +1281,7 @@ function SpeedBounty() {
     <div className="px-2 pb-4 pt-2">
       <h3 className="font-display text-base font-bold text-chocolate mb-1">Speed Bounty</h3>
       <p className="text-xs text-charcoal/60">
-        Points by finish order — the faster you get accepted, the more you earn.
+        Points by solve time — the faster your accepted solve, the more you earn.
       </p>
       <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-5 lg:grid-cols-10">
         {BOUNTY_LADDER.map((tier, i) => (

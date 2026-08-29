@@ -3,10 +3,11 @@ import { BASE_POINTS, FLAG_LIMIT, pointsForRank } from "@/lib/points";
 /**
  * Pure scoring for one challenge — no database, so it's unit-tested directly.
  *
- * - A **live** solver (a ranked Problem-of-the-Day AC) scores by finish order on
- *   their earliest live AC: more than FLAG_LIMIT integrity flags caps them at the
- *   base score and out of the ranked positions; otherwise `pointsForRank` by their
- *   position among the flag-eligible live solvers, ordered by solve time.
+ * - A **live** solver (a ranked Problem-of-the-Day AC) scores by their solve time
+ *   on their earliest live AC: more than FLAG_LIMIT integrity flags caps them at
+ *   the base score and out of the ranked positions; otherwise `pointsForRank` by
+ *   their position among the flag-eligible live solvers, ordered by elapsed solve
+ *   time (the arena timer) — fastest first, finish order breaking ties.
  * - A **late** solver (only practice ACs on a past problem) scores a flat base
  *   score with no rank.
  * - Exactly one award per user. A live solver never also earns the late score.
@@ -14,8 +15,13 @@ import { BASE_POINTS, FLAG_LIMIT, pointsForRank } from "@/lib/points";
 
 export interface ScoreInput {
   userId: string;
-  /** Server receive time of the AC (finish order). */
+  /** Server receive time of the AC — used to pick a user's earliest solve and to
+   *  break ties between equal solve times. */
   createdAt: number;
+  /** Server-computed solve duration in seconds (the arena timer: submit time minus
+   *  the immutable first-open time). Lower ranks higher. Null when the attempt clock
+   *  is missing — those sort last among eligible solvers. */
+  elapsedSeconds: number | null;
   flags: number;
   /** True for a live POTD solve; false for a late/practice solve. */
   ranked: boolean;
@@ -48,7 +54,13 @@ export function scoreChallenge(acs: ScoreInput[]): Map<string, ScoreResult> {
   const live = [...earliestLive.values()];
   const eligible = live
     .filter((e) => e.flags <= FLAG_LIMIT)
-    .sort((x, y) => x.createdAt - y.createdAt);
+    // Fastest solve first (the arena timer). A missing clock sorts last; equal
+    // times fall back to finish order so the ordering stays deterministic.
+    .sort(
+      (x, y) =>
+        (x.elapsedSeconds ?? Infinity) - (y.elapsedSeconds ?? Infinity) ||
+        x.createdAt - y.createdAt,
+    );
   eligible.forEach((e, i) =>
     result.set(e.userId, {
       points: pointsForRank(i + 1),
