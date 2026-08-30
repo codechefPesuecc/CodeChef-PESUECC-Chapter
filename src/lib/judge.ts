@@ -51,6 +51,8 @@ export const JUDGE_LANGUAGE: Record<string, string> = {
   python: "python",
   python3: "python",
   py: "python",
+  pypy3: "pypy",
+  pypy: "pypy",
   javascript: "javascript",
   js: "javascript",
   typescript: "typescript",

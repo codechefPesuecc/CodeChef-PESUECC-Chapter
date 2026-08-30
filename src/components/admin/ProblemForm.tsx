@@ -621,13 +621,13 @@ function MarkdownField({
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/preview", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ markdown: value }),
-      });
-      const d = await res.json();
-      setHtml(d.html ?? "");
+      // Render in the browser using the same pipeline as the server, so the preview
+      // still matches the real solve page — but without a Worker request. The
+      // server-side render (the unified/rehype stack) was heavy enough to trip
+      // Cloudflare's per-request CPU/memory limits on the free plan. Dynamically
+      // imported so the markdown stack only loads when the admin actually previews.
+      const { renderMarkdown } = await import("@/lib/markdown");
+      setHtml(await renderMarkdown(value));
     } catch {
       setHtml("<p><em>Preview failed.</em></p>");
     }

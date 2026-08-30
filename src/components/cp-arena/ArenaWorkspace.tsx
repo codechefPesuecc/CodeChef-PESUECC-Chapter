@@ -15,7 +15,7 @@ import Link from "@/components/AppLink";
 import CodeEditor from "./CodeEditor";
 import ArenaRules from "./ArenaRules";
 import {
-  LANGUAGES,
+  ARENA_LANGUAGES,
   STARTER_CODE,
   formatClock,
   languageLabel,
@@ -399,6 +399,7 @@ export default function ArenaWorkspace({
       });
     } finally {
       setRunning(false);
+      setBottomTab("result");
     }
   };
 
@@ -552,6 +553,7 @@ export default function ArenaWorkspace({
       });
     } finally {
       setRunning(false);
+      setBottomTab("result");
       // Turnstile tokens are single-use — refresh the widget for a next attempt.
       if (turnstileConfigured) {
         setTurnstileToken(null);
@@ -595,8 +597,17 @@ export default function ArenaWorkspace({
 
   return (
     <>
-      {/* Full-viewport IDE — covers the global navbar (z-50), HUD frame and footer. */}
-      <div className="fixed inset-0 z-[60] flex flex-col bg-cream dark:bg-[#0f0b07]">
+      {/* Full-viewport IDE — covers the global navbar (z-50), HUD frame and footer.
+          Right-click is disabled across the whole workspace (the context menu is a
+          copy/paste/inspect vector); a right-click during a ranked solve is recorded
+          like the other integrity signals. */}
+      <div
+        className="fixed inset-0 z-[60] flex flex-col bg-cream dark:bg-[#0f0b07]"
+        onContextMenu={(e) => {
+          e.preventDefault();
+          if (!practice) integrity.record("context-menu");
+        }}
+      >
         {/* Editor-maximize backdrop — rendered INSIDE the root so the fixed editor
             panel (z-70) stacks above it. A portal to <body> would sit above the
             root's z-60 context and trap the maximized editor underneath it. */}
@@ -767,7 +778,6 @@ export default function ArenaWorkspace({
                         className={`arena-no-print h-full overflow-y-auto px-6 py-6 ${practice ? "" : "select-none"}`}
                         onCopyCapture={practice ? undefined : (e) => { e.preventDefault(); integrity.record("copy"); }}
                         onCutCapture={practice ? undefined : (e) => { e.preventDefault(); integrity.record("cut"); }}
-                        onContextMenu={practice ? undefined : (e) => { e.preventDefault(); integrity.record("context-menu"); }}
                       >
                         {problem}
                       </div>
@@ -825,7 +835,7 @@ export default function ArenaWorkspace({
                       aria-label="Language"
                       className="ml-2 cursor-pointer rounded-md border border-[var(--ide-border)] bg-[var(--ide-body)] px-2.5 py-1 font-mono text-xs font-medium text-[var(--ide-ink-strong)] outline-none transition-colors hover:border-bronze/60"
                     >
-                      {LANGUAGES.map((lang) => (
+                      {ARENA_LANGUAGES.map((lang) => (
                         <option key={lang.id} value={lang.id}>{lang.label}</option>
                       ))}
                     </select>
@@ -1281,7 +1291,7 @@ function SpeedBounty() {
     <div className="px-2 pb-4 pt-2">
       <h3 className="font-display text-base font-bold text-chocolate mb-1">Speed Bounty</h3>
       <p className="text-xs text-charcoal/60">
-        Points by finish order — the faster you get accepted, the more you earn.
+        Points by solve time — the faster your accepted solve, the more you earn.
       </p>
       <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-5 lg:grid-cols-10">
         {BOUNTY_LADDER.map((tier, i) => (

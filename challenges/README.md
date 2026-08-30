@@ -56,8 +56,8 @@ same file.)
 | `checker` | – | `{ "type": "token" \| "exact" \| "float", "epsilon"? }`. Defaults to `token`. |
 
 There is **no `points` field** — scoring is server-side: the live Problem of the
-Day is a speed bounty (finish order), and a past problem solved for practice earns
-a flat base score.
+Day is a speed bounty (ranked by solve time — the fastest accepted solve wins), and
+a past problem solved for practice earns a flat base score.
 
 ## Example
 
