@@ -49,7 +49,7 @@ function EventBlueprintCard({
   event: (typeof events)[number];
   index: number;
 }) {
-  const cover = event.gallery[0];
+  const cover = event.gallery?.[0] || { src: event.image || '/dev-team.jpg', caption: event.title };
 
   return (
     <article id={event.id} className="relative w-full isolate group scroll-mt-24">
@@ -84,12 +84,8 @@ function EventBlueprintCard({
               405px 155px, 
               405px 325px, 
               420px 340px, 
-              420px calc(480px - 20px), 
-              calc(420px + 20px) 480px, 
-              calc(100% - 20px) 480px, 
-              100% calc(480px + 20px), 
-              100% calc(100% - 20px), 
-              calc(100% - 20px) 100%, 
+              420px calc(100% - 20px), 
+              calc(420px - 20px) 100%, 
               20px 100%, 
               0 calc(100% - 20px)
             )`
@@ -118,12 +114,8 @@ function EventBlueprintCard({
               402px 152px, 
               402px 328px, 
               417px 343px, 
-              417px calc(480px - 17px), 
-              calc(420px + 17px) 483px, 
-              calc(100% - 23px) 483px, 
-              calc(100% - 3px) calc(480px + 23px), 
-              calc(100% - 3px) calc(100% - 23px), 
-              calc(100% - 23px) calc(100% - 3px), 
+              417px calc(100% - 23px), 
+              calc(420px - 23px) calc(100% - 3px), 
               23px calc(100% - 3px), 
               3px calc(100% - 23px),
               3px 340px,
@@ -156,12 +148,8 @@ function EventBlueprintCard({
               396px 146px, 
               396px 334px, 
               411px 349px, 
-              411px calc(480px - 11px), 
-              calc(420px + 11px) 489px, 
-              calc(100% - 29px) 489px, 
-              calc(100% - 9px) calc(480px + 29px), 
-              calc(100% - 9px) calc(100% - 29px), 
-              calc(100% - 29px) calc(100% - 9px), 
+              411px calc(100% - 29px), 
+              calc(420px - 29px) calc(100% - 9px), 
               29px calc(100% - 9px), 
               9px calc(100% - 29px),
               9px 346px,
@@ -177,10 +165,10 @@ function EventBlueprintCard({
       {/* ═══════════════════════════════════════════════
        *  2. THE STRICT CONTENT GRID
        * ═══════════════════════════════════════════════ */}
-      <div className="relative z-10 flex flex-col lg:grid lg:grid-cols-[420px_1fr] lg:grid-rows-[480px_auto]">
+      <div className="relative z-10 flex flex-col lg:grid lg:grid-cols-[420px_1fr]">
 
-        {/* ─── LEFT COLUMN — spans full height ─── */}
-        <div className="lg:col-start-1 lg:row-span-2 w-full h-full p-8 lg:p-12">
+        {/* ─── LEFT COLUMN ─── */}
+        <div className="lg:col-start-1 w-full h-full p-8 lg:p-12">
           <Reveal delay={index * 0.05} className="h-full">
             <div className="flex flex-col h-full">
 
@@ -204,11 +192,13 @@ function EventBlueprintCard({
                 {event.description}
               </p>
 
+
+
               {/* Highlights — "+" prefix pills */}
               <div className="mt-8 flex flex-col items-start gap-3">
-                {event.highlights.map((highlight) => (
+                {event.highlights?.map((highlight, idx) => (
                   <div
-                    key={highlight}
+                    key={`${highlight}-${idx}`}
                     className="inline-flex w-fit items-center gap-3 rounded-full bg-transparent border border-brown/30 dark:border-[#3B2F26] px-4 py-1.5 transition-colors hover:bg-brown/5"
                   >
                     <span className="font-mono text-[11px] font-bold text-brown dark:text-[#D98A53]">+</span>
@@ -230,12 +220,20 @@ function EventBlueprintCard({
                   {event.cadence}
                 </div>
               </div>
+
+              {/* CTA Button */}
+              <Link
+                href={event.id === "cp-arena" ? "/cp-arena" : `/initiatives/${event.id}`}
+                className="initiative-btn mt-6"
+              >
+                {event.id === "cp-arena" ? "ENTER ARENA" : "VIEW PROGRAM DETAILS"}
+              </Link>
             </div>
           </Reveal>
         </div>
 
-        {/* ─── TOP-RIGHT — The chamfered image ─── */}
-        <div className="lg:col-start-2 lg:row-start-1 w-full h-[320px] lg:h-full p-6 lg:p-0 lg:pl-[40px] lg:pb-[40px] lg:pr-12 lg:pt-12">
+        {/* ─── RIGHT — The chamfered image ─── */}
+        <div className="lg:col-start-2 lg:row-start-1 w-full h-[320px] lg:h-full min-h-[480px] p-6 lg:p-0 lg:pl-[40px] lg:pb-[40px] lg:pr-12 lg:pt-12">
           <Reveal delay={index * 0.05 + 0.05} className="w-full h-full">
             <div 
               className="relative w-full h-full overflow-hidden shadow-xl rounded-3xl"
@@ -262,30 +260,6 @@ function EventBlueprintCard({
                   {event.title} visual archive
                 </div>
               </div>
-            </div>
-          </Reveal>
-        </div>
-
-        {/* ─── BOTTOM-RIGHT — Detailed explanation ─── */}
-        <div className="lg:col-start-2 lg:row-start-2 w-full p-6 lg:p-0 lg:pl-[40px] lg:pt-8">
-          <Reveal delay={index * 0.05 + 0.1}>
-            <div className="flex flex-col items-start lg:pr-12 lg:pb-12">
-              {/* Heading */}
-              <h4 className="font-display text-[1.1rem] font-bold tracking-tight text-[#221E1A] dark:text-[#E8DFD8] uppercase tracking-[0.05em]">
-                PROGRAM BRIEF
-              </h4>
-              {/* Body */}
-              <p className="mt-4 max-w-prose font-sans text-[0.95rem] leading-[1.7] text-[#6B6255] dark:text-[#A39281]">
-                {event.detailedExplanation}
-              </p>
-
-              {/* CTA Button — bordered rectangle with arrow */}
-              <Link
-                href={event.id === "cp-arena" ? "/cp-arena" : `/initiatives/${event.id}`}
-                className="initiative-btn self-end mt-10"
-              >
-                {event.id === "cp-arena" ? "ENTER ARENA" : "VIEW PROGRAM DETAILS"}
-              </Link>
             </div>
           </Reveal>
         </div>
