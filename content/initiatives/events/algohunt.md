@@ -96,7 +96,51 @@ mentors:
     linkedin: "https://linkedin.com"
 
 winners:
+  # ==========================================
+  # 🟢 EASY TRACK (1st, 2nd, 3rd)
+  # ==========================================
+  - team: "Binary Beasts"
+    track: "Easy Track"
+    badge: "Easy Track Champions"
+    achievement: "1st Place Champions"
+    heroImage: "/dev-team.jpg"
+    members:
+      - name: "Aarav Sharma"
+        linkedin: "https://linkedin.com"
+      - name: "Tanvi Rao"
+        linkedin: "https://linkedin.com"
+      - name: "Kavya Nair"
+        linkedin: "https://linkedin.com"
+    experience: "As freshers, navigating the checkpoints while writing clean Python scripts was an adrenaline rush. Winning the Easy Track boosted our confidence tremendously!"
+
+  - team: "Syntax Strikers"
+    track: "Easy Track"
+    achievement: "2nd Place Runner-Up"
+    heroImage: "/dev-team.jpg"
+    members:
+      - name: "Rohan Gupta"
+        linkedin: "https://linkedin.com"
+      - name: "Meera Iyer"
+        linkedin: "https://linkedin.com"
+    experience: "We were neck-and-neck until the final checkpoint puzzle. A memorable 2nd place finish!"
+
+  - team: "Bug Squishers"
+    track: "Easy Track"
+    achievement: "3rd Place Podium"
+    heroImage: "/dev-team.jpg"
+    members:
+      - name: "Arjun Verma"
+        linkedin: "https://linkedin.com"
+      - name: "Sneha Reddy"
+        linkedin: "https://linkedin.com"
+    experience: "Cracking the sliding window problem under time pressure was electric. So proud of our podium spot!"
+
+  # ==========================================
+  # ⚡ TOUGH TRACK (1st, 2nd, 3rd)
+  # ==========================================
   - team: "Team Enigma"
+    track: "Tough Track"
+    badge: "Tough Track Champions"
     achievement: "1st Place Champions"
     heroImage: "/dev-team.jpg"
     members:
@@ -106,20 +150,22 @@ winners:
         linkedin: "https://linkedin.com"
       - name: "Rahul Patel"
         linkedin: "https://linkedin.com"
-    experience: "The combination of algorithmic thinking and sprinting across campus was unparalleled. We spent 20 minutes debugging Dijkstra while physically standing in the rain at the final checkpoint. It pushed us to our absolute limits!"
+    experience: "The combination of advanced graph algorithms and sprinting across campus in the rain was unparalleled. It pushed our debugging limits to the extreme!"
   
-  - team: "Runtime Terrors"
-    achievement: "2nd Place Runner Ups"
+  - team: "Circuit Breakers"
+    track: "Tough Track"
+    achievement: "2nd Place Runner-Up"
     heroImage: "/dev-team.jpg"
     members:
       - name: "David Kim"
         linkedin: "https://linkedin.com"
       - name: "Priya Singh"
         linkedin: "https://linkedin.com"
-    experience: "We lost our lead because we forgot a semicolon in the cryptography round, but making up the time during the campus sprint was thrilling."
+    experience: "Reverse-engineering the physical ESP32 node while decoding ciphertexts was hands-down the coolest challenge we have ever tackled."
 
   - team: "O(1) Braincells"
-    achievement: "3rd Place"
+    track: "Tough Track"
+    achievement: "3rd Place Podium"
     heroImage: "/dev-team.jpg"
     members:
       - name: "Michael Chang"
@@ -128,7 +174,7 @@ winners:
         linkedin: "https://linkedin.com"
       - name: "Zack Taylor"
         linkedin: "https://linkedin.com"
-    experience: "Getting onto the podium was incredible. The hardware node reverse engineering completely blew our minds. Best event of the year!"
+    experience: "Standing on the Tough Track podium against the sharpest minds on campus was incredible. Worth every drop of sweat!"
 ---
 
 AlgoHunt transforms competitive programming into a high-octane physical reality. It demands a unique hybrid of rapid code execution, team communication under pressure, and physical stamina. AlgoHunt tests not just how well you know Dijkstra's algorithm, but how fast your team can debug it while racing against the clock to the next checkpoint.

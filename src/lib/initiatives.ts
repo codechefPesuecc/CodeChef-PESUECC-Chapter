@@ -34,6 +34,8 @@ export interface WinnerMember {
 export interface Winner {
   team: string;
   achievement: string;
+  track?: string;
+  badge?: string;
   heroImage: string;
   members: WinnerMember[];
   experience: string;

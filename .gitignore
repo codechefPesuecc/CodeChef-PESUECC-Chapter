@@ -52,6 +52,7 @@ Icon?
 
 # misc
 *.pem
+*.pdf
 
 # debug
 npm-debug.log*
