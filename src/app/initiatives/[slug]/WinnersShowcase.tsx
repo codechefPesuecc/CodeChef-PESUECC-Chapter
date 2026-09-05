@@ -3,14 +3,7 @@
 import { motion } from "motion/react";
 import Image from "next/image";
 import { Quote, Trophy, Users, ExternalLink } from "lucide-react";
-
-interface Winner {
-  team: string;
-  achievement: string;
-  heroImage: string;
-  members: { name: string; linkedin?: string }[];
-  experience: string;
-}
+import type { Winner } from "@/lib/initiatives";
 
 export default function WinnersShowcase({ winners }: { winners: Winner[] }) {
   if (!winners || winners.length === 0) return null;
@@ -44,13 +37,18 @@ export default function WinnersShowcase({ winners }: { winners: Winner[] }) {
               } p-6 lg:p-10 backdrop-blur-sm`}
             >
               {/* Grand Photo Section */}
-              <div className={`relative ${isFirst ? "w-full lg:w-1/2 aspect-[4/3]" : "w-full lg:w-2/5 aspect-video"} overflow-hidden rounded-2xl border border-chocolate/10 dark:border-cream/10`}>
-                <Image
-                  src={winner.heroImage}
-                  alt={winner.team}
-                  fill
-                  className="object-cover transition-transform duration-700 hover:scale-105"
-                />
+              <div className={`relative ${isFirst ? "w-full lg:w-1/2 aspect-[4/3]" : "w-full lg:w-2/5 aspect-video"} overflow-hidden rounded-2xl border border-chocolate/10 dark:border-cream/10 bg-chocolate/5 dark:bg-cream/5 flex items-center justify-center`}>
+                {winner.heroImage ? (
+                  <Image
+                    src={winner.heroImage}
+                    alt={winner.team}
+                    fill
+                    sizes="(min-width: 1024px) 50vw, 100vw"
+                    className="object-cover transition-transform duration-700 hover:scale-105"
+                  />
+                ) : (
+                  <Trophy className="h-16 w-16 text-bronze/30" />
+                )}
                 {isFirst && (
                   <div className="absolute top-4 left-4 flex items-center gap-2 bg-bronze/90 backdrop-blur text-white px-4 py-2 rounded-full font-bold shadow-lg">
                     <Trophy className="h-5 w-5" />

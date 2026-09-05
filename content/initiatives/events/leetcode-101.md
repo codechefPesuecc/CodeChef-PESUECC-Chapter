@@ -10,10 +10,10 @@ highlights:
   - "Mentor-led reviews"
   - "Editorial practice"
 accent: "02"
-image: "/dev-team.jpg"
+image: "/events/leetcode101.jpg"
 gallery:
   -
-    src: "/dev-team.jpg"
+    src: "/events/leetcode101.jpg"
     caption: "Mentor-led pattern sessions"
   -
     src: "/dev-team.jpg"
@@ -21,7 +21,7 @@ gallery:
   -
     src: "/dev-team.jpg"
     caption: "Editorial review circles"
-href: "/initiatives#leetcode-101"
+href: "/initiatives/leetcode-101"
 timeline:
   - date: "09:00 AM"
     title: "Check-in & Breakfast"

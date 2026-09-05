@@ -10,10 +10,10 @@ highlights:
   - "Demo-first judging"
   - "Production mindset"
 accent: "04"
-image: "/dev-team.jpg"
+image: "/events/praxis-2024.jpg"
 gallery:
   -
-    src: "/dev-team.jpg"
+    src: "/events/praxis-2024.jpg"
     caption: "Rapid AI product ideation"
   -
     src: "/dev-team.jpg"
@@ -21,7 +21,7 @@ gallery:
   -
     src: "/dev-team.jpg"
     caption: "Final demos and judging"
-href: "/initiatives#praxis"
+href: "/initiatives/praxis"
 timeline:
   - date: "09:00 AM"
     title: "Check-in & Breakfast"

@@ -1,10 +1,10 @@
 import Image from "next/image";
 import Link from "@/components/AppLink";
 import Reveal from "@/components/Reveal";
-import { events } from "./data";
+import type { Event } from "@/lib/initiatives";
 import { SectionIntro } from "./Shared";
 
-export function FlagshipEvents() {
+export function FlagshipEvents({ events }: { events: Event[] }) {
   return (
     <section id="flagship-events" className="relative w-full px-6 py-16 sm:py-20 lg:px-16 lg:py-24">
 
@@ -46,10 +46,13 @@ function EventBlueprintCard({
   event,
   index,
 }: {
-  event: (typeof events)[number];
+  event: Event;
   index: number;
 }) {
-  const cover = event.gallery[0];
+  const cover = event.gallery?.[0] ?? {
+    src: event.image || "/dev-team.jpg",
+    caption: event.title || "Initiative Showcase",
+  };
 
   return (
     <article id={event.id} className="relative w-full isolate group scroll-mt-24">
@@ -276,15 +279,15 @@ function EventBlueprintCard({
               </h4>
               {/* Body */}
               <p className="mt-4 max-w-prose font-sans text-[0.95rem] leading-[1.7] text-[#6B6255] dark:text-[#A39281]">
-                {event.detailedExplanation}
+                {event.cardBrief}
               </p>
 
-              {/* CTA Button — bordered rectangle with arrow */}
+              {/* CTA Button */}
               <Link
-                href={event.id === "cp-arena" ? "/cp-arena" : `/initiatives/${event.id}`}
+                href={event.href || `/initiatives/${event.id}`}
                 className="initiative-btn self-end mt-10"
               >
-                {event.id === "cp-arena" ? "ENTER ARENA" : "VIEW PROGRAM DETAILS"}
+                {event.ctaLabel || (event.href && !event.href.startsWith("/initiatives") ? "ENTER ARENA" : "VIEW PROGRAM DETAILS")}
               </Link>
             </div>
           </Reveal>

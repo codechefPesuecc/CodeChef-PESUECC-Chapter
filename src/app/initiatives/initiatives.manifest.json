@@ -29,6 +29,7 @@
         }
       ],
       "href": "/cp-arena",
+      "ctaLabel": "ENTER ARENA",
       "timeline": [
         {
           "date": "09:00 AM",
@@ -87,7 +88,9 @@
           "date": "01:00 PM",
           "title": "Lunch & Networking",
           "tag": "Break",
-          "description": "A mandatory cool-down period where teams can refuel, discuss strategies with mentors, and check the global standings."
+          "description": "A mandatory cool-down period where teams can refuel, discuss strategies with mentors, and check the global standings.",
+          "stats": [],
+          "features": []
         },
         {
           "date": "02:00 PM",
@@ -116,7 +119,8 @@
               "label": "Prize Pool",
               "value": "$5,000"
             }
-          ]
+          ],
+          "features": []
         }
       ],
       "mentors": [
@@ -197,6 +201,7 @@
           "experience": "Getting onto the podium was incredible. The hardware node reverse engineering completely blew our minds. Best event of the year!"
         }
       ],
+      "cardBrief": "CP Arena is the backbone of our daily coding culture...",
       "detailedExplanation": "CP Arena is the backbone of our daily coding culture..."
     },
     {
@@ -212,10 +217,10 @@
         "Editorial practice"
       ],
       "accent": "02",
-      "image": "/dev-team.jpg",
+      "image": "/events/leetcode101.jpg",
       "gallery": [
         {
-          "src": "/dev-team.jpg",
+          "src": "/events/leetcode101.jpg",
           "caption": "Mentor-led pattern sessions"
         },
         {
@@ -227,7 +232,7 @@
           "caption": "Editorial review circles"
         }
       ],
-      "href": "/initiatives#leetcode-101",
+      "href": "/initiatives/leetcode-101",
       "timeline": [
         {
           "date": "09:00 AM",
@@ -286,7 +291,9 @@
           "date": "01:00 PM",
           "title": "Lunch & Networking",
           "tag": "Break",
-          "description": "A mandatory cool-down period where teams can refuel, discuss strategies with mentors, and check the global standings."
+          "description": "A mandatory cool-down period where teams can refuel, discuss strategies with mentors, and check the global standings.",
+          "stats": [],
+          "features": []
         },
         {
           "date": "02:00 PM",
@@ -315,7 +322,8 @@
               "label": "Prize Pool",
               "value": "$5,000"
             }
-          ]
+          ],
+          "features": []
         }
       ],
       "mentors": [
@@ -396,6 +404,7 @@
           "experience": "Getting onto the podium was incredible. The hardware node reverse engineering completely blew our minds. Best event of the year!"
         }
       ],
+      "cardBrief": "LeetCode 101 is our flagship mentorship program engineered to systematically break down data structures and algorithms.",
       "detailedExplanation": "LeetCode 101 is our flagship mentorship program engineered to systematically break down data structures and algorithms."
     },
     {
@@ -411,10 +420,10 @@
         "Team-based solving"
       ],
       "accent": "03",
-      "image": "/dev-team.jpg",
+      "image": "/events/algohunt.jpg",
       "gallery": [
         {
-          "src": "/dev-team.jpg",
+          "src": "/events/algohunt.jpg",
           "caption": "Campus checkpoints and clue drops"
         },
         {
@@ -426,7 +435,7 @@
           "caption": "Leaderboard-driven finale"
         }
       ],
-      "href": "/initiatives#algohunt",
+      "href": "/initiatives/algohunt",
       "timeline": [
         {
           "date": "09:00 AM",
@@ -485,7 +494,9 @@
           "date": "01:00 PM",
           "title": "Lunch & Networking",
           "tag": "Break",
-          "description": "A mandatory cool-down period where teams can refuel, discuss strategies with mentors, and check the global standings."
+          "description": "A mandatory cool-down period where teams can refuel, discuss strategies with mentors, and check the global standings.",
+          "stats": [],
+          "features": []
         },
         {
           "date": "02:00 PM",
@@ -514,7 +525,8 @@
               "label": "Prize Pool",
               "value": "$5,000"
             }
-          ]
+          ],
+          "features": []
         }
       ],
       "mentors": [
@@ -595,6 +607,7 @@
           "experience": "Getting onto the podium was incredible. The hardware node reverse engineering completely blew our minds. Best event of the year!"
         }
       ],
+      "cardBrief": "AlgoHunt transforms competitive programming into a high-octane physical reality. It demands a unique hybrid of rapid code execution, team communication under pressure, and physical stamina. AlgoHunt tests not just how well you know Dijkstra's algorithm, but...",
       "detailedExplanation": "AlgoHunt transforms competitive programming into a high-octane physical reality. It demands a unique hybrid of rapid code execution, team communication under pressure, and physical stamina. AlgoHunt tests not just how well you know Dijkstra's algorithm, but how fast your team can debug it while racing against the clock to the next checkpoint."
     },
     {
@@ -610,10 +623,10 @@
         "Production mindset"
       ],
       "accent": "04",
-      "image": "/dev-team.jpg",
+      "image": "/events/praxis-2024.jpg",
       "gallery": [
         {
-          "src": "/dev-team.jpg",
+          "src": "/events/praxis-2024.jpg",
           "caption": "Rapid AI product ideation"
         },
         {
@@ -625,7 +638,7 @@
           "caption": "Final demos and judging"
         }
       ],
-      "href": "/initiatives#praxis",
+      "href": "/initiatives/praxis",
       "timeline": [
         {
           "date": "09:00 AM",
@@ -684,7 +697,9 @@
           "date": "01:00 PM",
           "title": "Lunch & Networking",
           "tag": "Break",
-          "description": "A mandatory cool-down period where teams can refuel, discuss strategies with mentors, and check the global standings."
+          "description": "A mandatory cool-down period where teams can refuel, discuss strategies with mentors, and check the global standings.",
+          "stats": [],
+          "features": []
         },
         {
           "date": "02:00 PM",
@@ -713,7 +728,8 @@
               "label": "Prize Pool",
               "value": "$5,000"
             }
-          ]
+          ],
+          "features": []
         }
       ],
       "mentors": [
@@ -794,6 +810,7 @@
           "experience": "Getting onto the podium was incredible. The hardware node reverse engineering completely blew our minds. Best event of the year!"
         }
       ],
+      "cardBrief": "Praxis is designed to push developers out of tutorial hell and into the builder's mindset.",
       "detailedExplanation": "Praxis is designed to push developers out of tutorial hell and into the builder's mindset."
     }
   ],

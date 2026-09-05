@@ -10,15 +10,15 @@ highlights:
   - "Live scoring"
   - "Team-based solving"
 accent: "03"
-image: "/dev-team.jpg"
+image: "/events/algohunt.jpg"
 gallery:
-  - src: "/dev-team.jpg"
+  - src: "/events/algohunt.jpg"
     caption: "Campus checkpoints and clue drops"
   - src: "/dev-team.jpg"
     caption: "Team solving under live pressure"
   - src: "/dev-team.jpg"
     caption: "Leaderboard-driven finale"
-href: "/initiatives#algohunt"
+href: "/initiatives/algohunt"
 timeline:
   - date: "09:00 AM"
     title: "Check-in & Breakfast"
