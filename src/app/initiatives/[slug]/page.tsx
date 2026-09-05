@@ -1,22 +1,32 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "@/components/AppLink";
-import manifest from "../initiatives.manifest.json";
+import { getEventBySlug, getEventSlugs } from "@/lib/initiatives";
+import { renderMarkdown } from "@/lib/markdown";
 import { ArrowLeft, Calendar, Trophy, Users } from "lucide-react";
 import EventTimeline from "./EventTimeline";
 import TeamShowcase from "./TeamShowcase";
 import WinnersShowcase from "./WinnersShowcase";
 
 export function generateStaticParams() {
-  return manifest.events.map((e: { id: string }) => ({ slug: e.id }));
+  return getEventSlugs().map((slug) => ({ slug }));
 }
 
 export default async function InitiativeDetail({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = await params;
-  const event = manifest.events.find((e: { id: string }) => e.id === resolvedParams.slug);
+  const event = getEventBySlug(resolvedParams.slug);
   
   if (!event) {
     notFound();
+  }
+
+  // Render the markdown body to HTML for the detail page safely
+  let descriptionHtml = "";
+  try {
+    descriptionHtml = await renderMarkdown(event.detailedExplanation);
+  } catch (error) {
+    console.error(`[initiatives] Markdown render error in ${event.id}:`, error);
+    descriptionHtml = `<p>${event.detailedExplanation}</p>`;
   }
 
   return (
@@ -62,6 +72,7 @@ export default async function InitiativeDetail({ params }: { params: Promise<{ s
                 src={event.image} 
                 alt={event.title}
                 fill
+                sizes="(min-width: 1024px) 50vw, 100vw"
                 className="object-cover"
                 priority
               />
@@ -71,12 +82,15 @@ export default async function InitiativeDetail({ params }: { params: Promise<{ s
         </div>
       </div>
 
-      {/* Detailed Description */}
-      <div className="mx-auto max-w-3xl px-6 lg:px-8 mt-24 text-center">
-        <div className="prose prose-lg dark:prose-invert mx-auto text-chocolate/80 dark:text-cream/80 font-medium leading-relaxed">
-          {event.detailedExplanation}
+      {/* Detailed Description — rendered from Markdown */}
+      {descriptionHtml && (
+        <div className="mx-auto max-w-3xl px-6 lg:px-8 mt-24">
+          <div
+            className="prose prose-lg dark:prose-invert mx-auto text-chocolate/80 dark:text-cream/80 font-medium leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+          />
         </div>
-      </div>
+      )}
 
       {/* Vertical Tree Timeline */}
       {event.timeline && event.timeline.length > 0 && (

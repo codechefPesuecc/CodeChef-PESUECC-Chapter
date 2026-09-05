@@ -1,8 +1,8 @@
 import Reveal from "@/components/Reveal";
-import { systems } from "./data";
+import type { System } from "@/lib/initiatives";
 import { SectionIntro } from "./Shared";
 
-export function SystemsPortfolio() {
+export function SystemsPortfolio({ systems }: { systems: System[] }) {
   return (
     <section id="engineered-events" className="relative overflow-hidden py-16 sm:py-24">
       <div className="absolute inset-0 bg-chocolate dark:bg-[#0f0b07]" />
@@ -54,7 +54,7 @@ function SystemPanel({
   system,
   delay,
 }: {
-  system: (typeof systems)[number];
+  system: System;
   delay: number;
 }) {
   return (

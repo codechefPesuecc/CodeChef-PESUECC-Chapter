@@ -22,6 +22,7 @@ gallery:
     src: "/dev-team.jpg"
     caption: "Global standing tracking"
 href: "/cp-arena"
+ctaLabel: "ENTER ARENA"
 timeline:
   - date: "09:00 AM"
     title: "Check-in & Breakfast"

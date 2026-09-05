@@ -6,16 +6,9 @@ import { Calendar, CheckCircle2 } from "lucide-react";
 import Image from "next/image";
 
 
-interface TimelineEvent {
-  date: string;
-  title: string;
-  tag: string;
-  description: string;
-  image?: string;
-  stats?: { label: string; value: string }[];
-  features?: string[];
-}
-export default function EventTimeline({ timeline }: { timeline: TimelineEvent[] }) {
+import type { TimelineEntry } from "@/lib/initiatives";
+
+export default function EventTimeline({ timeline }: { timeline: TimelineEntry[] }) {
   const containerRef = useRef<HTMLDivElement>(null);
   
   const { scrollYProgress } = useScroll({
@@ -123,6 +116,7 @@ export default function EventTimeline({ timeline }: { timeline: TimelineEvent[] 
                             src={event.image} 
                             alt={event.title}
                             fill
+                            sizes="(min-width: 1024px) 40vw, 100vw"
                             className="object-cover transition-transform duration-700 group-hover:scale-105"
                           />
                         </div>

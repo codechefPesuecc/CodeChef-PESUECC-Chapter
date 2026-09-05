@@ -1,6 +1,33 @@
 import Reveal from "@/components/Reveal";
-import { timeline } from "./data";
 import { SectionIntro } from "./Shared";
+
+const TIMELINE_STEPS = [
+  {
+    step: "01",
+    title: "Ideate",
+    body: "Start with a campus problem: learning gaps, contest friction, event scale, or solver motivation.",
+  },
+  {
+    step: "02",
+    title: "Build",
+    body: "Turn the idea into a usable system with tight scopes, real interfaces, and measurable outcomes.",
+  },
+  {
+    step: "03",
+    title: "Test",
+    body: "Put it in front of students early, observe failure modes, and tune the experience before launch.",
+  },
+  {
+    step: "04",
+    title: "Launch",
+    body: "Run the initiative as a live operation with clear ownership, support loops, and technical monitoring.",
+  },
+  {
+    step: "05",
+    title: "Iterate",
+    body: "Fold learnings back into the next event, platform release, or competitive programming track.",
+  },
+];
 
 export function BuildTimeline() {
   return (
@@ -17,7 +44,7 @@ export function BuildTimeline() {
           className="absolute left-12 top-8 h-[calc(100%-4rem)] w-px bg-hairline lg:left-12 lg:top-20 lg:h-px lg:w-[calc(100%-6rem)]"
         />
         <div className="grid gap-8 lg:grid-cols-5 lg:gap-5">
-          {timeline.map((item, i) => (
+          {TIMELINE_STEPS.map((item, i) => (
             <Reveal key={item.step} delay={i * 0.06}>
               <article className="relative pl-12 lg:pl-0 lg:pt-12">
                 <span className="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full border border-bronze/35 bg-panel font-mono text-[10px] font-bold text-bronze shadow-sm">

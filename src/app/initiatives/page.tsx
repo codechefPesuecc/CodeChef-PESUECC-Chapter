@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { InitiativesHero } from "./components/InitiativesHero";
 import { ImpactStats } from "./components/ImpactStats";
+import { getAllEvents, getAllSystems } from "@/lib/initiatives";
 import dynamic from "next/dynamic";
 
 const FlagshipEvents = dynamic(() => import("./components/FlagshipEvents").then(m => m.FlagshipEvents));
@@ -15,12 +16,15 @@ export const metadata: Metadata = {
 };
 
 export default function InitiativesPage() {
+  const events = getAllEvents();
+  const systems = getAllSystems();
+
   return (
     <main className="flex-1">
       <InitiativesHero />
-      <ImpactStats />
-      <FlagshipEvents />
-      <SystemsPortfolio />
+      <ImpactStats eventsCount={events.length} systemsCount={systems.length} />
+      <FlagshipEvents events={events} />
+      <SystemsPortfolio systems={systems} />
       <BuildTimeline />
       <ClosingImpact />
     </main>
