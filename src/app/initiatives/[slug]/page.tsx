@@ -26,7 +26,7 @@ export default async function InitiativeDetail({ params }: { params: Promise<{ s
     descriptionHtml = await renderMarkdown(event.detailedExplanation);
   } catch (error) {
     console.error(`[initiatives] Markdown render error in ${event.id}:`, error);
-    descriptionHtml = `<p>${event.detailedExplanation}</p>`;
+    descriptionHtml = "";
   }
 
   return (

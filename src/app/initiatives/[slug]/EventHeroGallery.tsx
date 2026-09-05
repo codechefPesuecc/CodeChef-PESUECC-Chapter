@@ -123,6 +123,7 @@ export default function EventHeroGallery({ images, title, fallbackImage }: Props
                 type="button"
                 onClick={() => setCurrentIndex(idx)}
                 aria-label={`View photo ${idx + 1}`}
+                aria-current={isActive ? "true" : undefined}
                 className={`group relative h-16 w-24 sm:h-20 sm:w-32 shrink-0 overflow-hidden rounded-xl border transition-all duration-300 ${
                   isActive
                     ? "border-bronze ring-2 ring-bronze/50 scale-[1.02] shadow-lg"

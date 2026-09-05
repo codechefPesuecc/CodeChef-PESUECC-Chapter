@@ -14,7 +14,8 @@ const OUT = path.join(ROOT, "src", "app", "initiatives", "initiatives.manifest.j
 
 const SafeUrlSchema = z.string().refine(
   (val) => {
-    if (!val || val === "#" || val.startsWith("/") || val.startsWith("#")) return true;
+    if (!val || val === "#" || val.startsWith("#")) return true;
+    if (val.startsWith("/") && !val.startsWith("//")) return true;
     try {
       const parsed = new URL(val);
       return ["http:", "https:", "mailto:"].includes(parsed.protocol);
@@ -145,8 +146,8 @@ export function buildInitiativesManifest() {
       const { data, content } = matter(raw);
 
       const dataWithFallback = {
-        id: data.id || fallbackId,
         ...data,
+        id: data?.id || fallbackId,
       };
 
       const result = EventFrontmatterSchema.safeParse(dataWithFallback);
@@ -187,8 +188,8 @@ export function buildInitiativesManifest() {
       const { data } = matter(raw);
 
       const dataWithFallback = {
-        id: data.id || fallbackId,
         ...data,
+        id: data?.id || fallbackId,
       };
 
       const result = SystemFrontmatterSchema.safeParse(dataWithFallback);
