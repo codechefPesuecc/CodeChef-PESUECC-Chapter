@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { sql } from "drizzle-orm";
 import { getDb } from "@/server/db";
-import { judgeQueueStats, judgeHealth } from "@/lib/judge";
+import { judgeHealth } from "@/lib/judge";
 
-// Always run at request time � this checks live dependencies.
+// Always run at request time — this checks live dependencies.
 export const dynamic = "force-dynamic";
 
 /**
@@ -39,7 +39,7 @@ export async function GET() {
 
   const ok = checks.db && checks.judge;
   return NextResponse.json(
-    { ok, ...checks, judgeQueue: judgeQueueStats(), at: new Date().toISOString() },
+    { ok, ...checks, at: new Date().toISOString() },
     { status: ok ? 200 : 503 },
   );
 }
