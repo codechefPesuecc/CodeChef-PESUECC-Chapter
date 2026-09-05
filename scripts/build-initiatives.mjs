@@ -80,6 +80,8 @@ const WinnerMemberSchema = z.object({
 const WinnerSchema = z.object({
   team: z.string().min(1, "Team name is required"),
   achievement: z.string().default("Podium Finisher"),
+  track: z.string().optional(),
+  badge: z.string().optional(),
   heroImage: z.string().default("/dev-team.jpg"),
   members: z.array(WinnerMemberSchema).default([]),
   experience: z.string().default(""),
