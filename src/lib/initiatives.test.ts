@@ -53,4 +53,22 @@ describe("initiatives data layer", () => {
       expect(event.cardBrief.length).toBeGreaterThan(0);
     }
   });
+
+  it("supports multi-track event winners with distinct podiums", () => {
+    const algohunt = getEventBySlug("algohunt");
+    expect(algohunt).not.toBeNull();
+    expect(algohunt?.winners.length).toBeGreaterThanOrEqual(1);
+
+    const tracks = Array.from(new Set(algohunt?.winners.map((w) => w.track).filter(Boolean)));
+    expect(tracks.length).toBeGreaterThanOrEqual(2);
+
+    // Verify winners can be filtered by track and retain badges
+    const winnersWithTrack = algohunt?.winners.filter((w) => w.track);
+    expect(winnersWithTrack?.length).toBeGreaterThanOrEqual(2);
+
+    const winnerWithBadge = algohunt?.winners.find((w) => w.badge);
+    if (winnerWithBadge) {
+      expect(typeof winnerWithBadge.badge).toBe("string");
+    }
+  });
 });
