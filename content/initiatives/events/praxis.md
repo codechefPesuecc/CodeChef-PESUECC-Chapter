@@ -10,17 +10,17 @@ highlights:
   - "Demo-first judging"
   - "Production mindset"
 accent: "04"
-image: "/events/praxis-2024.jpg"
+image: "/eventsCompr/praxis2.webp"
 gallery:
   -
-    src: "/events/praxis-2024.jpg"
-    caption: "Rapid AI product ideation"
+    src: "/eventsCompr/praxis1.webp"
+    caption: "Hall Of Fame"
   -
-    src: "/dev-team.jpg"
-    caption: "Build sprint execution"
+    src: "/eventsCompr/praxis2.webp"
+    caption: "Working Under pressure"
   -
-    src: "/dev-team.jpg"
-    caption: "Final demos and judging"
+    src: "/eventsCompr/praxis3.webp"
+    caption: "Progress Report"
 href: "/initiatives/praxis"
 timeline:
   - date: "09:00 AM"
@@ -40,7 +40,7 @@ timeline:
     title: "Opening Ceremony & Problem Release"
     tag: "Ceremony"
     description: "The official kickoff. We will explain the rules, introduce the judges, and reveal the primary encrypted problem statement that unlocks the first physical checkpoint."
-    image: "/dev-team.jpg"
+    image: "/eventsCompr/praxisopen.webp"
     stats:
       - label: "Venue"
         value: "Main Auditorium"
@@ -135,4 +135,5 @@ winners:
 ---
 
 
-Praxis is designed to push developers out of tutorial hell and into the builder's mindset.
+Praxis 
+The official hackathon conducted by Codechef PESU ECC participants are given a problem statement on which they need to work on the problem statements have an intersection of real life problems and AIML the whole point is to solve problems by having AIML as a backbone 

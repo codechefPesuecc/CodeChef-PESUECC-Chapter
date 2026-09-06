@@ -10,129 +10,108 @@ highlights:
   - "Mentor-led reviews"
   - "Editorial practice"
 accent: "02"
-image: "/events/leetcode101.jpg"
+image: "/eventsCompr/leetcode101-pushkar.webp"
 gallery:
   -
-    src: "/events/leetcode101.jpg"
+    src: "/eventsCompr/leetcode101-pushkar1.webp"
     caption: "Mentor-led pattern sessions"
   -
-    src: "/dev-team.jpg"
+    src: "/eventsCompr/leetcode101.webp"
     caption: "Weekly practice cohorts"
   -
-    src: "/dev-team.jpg"
+    src: "/eventsCompr/leetcode101-sid.webp"
     caption: "Editorial review circles"
 href: "/initiatives/leetcode-101"
-timeline:
-  - date: "09:00 AM"
-    title: "Check-in & Breakfast"
-    tag: "Registration"
-    description: "Participants arrive, verify their registration, collect their badges, and get energized with a hearty breakfast before the intense competition begins."
-    stats:
-      - label: "Expected Arrival"
-        value: "800+"
-      - label: "Duration"
-        value: "60 mins"
-    features:
-      - "QR Code quick scanning"
-      - "Swag bag distribution"
 
-  - date: "10:00 AM"
-    title: "Opening Ceremony & Problem Release"
-    tag: "Ceremony"
-    description: "The official kickoff. We will explain the rules, introduce the judges, and reveal the primary encrypted problem statement that unlocks the first physical checkpoint."
-    image: "/dev-team.jpg"
-    stats:
-      - label: "Venue"
-        value: "Main Auditorium"
-    features:
-      - "Keynote by Lead Architect"
-      - "Live demonstration of the leaderboard platform"
-
-  - date: "10:30 AM"
-    title: "Checkpoint 1: The Cryptography Node"
-    tag: "Hacking"
-    description: "Teams disperse across campus to their first physical node. They must decrypt a cipher to unlock the next GPS coordinates."
-    stats:
-      - label: "Difficulty"
-        value: "Medium"
-    features:
-      - "RSA decryption puzzles"
-      - "Physical lock boxes"
-
-  - date: "01:00 PM"
-    title: "Lunch & Networking"
-    tag: "Break"
-    description: "A mandatory cool-down period where teams can refuel, discuss strategies with mentors, and check the global standings."
-    
-  - date: "02:00 PM"
-    title: "Checkpoint 2: The Hardware Node"
-    tag: "Hacking"
-    description: "The final sprint. Teams must interface their laptops with custom ESP32 hardware modules placed around the campus to execute their final algorithms."
-    image: "/dev-team.jpg"
-    stats:
-      - label: "Elimination"
-        value: "Bottom 50%"
-    features:
-      - "Arduino / ESP32 interfacing"
-      - "Reverse engineering binaries"
-
-  - date: "05:00 PM"
-    title: "Closing Ceremony & Winners"
-    tag: "Ceremony"
-    description: "The leaderboard freezes. We announce the top 3 teams, distribute prizes, and conclude the event with closing remarks from our sponsors."
-    stats:
-      - label: "Prize Pool"
-        value: "$5,000"
-
-mentors:
-  - name: "Aditya Raj"
-    role: "Lead Architect"
-    photo: "/dev-team.jpg"
-    linkedin: "https://linkedin.com"
-  - name: "Aniket Barun"
-    role: "Problem Setter"
-    photo: "/dev-team.jpg"
-    linkedin: "https://linkedin.com"
-  - name: "Shivansh"
-    role: "Platform Engineer"
-    photo: "/dev-team.jpg"
-    linkedin: "https://linkedin.com"
-
-winners:
-  - team: "Team Enigma"
-    achievement: "1st Place Champions"
-    heroImage: "/dev-team.jpg"
-    members:
-      - name: "Alex Chen"
-        linkedin: "https://linkedin.com"
-      - name: "Sarah Jenkins"
-        linkedin: "https://linkedin.com"
-      - name: "Rahul Patel"
-        linkedin: "https://linkedin.com"
-    experience: "The combination of algorithmic thinking and sprinting across campus was unparalleled. We spent 20 minutes debugging Dijkstra while physically standing in the rain at the final checkpoint. It pushed us to our absolute limits!"
-  
-  - team: "Runtime Terrors"
-    achievement: "2nd Place Runner Ups"
-    heroImage: "/dev-team.jpg"
-    members:
-      - name: "David Kim"
-        linkedin: "https://linkedin.com"
-      - name: "Priya Singh"
-        linkedin: "https://linkedin.com"
-    experience: "We lost our lead because we forgot a semicolon in the cryptography round, but making up the time during the campus sprint was thrilling."
-
-  - team: "O(1) Braincells"
-    achievement: "3rd Place"
-    heroImage: "/dev-team.jpg"
-    members:
-      - name: "Michael Chang"
-        linkedin: "https://linkedin.com"
-      - name: "Emily Watson"
-        linkedin: "https://linkedin.com"
-      - name: "Zack Taylor"
-        linkedin: "https://linkedin.com"
-    experience: "Getting onto the podium was incredible. The hardware node reverse engineering completely blew our minds. Best event of the year!"
 ---
 
+LeetCode 101 is our flagship mentorship program designed to help students build a strong foundation in data structures, algorithms, and problem-solving.
 
-LeetCode 101 is our flagship mentorship program engineered to systematically break down data structures and algorithms.
+## What is LeetCode 101?
+
+LeetCode 101 is a guided learning program focused on developing the problem-solving habits required for competitive programming and technical interviews.
+
+Instead of treating problem solving as a collection of tricks to memorize, the program focuses on understanding the patterns behind problems and learning how to recognize those patterns when encountering something new.
+
+The sessions introduce students to online judges such as LeetCode and Codeforces and gradually move from fundamental concepts toward more structured problem solving.
+
+## What We Focus On
+
+### Data Structures
+
+We build a practical understanding of the data structures that appear frequently in programming problems.
+
+The emphasis is not simply on learning what a data structure is, but on understanding **when and why** it should be used.
+
+Students learn to reason about structures such as arrays, strings, stacks, queues, hash maps, trees, and graphs through problems and examples.
+
+### Problem-Solving Patterns
+
+A major part of LeetCode 101 is learning to recognize recurring patterns.
+
+Rather than memorizing individual solutions, students learn to ask:
+
+- What information do I need to keep track of?
+- Can I reduce the number of operations?
+- Can a known data structure simplify the problem?
+- Is there a relationship between the current state and previous states?
+- How does my approach scale as the input grows?
+
+### Complexity and Optimization
+
+A correct solution is only the beginning.
+
+We compare different approaches and examine their time and space complexity. Students learn to identify unnecessary work and understand why an optimized solution performs better.
+
+## Learning Through Problems
+
+The program is built around solving problems rather than passively watching explanations.
+
+A typical problem-solving cycle is:
+
+1. Understand the problem.
+2. Break it into smaller parts.
+3. Develop possible approaches.
+4. Implement a solution.
+5. Analyze its complexity.
+6. Compare alternative approaches.
+7. Review the reasoning behind the solution.
+
+This creates a repeatable process for approaching unfamiliar problems.
+
+## Mentor-Led Reviews
+
+Mentorship is an important part of the program.
+
+During reviews, solutions are discussed beyond simply asking whether they pass. We look at the chosen approach, implementation, complexity, clarity, and possible improvements.
+
+The objective is to turn every solved problem into a learning opportunity.
+
+## Editorial Practice
+
+Understanding a solution is different from being able to explain it.
+
+LeetCode 101 introduces students to reading and writing problem editorials, with an emphasis on explaining the key observation, describing the algorithm, and reasoning about its complexity.
+
+## From Foundations to Competitive Programming
+
+LeetCode 101 provides the foundation for students who want to continue deeper into competitive programming.
+
+The focus is on developing habits that make future learning easier:
+
+- consistent problem solving
+- recognizing algorithmic patterns
+- analyzing complexity
+- learning from failed approaches
+- reviewing and improving solutions
+- communicating technical reasoning
+
+The goal is not simply to complete a fixed list of problems. It is to develop a problem-solving mindset that students can carry into more advanced challenges.
+
+## Start With the Problem, Not the Solution
+
+Problem solving is a skill that improves through deliberate practice.
+
+Every difficult problem is an opportunity to identify a new pattern, question an existing approach, and become better at breaking down unfamiliar problems.
+
+LeetCode 101 provides the structure, mentorship, and practice environment to make that process consistent.
