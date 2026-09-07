@@ -14,15 +14,21 @@ import { scoreChallenge, type ScoreInput } from "@/lib/scoring";
 
 export interface LeaderRow {
   rank: number | null; // null = flagged / out of the ranked positions
-  // Public board identity: SRN if the student has one, else PRN. The login handle
-  // (username) and email are intentionally not exposed on the board.
+  // Match key and the Solver column: the username (NOT NULL + UNIQUE, so it is also
+  // a stable React key). The board additionally shows the student's name and SRN.
   display: string;
+  name: string | null; // Name column — nullable, added after launch
+  identity: string; // SRN column, falling back to PRN when no SRN is set yet
   points: number;
   flagged: boolean;
   solved?: number; // month / all-time
   language?: string; // today
   timeSeconds?: number | null; // today (server-computed solve duration)
 }
+
+// Fallback for the (unreachable) case of a scored userId with no joined user row —
+// the queries INNER JOIN users, so every scored id has one.
+const UNKNOWN_SOLVER = { display: "unknown", name: null, identity: "—" };
 
 /** Today's problem: solve-time standings with the speed-bounty points (fastest arena
  * timer ranks first). Only live (ranked) accepted solves count — a past-problem
@@ -39,6 +45,8 @@ export async function todayLeaderboard(): Promise<LeaderRow[]> {
       flags: submissions.flags,
       elapsedSeconds: submissions.elapsedSeconds,
       language: submissions.language,
+      username: users.username,
+      name: users.name,
       srn: users.srn,
       prn: users.prn,
     })
@@ -52,7 +60,12 @@ export async function todayLeaderboard(): Promise<LeaderRow[]> {
       ),
     );
 
-  const displayById = new Map(rows.map((r) => [r.userId, r.srn ?? r.prn]));
+  const byUser = new Map(
+    rows.map((r) => [
+      r.userId,
+      { display: r.username, name: r.name, identity: r.srn ?? r.prn },
+    ]),
+  );
   // Earliest live AC per user carries the language + solve time we display.
   const firstByUser = new Map<string, (typeof rows)[number]>();
   for (const r of rows) {
@@ -74,7 +87,7 @@ export async function todayLeaderboard(): Promise<LeaderRow[]> {
     const first = firstByUser.get(userId);
     return {
       rank: s.rank,
-      display: displayById.get(userId) ?? "unknown",
+      ...(byUser.get(userId) ?? UNKNOWN_SOLVER),
       points: s.points,
       flagged: s.flagged,
       language: first?.language,
@@ -115,6 +128,8 @@ function fetchAggregateRows() {
       flags: submissions.flags,
       ranked: submissions.ranked,
       date: challenges.date,
+      username: users.username,
+      name: users.name,
       srn: users.srn,
       prn: users.prn,
     })
@@ -146,7 +161,12 @@ async function getAggregateRows(): Promise<AggregateRow[]> {
 export async function aggregateLeaderboard(scope: "month" | "all"): Promise<LeaderRow[]> {
   const rows = await getAggregateRows();
 
-  const displayById = new Map(rows.map((r) => [r.userId, r.srn ?? r.prn]));
+  const byUser = new Map(
+    rows.map((r) => [
+      r.userId,
+      { display: r.username, name: r.name, identity: r.srn ?? r.prn },
+    ]),
+  );
 
   const bySlug = new Map<string, { date: string | null; acs: ScoreInput[] }>();
   for (const r of rows) {
@@ -175,7 +195,7 @@ export async function aggregateLeaderboard(scope: "month" | "all"): Promise<Lead
 
   const out: LeaderRow[] = [...totals.entries()].map(([userId, t]) => ({
     rank: 0,
-    display: displayById.get(userId) ?? "unknown",
+    ...(byUser.get(userId) ?? UNKNOWN_SOLVER),
     points: t.points,
     solved: t.solved,
     flagged: false,

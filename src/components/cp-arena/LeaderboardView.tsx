@@ -219,7 +219,7 @@ export default function LeaderboardView() {
           <LeaderboardTable
             rows={processedRows}
             scope={scope}
-            currentIdentity={user ? user.srn ?? user.prn : undefined}
+            currentIdentity={user?.username}
           />
         )}
       </MechaPanel>

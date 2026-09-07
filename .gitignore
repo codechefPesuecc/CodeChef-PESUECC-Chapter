@@ -40,6 +40,10 @@ docs/DUAL_TOKEN_ARCHITECTURE.md
 # challenge authoring source — problems (incl. hidden tests) live in the database,
 # not the repo. Kept locally to seed with `npm run challenges:seed`; not committed.
 /challenges/*.json
+# …except the authoring template, which carries no real hidden tests and is the
+# starting point contributors copy. The seed script skips EXAMPLE*.json so it is
+# never published to the database.
+!/challenges/EXAMPLE.json
 
 # misc
 .DS_Store
@@ -80,3 +84,4 @@ AGENTS.md
 .aider*
 .windsurf/
 .gemini/
+.env.bak-*

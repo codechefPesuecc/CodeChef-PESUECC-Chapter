@@ -6,8 +6,12 @@ export type LeaderScope = "today" | "month" | "all";
 
 export interface LeaderRow {
   rank: number | null;
-  /** Public board identity: SRN if present, else PRN (never the username/email). */
+  /** Match key + Solver column: the username (NOT NULL + UNIQUE). */
   display: string;
+  /** Name column — nullable, so render a placeholder when absent. */
+  name: string | null;
+  /** SRN column, falling back to PRN when the student has no SRN yet. */
+  identity: string;
   points: number;
   flagged: boolean;
   solved?: number;
@@ -37,11 +41,13 @@ export default function LeaderboardTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[520px] text-sm">
+      <table className="w-full min-w-[720px] text-sm">
         <thead>
           <tr className="text-left font-mono text-[11px] uppercase tracking-wider text-charcoal/45 ">
             <th className="px-6 py-3 font-medium">#</th>
             <th className="px-3 py-3 font-medium">Solver</th>
+            <th className="px-3 py-3 font-medium">Name</th>
+            <th className="px-3 py-3 font-medium">SRN</th>
             {isToday ? (
               <>
                 <th className="px-3 py-3 font-medium">Lang</th>
@@ -82,7 +88,7 @@ export default function LeaderboardTable({
                       {r.display.slice(0, 2).toUpperCase()}
                     </span>
                     <span className="flex items-center gap-2 font-semibold text-chocolate ">
-                      {r.display}
+                      @{r.display}
                       {r.flagged && (
                         <span className="mecha-chip bg-red-500/15 text-red-600 dark:text-red-400">
                           Flagged
@@ -95,6 +101,10 @@ export default function LeaderboardTable({
                       )}
                     </span>
                   </div>
+                </td>
+                <td className="px-3 py-3 text-charcoal/70 ">{r.name ?? "—"}</td>
+                <td className="px-3 py-3 font-mono text-charcoal/70 ">
+                  {r.identity}
                 </td>
                 {isToday ? (
                   <>

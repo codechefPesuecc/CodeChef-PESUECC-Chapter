@@ -23,11 +23,17 @@ upload the `.json` file — and it fills the whole form for you to review, then 
 Each problem is **one JSON file** containing everything: the statement, the samples,
 the **hidden tests**, and the checker. These files are the authoring source —
 they're **git-ignored** (so the hidden tests never enter the public repo) and loaded
-into D1 with the seed script. Keep them somewhere private to the setting team.
+into D1 with the seed script. Keep them somewhere private to the setting team. The
+single exception is [`EXAMPLE.json`](./EXAMPLE.json), the authoring template, which
+carries no real hidden tests and is committed on purpose.
 
-1. Copy an existing file (or the [example](#example) below) as a starting point.
-2. Name it `YYYY-MM-DD-kebab-title.json`, where the date is the day it should go
-   live.
+1. Copy **[`EXAMPLE.json`](./EXAMPLE.json)** — the committed authoring template. It
+   is a complete, valid problem that exercises every field, so start there rather
+   than from a blank file. (It is the one `.json` in this folder that *is* checked
+   in; the seed script skips `EXAMPLE*.json`, so it never reaches the database.)
+2. Name your copy `YYYY-MM-DD-kebab-title.json`, where the date is the day it
+   should go live, and add a matching `"date"` field — the template deliberately
+   omits it, which leaves a problem unscheduled (see `date` below).
 3. Validate: `npm run challenges:validate`.
 4. Seed it into the database: `npm run challenges:seed` (local dev DB) or
    `npm run challenges:seed -- --target remote` (production D1).
@@ -45,7 +51,7 @@ same file.)
 | `title` | ✓ | Display title. |
 | `difficulty` | – | One of `Easy`, `Medium`, `Hard`, `Unrated`. |
 | `tags` | – | Array of strings. |
-| `date` | ✓ | `YYYY-MM-DD`, a real calendar date. Release day (IST). |
+| `date` | – | `YYYY-MM-DD`, a real calendar date — the release day (IST). **Omit it** to leave the problem in the pool: unscheduled, hidden and unsolvable until an admin schedules it. |
 | `timeLimit` | – | e.g. `"1s"`, `"500ms"`. Enforced by the judge (TLE). |
 | `memoryLimit` | – | Display only for now, e.g. `"256 MB"`. |
 | `author` | – | Credit line. |
@@ -61,7 +67,9 @@ a past problem solved for practice earns a flat base score.
 
 ## Example
 
-A complete, minimal problem:
+[`EXAMPLE.json`](./EXAMPLE.json) is the file to copy. Below is a second, deliberately
+tiny problem showing the smallest thing that validates — a scheduled one, so it also
+shows `date` in place:
 
 ```json
 {

@@ -43,7 +43,12 @@ function parseTarget(): "local" | "remote" {
 async function loadRows(): Promise<NewChallengeRow[]> {
   let files: string[];
   try {
-    files = fs.readdirSync(CHALLENGES_DIR).filter((f) => f.endsWith(".json"));
+    // EXAMPLE*.json is the committed authoring template, not a real problem. It is
+    // still validated (`npm run challenges:validate`) so it can't rot, but it must
+    // never be published — otherwise every seed would push a dummy row to D1.
+    files = fs
+      .readdirSync(CHALLENGES_DIR)
+      .filter((f) => f.endsWith(".json") && !f.startsWith("EXAMPLE"));
   } catch {
     console.error(`No challenges directory at ${CHALLENGES_DIR}`);
     process.exit(1);
