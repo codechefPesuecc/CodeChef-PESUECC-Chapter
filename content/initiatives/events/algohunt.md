@@ -19,16 +19,16 @@ gallery:
   - src: "/eventsCompr/algohunt3.webp"
     caption: "The team"
 href: "/initiatives/algohunt"
+
 winners:
   # ============================================================
-  #  EASY TRACK
+  # EASY TRACK
   # ============================================================
 
   - team: "Venkata Srivaibhav Nukaraju, Kritheesh N V, Maaya Mohan, Krish Arun"
     track: "Easy Track"
     badge: "Easy Track Champions"
     achievement: "1st Place Champions"
-    
     members:
       - name: "Venkata Srivaibhav Nukaraju"
       - name: "Kritheesh N V"
@@ -38,7 +38,6 @@ winners:
   - team: "Sreehaas Vangara, Rithvik R, Sahil Shirish Badgujar, Yashas C Sathal"
     track: "Easy Track"
     achievement: "2nd Place Runner-Up"
-    
     members:
       - name: "Sreehaas Vangara"
       - name: "Rithvik R"
@@ -48,98 +47,45 @@ winners:
   - team: "Achyuth Jois M, Suchita R Reddy, Greeshma N Shetty, Charan Reddy K N"
     track: "Easy Track"
     achievement: "3rd Place Podium"
-    
     members:
       - name: "Achyuth Jois M"
       - name: "Suchita R Reddy"
       - name: "Greeshma N Shetty"
       - name: "Charan Reddy K N"
 
-
   # ============================================================
-  #  ADVANCED TRACK
+  # ADVANCED TRACK
   # ============================================================
 
-winners:
-  # ==========================================
-  # 🟢 EASY TRACK (1st, 2nd, 3rd)
-  # ==========================================
-  - team: "Binary Beasts"
-    track: "Easy Track"
-    badge: "Easy Track Champions"
+  - team: "Sriniket Deeduvanu, Sushant Hiremath, Surya R Naik, Arpan Gupta"
+    track: "Advanced Track"
+    badge: "Advanced Track Champions"
     achievement: "1st Place Champions"
-    heroImage: "/dev-team.jpg"
     members:
-      - name: "Aarav Sharma"
-        linkedin: "https://linkedin.com"
-      - name: "Tanvi Rao"
-        linkedin: "https://linkedin.com"
-      - name: "Kavya Nair"
-        linkedin: "https://linkedin.com"
-    experience: "As freshers, navigating the checkpoints while writing clean Python scripts was an adrenaline rush. Winning the Easy Track boosted our confidence tremendously!"
+      - name: "Sriniket Deeduvanu"
+      - name: "Sushant Hiremath"
+      - name: "Surya R Naik"
+      - name: "Arpan Gupta"
 
-  - team: "Syntax Strikers"
-    track: "Easy Track"
+  - team: "Ayush, Bismun, Kishan, Mayank"
+    track: "Advanced Track"
     achievement: "2nd Place Runner-Up"
-    heroImage: "/dev-team.jpg"
     members:
-      - name: "Rohan Gupta"
-        linkedin: "https://linkedin.com"
-      - name: "Meera Iyer"
-        linkedin: "https://linkedin.com"
-    experience: "We were neck-and-neck until the final checkpoint puzzle. A memorable 2nd place finish!"
+      - name: "Ayush"
+      - name: "Bismun"
+      - name: "Kishan"
+      - name: "Mayank"
 
-  - team: "Bug Squishers"
-    track: "Easy Track"
+  - team: "Sai Jaswanth Akula, Jeel Nada"
+    track: "Advanced Track"
     achievement: "3rd Place Podium"
-    heroImage: "/dev-team.jpg"
     members:
-      - name: "Arjun Verma"
-        linkedin: "https://linkedin.com"
-      - name: "Sneha Reddy"
-        linkedin: "https://linkedin.com"
-    experience: "Cracking the sliding window problem under time pressure was electric. So proud of our podium spot!"
-
-  # ==========================================
-  # ⚡ TOUGH TRACK (1st, 2nd, 3rd)
-  # ==========================================
-  - team: "Team Enigma"
-    track: "Tough Track"
-    badge: "Tough Track Champions"
-    achievement: "1st Place Champions"
-    
-    members:
-      - name: "Alex Chen"
-        linkedin: "https://linkedin.com"
-      - name: "Sarah Jenkins"
-        linkedin: "https://linkedin.com"
-      - name: "Rahul Patel"
-        linkedin: "https://linkedin.com"
-    experience: "The combination of advanced graph algorithms and sprinting across campus in the rain was unparalleled. It pushed our debugging limits to the extreme!"
-  
-  - team: "Circuit Breakers"
-    track: "Tough Track"
-    achievement: "2nd Place Runner-Up"
-    heroImage: "/dev-team.jpg"
-    members:
-      - name: "David Kim"
-        linkedin: "https://linkedin.com"
-      - name: "Priya Singh"
-        linkedin: "https://linkedin.com"
-    experience: "Reverse-engineering the physical ESP32 node while decoding ciphertexts was hands-down the coolest challenge we have ever tackled."
-
-  - team: "O(1) Braincells"
-    track: "Tough Track"
-    achievement: "3rd Place Podium"
-    heroImage: "/dev-team.jpg"
-    members:
-      - name: "Michael Chang"
-        linkedin: "https://linkedin.com"
-      - name: "Emily Watson"
-        linkedin: "https://linkedin.com"
-      - name: "Zack Taylor"
-        linkedin: "https://linkedin.com"
-    experience: "Standing on the Tough Track podium against the sharpest minds on campus was incredible. Worth every drop of sweat!"
+      - name: "Sai Jaswanth Akula"
+      - name: "Jeel Nada"
 ---
 
-AlgoHunt transforms competitive programming into a high-octane physical reality. AlgoHunt happens during Maya (The Official Fest of PESUECC). AlgoHunt is a CP event designed in the form of a treasure hunt half of the team would be searching for a key arround the campus the other members would be working on a CP question .There is a Easy track for beginers and an Advnaced Track for the experienced .
+AlgoHunt transforms competitive programming into a high-octane physical reality.
+
+AlgoHunt happens during Maya (The Official Fest of PESUECC). AlgoHunt is a CP event designed in the form of a treasure hunt. Half of the team searches for a key around the campus while the other members work on a competitive programming problem.
+
+There is an **Easy Track** for beginners and an **Advanced Track** for experienced competitive programmers.

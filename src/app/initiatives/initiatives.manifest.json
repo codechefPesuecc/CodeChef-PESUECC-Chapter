@@ -274,6 +274,8 @@
         {
           "team": "Venkata Srivaibhav Nukaraju, Kritheesh N V, Maaya Mohan, Krish Arun",
           "achievement": "1st Place Champions",
+          "track": "Easy Track",
+          "badge": "Easy Track Champions",
           "heroImage": "/dev-team.jpg",
           "members": [
             {
@@ -294,6 +296,7 @@
         {
           "team": "Sreehaas Vangara, Rithvik R, Sahil Shirish Badgujar, Yashas C Sathal",
           "achievement": "2nd Place Runner-Up",
+          "track": "Easy Track",
           "heroImage": "/dev-team.jpg",
           "members": [
             {
@@ -314,6 +317,7 @@
         {
           "team": "Achyuth Jois M, Suchita R Reddy, Greeshma N Shetty, Charan Reddy K N",
           "achievement": "3rd Place Podium",
+          "track": "Easy Track",
           "heroImage": "/dev-team.jpg",
           "members": [
             {
@@ -332,74 +336,10 @@
           "experience": ""
         },
         {
-          "name": "Shivansh",
-          "role": "Platform Engineer",
-          "photo": "/dev-team.jpg",
-          "linkedin": "https://linkedin.com"
-        }
-      ],
-      "winners": [
-        {
-          "team": "Binary Beasts",
+          "team": "Sriniket Deeduvanu, Sushant Hiremath, Surya R Naik, Arpan Gupta",
           "achievement": "1st Place Champions",
-          "track": "Easy Track",
-          "badge": "Easy Track Champions",
-          "heroImage": "/dev-team.jpg",
-          "members": [
-            {
-              "name": "Aarav Sharma",
-              "linkedin": "https://linkedin.com"
-            },
-            {
-              "name": "Tanvi Rao",
-              "linkedin": "https://linkedin.com"
-            },
-            {
-              "name": "Kavya Nair",
-              "linkedin": "https://linkedin.com"
-            }
-          ],
-          "experience": "As freshers, navigating the checkpoints while writing clean Python scripts was an adrenaline rush. Winning the Easy Track boosted our confidence tremendously!"
-        },
-        {
-          "team": "Syntax Strikers",
-          "achievement": "2nd Place Runner-Up",
-          "track": "Easy Track",
-          "heroImage": "/dev-team.jpg",
-          "members": [
-            {
-              "name": "Rohan Gupta",
-              "linkedin": "https://linkedin.com"
-            },
-            {
-              "name": "Meera Iyer",
-              "linkedin": "https://linkedin.com"
-            }
-          ],
-          "experience": "We were neck-and-neck until the final checkpoint puzzle. A memorable 2nd place finish!"
-        },
-        {
-          "team": "Bug Squishers",
-          "achievement": "3rd Place Podium",
-          "track": "Easy Track",
-          "heroImage": "/dev-team.jpg",
-          "members": [
-            {
-              "name": "Arjun Verma",
-              "linkedin": "https://linkedin.com"
-            },
-            {
-              "name": "Sneha Reddy",
-              "linkedin": "https://linkedin.com"
-            }
-          ],
-          "experience": "Cracking the sliding window problem under time pressure was electric. So proud of our podium spot!"
-        },
-        {
-          "team": "Team Enigma",
-          "achievement": "1st Place Champions",
-          "track": "Tough Track",
-          "badge": "Tough Track Champions",
+          "track": "Advanced Track",
+          "badge": "Advanced Track Champions",
           "heroImage": "/dev-team.jpg",
           "members": [
             {
@@ -415,12 +355,12 @@
               "name": "Arpan Gupta"
             }
           ],
-          "experience": "The combination of advanced graph algorithms and sprinting across campus in the rain was unparalleled. It pushed our debugging limits to the extreme!"
+          "experience": ""
         },
         {
-          "team": "Circuit Breakers",
+          "team": "Ayush, Bismun, Kishan, Mayank",
           "achievement": "2nd Place Runner-Up",
-          "track": "Tough Track",
+          "track": "Advanced Track",
           "heroImage": "/dev-team.jpg",
           "members": [
             {
@@ -436,12 +376,12 @@
               "name": "Mayank"
             }
           ],
-          "experience": "Reverse-engineering the physical ESP32 node while decoding ciphertexts was hands-down the coolest challenge we have ever tackled."
+          "experience": ""
         },
         {
-          "team": "O(1) Braincells",
+          "team": "Sai Jaswanth Akula, Jeel Nada",
           "achievement": "3rd Place Podium",
-          "track": "Tough Track",
+          "track": "Advanced Track",
           "heroImage": "/dev-team.jpg",
           "members": [
             {
@@ -451,11 +391,11 @@
               "name": "Jeel Nada"
             }
           ],
-          "experience": "Standing on the Tough Track podium against the sharpest minds on campus was incredible. Worth every drop of sweat!"
+          "experience": ""
         }
       ],
-      "cardBrief": "AlgoHunt transforms competitive programming into a high-octane physical reality. AlgoHunt happens during Maya (The Official Fest of PESUECC). AlgoHunt is a CP event designed in the form of a treasure hunt half of the team would be searching for a key arround...",
-      "detailedExplanation": "AlgoHunt transforms competitive programming into a high-octane physical reality. AlgoHunt happens during Maya (The Official Fest of PESUECC). AlgoHunt is a CP event designed in the form of a treasure hunt half of the team would be searching for a key arround the campus the other members would be working on a CP question .There is a Easy track for beginers and an Advnaced Track for the experienced ."
+      "cardBrief": "AlgoHunt transforms competitive programming into a high-octane physical reality. AlgoHunt happens during Maya (The Official Fest of PESUECC). AlgoHunt is a CP event designed in the form of a treasure hunt. Half of the team searches for a key around the campus...",
+      "detailedExplanation": "AlgoHunt transforms competitive programming into a high-octane physical reality.\n\nAlgoHunt happens during Maya (The Official Fest of PESUECC). AlgoHunt is a CP event designed in the form of a treasure hunt. Half of the team searches for a key around the campus while the other members work on a competitive programming problem.\n\nThere is an **Easy Track** for beginners and an **Advanced Track** for experienced competitive programmers."
     },
     {
       "id": "praxis",
