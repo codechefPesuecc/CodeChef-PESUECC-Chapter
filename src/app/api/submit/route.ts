@@ -188,7 +188,7 @@ export async function POST(req: Request) {
       try {
         const { todayLeaderboard } = await import("@/server/leaderboard");
         const board = await todayLeaderboard();
-        const me = board.find((r) => r.display === (user.srn ?? user.prn));
+        const me = board.find((r) => r.display === user.username);
         return NextResponse.json({
           ok: true,
           practice: false,

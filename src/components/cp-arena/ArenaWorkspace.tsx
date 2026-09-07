@@ -501,7 +501,7 @@ export default function ArenaWorkspace({
           setBoard(rows);
 
           if (rank == null && points == null) {
-            const me = rows.find((r) => r.display === (user.srn ?? user.prn));
+            const me = rows.find((r) => r.display === user.username);
             rank = me?.rank ?? null;
             points = me?.points ?? (flagsNow > FLAG_LIMIT ? BASE_POINTS : null);
             flagged = me?.flagged ?? flagsNow > FLAG_LIMIT;

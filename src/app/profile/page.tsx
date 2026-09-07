@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/server/auth/session";
 import { getUserSubmissions, getProfileStats } from "@/server/profile";
 import { FLAG_LIMIT, ordinal } from "@/lib/points";
 import MechaPanel from "@/components/cp-arena/MechaPanel";
+import ProfileEditForm from "@/components/profile/ProfileEditForm";
 
 export const metadata: Metadata = {
   title: "Your profile",
@@ -43,7 +44,7 @@ export default async function ProfilePage() {
   if (!user) redirect("/login");
 
   const subs = await getUserSubmissions(user.id);
-  const stats = await getProfileStats(user.srn ?? user.prn, subs.length);
+  const stats = await getProfileStats(user.username, subs.length);
 
   return (
     <main className="flex-1">
@@ -97,15 +98,17 @@ export default async function ProfilePage() {
               </Link>
             )}
           </DetailRow>
-          <DetailRow label="PRN">
-            <span className="font-mono text-charcoal/80">{user.prn}</span>
-          </DetailRow>
-          <DetailRow label="SRN">
-            <span className="font-mono text-charcoal/80">
-              {user.srn ?? "—"}
-            </span>
-          </DetailRow>
           </div>
+          {/* Name / username / PRN / SRN are editable — a student who registered
+              before their SRN was assigned can fill it in here. */}
+          <ProfileEditForm
+            user={{
+              name: user.name,
+              username: user.username,
+              srn: user.srn,
+              prn: user.prn,
+            }}
+          />
         </MechaPanel>
 
         {/* Stats */}

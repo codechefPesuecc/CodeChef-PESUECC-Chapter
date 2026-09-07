@@ -104,7 +104,7 @@
       // becomes a past problem (reviewable in the archive). Show the result instead.
       if (await hasSolvedRanked(user.id, slug)) {
         const board = await todayLeaderboard();
-        const me = board.find((r) => r.display === (user.srn ?? user.prn));
+        const me = board.find((r) => r.display === user.username);
         return (
           <main className="flex flex-1 items-center justify-center px-6 py-32 text-center">
             <div className="max-w-md">
