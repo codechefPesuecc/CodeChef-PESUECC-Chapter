@@ -40,30 +40,7 @@ export default async function AdminPage() {
 
   return (
     <main className="flex-1">
-      <section className="mx-auto max-w-4xl px-6 pt-6 pb-24">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-          <nav className="flex gap-4">
-            <Link
-              href="/admin"
-              className="font-mono text-xs uppercase tracking-wider font-medium text-chocolate hover:text-bronze transition"
-            >
-              CP Arena
-            </Link>
-            <Link
-              href="/admin/teachers"
-              className="font-mono text-xs uppercase tracking-wider font-medium text-charcoal/60 hover:text-chocolate transition"
-            >
-              Teachers
-            </Link>
-            <Link
-              href="/admin/users"
-              className="font-mono text-xs uppercase tracking-wider font-medium text-charcoal/60 hover:text-chocolate transition"
-            >
-              Users
-            </Link>
-          </nav>
-        </div>
-
+      <section className="mx-auto max-w-4xl px-6 pb-24">
         {/* Teacher Management Card */}
         <div className="mb-8 p-6 rounded-2xl border border-hairline bg-blue-50/40 dark:bg-blue-900/20">
           <div className="flex items-start justify-between">
