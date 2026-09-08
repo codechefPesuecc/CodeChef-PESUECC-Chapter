@@ -10,16 +10,16 @@ highlights:
   - "Demo-first judging"
   - "Production mindset"
 accent: "04"
-image: "/eventsCompr/praxis2.webp"
+image: "/events/praxis2.webp"
 gallery:
   -
-    src: "/eventsCompr/praxis1.webp"
+    src: "/events/praxis1.webp"
     caption: "Hall Of Fame"
   -
-    src: "/eventsCompr/praxis2.webp"
+    src: "/events/praxis2.webp"
     caption: "Working Under pressure"
   -
-    src: "/eventsCompr/praxis3.webp"
+    src: "/events/praxis3.webp"
     caption: "Progress Report"
 href: "/initiatives/praxis"
 timeline:
@@ -40,7 +40,7 @@ timeline:
     title: "Opening Ceremony & Problem Release"
     tag: "Ceremony"
     description: "The official kickoff. We will explain the rules, introduce the judges, and reveal the primary encrypted problem statement that unlocks the first physical checkpoint."
-    image: "/eventsCompr/praxisopen.webp"
+    image: "/events/praxisopen.webp"
     stats:
       - label: "Venue"
         value: "Main Auditorium"
@@ -135,5 +135,60 @@ winners:
 ---
 
 
-Praxis 
-The official hackathon conducted by Codechef PESU ECC participants are given a problem statement on which they need to work on the problem statements have an intersection of real life problems and AIML the whole point is to solve problems by having AIML as a backbone 
+## About Praxis
+
+Praxis is the official hackathon conducted by CodeChef PESU ECC.
+
+The event gives participants a problem statement based on real-life challenges. Teams then work on building solutions to these problems, with **Artificial Intelligence and Machine Learning (AI/ML) serving as the backbone of their approach**.
+
+## What Is Praxis?
+
+Praxis is centered around turning ideas into working solutions.
+
+Participants are presented with problem statements that have an intersection between **real-world problems and AI/ML**. The objective is not simply to build a prototype, but to think about how AI/ML can be used as a core part of solving the problem.
+
+The hackathon gives participants an environment where they can take a problem, explore possible approaches, build a solution, and turn their ideas into something tangible.
+
+## The Problem Statements
+
+The foundation of Praxis is its problem statements.
+
+Each problem is designed around a real-life challenge and requires participants to think beyond conventional solutions. Teams need to understand the problem, identify where AI/ML can add value, and develop a solution around that intersection.
+
+This makes the hackathon as much about **understanding the problem** as it is about building the technology.
+
+## AI/ML as the Backbone
+
+A central idea behind Praxis is using AI/ML as a backbone for solving problems.
+
+Rather than treating AI/ML as an isolated feature added at the end of a project, participants explore how it can contribute to the core solution.
+
+This encourages teams to think about:
+
+* How AI/ML can address the underlying problem
+* Where intelligent systems can improve an existing process
+* How a real-world challenge can be translated into a technical solution
+* How an idea can be turned into a functional prototype
+
+## From Idea to Solution
+
+Praxis is about taking a problem statement and turning it into something that works.
+
+The process involves understanding the challenge, brainstorming possible solutions, selecting an approach, and building a working implementation.
+
+Teams get the opportunity to move through the entire journey from **problem → idea → implementation → solution**.
+
+## Building Under Pressure
+
+As a hackathon, Praxis challenges participants to build within a limited amount of time.
+
+This means teams have to make practical decisions about what to build, how to approach the problem, and where to focus their effort.
+
+The result is an environment that encourages rapid experimentation, collaboration, and execution.
+
+## The Goal
+
+The goal of Praxis is to encourage students to approach real-world problems through technology and explore the possibilities of AI/ML as a foundation for building solutions.
+
+It is an opportunity to move beyond simply learning concepts and put them into practice by building something that addresses a meaningful problem.
+

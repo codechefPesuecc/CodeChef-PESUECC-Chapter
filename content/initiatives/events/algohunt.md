@@ -10,13 +10,13 @@ highlights:
   - "Live scoring"
   - "Team-based solving"
 accent: "03"
-image: "/eventsCompr/algohunt3.webp"
+image: "/events/algohunt3.webp"
 gallery:
-  - src: "/eventsCompr/algohunt1.webp"
+  - src: "/events/algohunt1.webp"
     caption: "The Arena"
-  - src: "/eventsCompr/algohunt2.webp"
+  - src: "/events/algohunt2.webp"
     caption: "Team solving under pressure"
-  - src: "/eventsCompr/algohunt3.webp"
+  - src: "/events/algohunt3.webp"
     caption: "The team"
 href: "/initiatives/algohunt"
 
@@ -29,11 +29,13 @@ winners:
     track: "Easy Track"
     badge: "Easy Track Champions"
     achievement: "1st Place Champions"
+    heroImage: "/events/algohunt-winner-eas.webp"
     members:
       - name: "Venkata Srivaibhav Nukaraju"
       - name: "Kritheesh N V"
       - name: "Maaya Mohan"
       - name: "Krish Arun"
+    experience: "procure this"
 
   - team: "Sreehaas Vangara, Rithvik R, Sahil Shirish Badgujar, Yashas C Sathal"
     track: "Easy Track"
@@ -61,11 +63,13 @@ winners:
     track: "Advanced Track"
     badge: "Advanced Track Champions"
     achievement: "1st Place Champions"
+    heroImage: "/events/algohunt-winner-adv.webp"
     members:
       - name: "Sriniket Deeduvanu"
       - name: "Sushant Hiremath"
       - name: "Surya R Naik"
       - name: "Arpan Gupta"
+    experience: "procure this"
 
   - team: "Ayush, Bismun, Kishan, Mayank"
     track: "Advanced Track"

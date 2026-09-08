@@ -10,16 +10,16 @@ highlights:
   - "Mentor-led reviews"
   - "Editorial practice"
 accent: "02"
-image: "/eventsCompr/leetcode101-pushkar.webp"
+image: "/events/leetcode101-pushkar.webp"
 gallery:
   -
-    src: "/eventsCompr/leetcode101-pushkar1.webp"
+    src: "/events/leetcode101-pushkar1.webp"
     caption: "Mentor-led pattern sessions"
   -
-    src: "/eventsCompr/leetcode101.webp"
+    src: "/events/leetcode101.webp"
     caption: "Weekly practice cohorts"
   -
-    src: "/eventsCompr/leetcode101-sid.webp"
+    src: "/events/leetcode101-sid.webp"
     caption: "Editorial review circles"
 href: "/initiatives/leetcode-101"
 
