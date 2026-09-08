@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toShareUrl } from "@/lib/recruitment";
 
 export interface RecruitmentPanelState {
   isOpen: boolean;
@@ -19,6 +20,15 @@ export default function RecruitmentPanel({ initial }: { initial: RecruitmentPane
   const [saved, setSaved] = useState(initial);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Deliberately derived from `saved`, not the editor state: this line describes
+  // what /join is serving right now. Reading the unsaved fields would announce a
+  // drive as open the moment someone ticked the box, before anything was written.
+  const liveStatus = !saved.formUrl
+    ? "No form link saved yet — /join is showing the closed notice."
+    : saved.isOpen
+      ? "Recruitment is open. /join is showing the form."
+      : "Recruitment is closed. /join is showing the closed notice.";
 
   const dirty =
     isOpen !== saved.isOpen ||
@@ -126,6 +136,20 @@ export default function RecruitmentPanel({ initial }: { initial: RecruitmentPane
             <span className="text-xs text-charcoal/45">
               {saved.updatedAt ? "Saved." : "Nothing saved yet."}
             </span>
+          )}
+        </div>
+
+        <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-hairline pt-4">
+          <span className="text-xs text-charcoal/70">{liveStatus}</span>
+          {saved.formUrl && (
+            <a
+              href={toShareUrl(saved.formUrl)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-mono text-[11px] uppercase tracking-wider text-bronze hover:text-chocolate transition"
+            >
+              Preview the saved form &rarr;
+            </a>
           )}
         </div>
 

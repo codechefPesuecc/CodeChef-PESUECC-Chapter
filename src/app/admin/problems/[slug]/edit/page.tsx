@@ -24,7 +24,7 @@ export default async function EditProblemPage({
 
   return (
     <main className="flex-1">
-      <section className="mx-auto max-w-3xl px-6 pt-6 pb-24">
+      <section className="mx-auto max-w-4xl px-6 pb-24">
         <Link
           href="/admin"
           className="font-mono text-[11px] uppercase tracking-wider text-charcoal/50 hover:text-bronze"
