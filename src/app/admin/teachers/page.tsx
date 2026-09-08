@@ -23,7 +23,7 @@ export default async function AdminTeachersPage() {
 
   return (
     <main className="flex-1">
-      <section className="mx-auto max-w-4xl px-6 pt-6 pb-24">
+      <section className="mx-auto max-w-4xl px-6 pb-24">
         <div className="mb-8">
           <p className="font-mono text-xs uppercase tracking-widest text-bronze">
             Management
