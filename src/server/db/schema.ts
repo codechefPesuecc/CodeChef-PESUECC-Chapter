@@ -236,6 +236,29 @@ export const monstrSubmissions = sqliteTable("monstr_submissions", {
   createdAt: integer("created_at").notNull(),
 });
 
+// Recruitment drive settings — exactly one row (id = "current"). The form URL and
+// the open/closed flag live in the DB rather than in code so a new cycle is a paste
+// in /admin/recruitment, not a redeploy — the same reason challenges aren't in the
+// repo. Applications themselves are handled in Google Forms; this table only holds
+// which form /join embeds and whether to show it.
+export const recruitmentSettings = sqliteTable("recruitment_settings", {
+  id: text("id").primaryKey(),
+  isOpen: integer("is_open", { mode: "boolean" }).notNull().default(false),
+  // Google Forms URL. NULL until an admin configures it — /join then renders its
+  // closed state instead of an empty frame, which is what a freshly migrated
+  // production database looks like.
+  formUrl: text("form_url"),
+  cycle: text("cycle"), // e.g. "2026-27", shown in the /join hero
+  closesOn: text("closes_on"), // YYYY-MM-DD (IST), display only — never enforced
+  updatedAt: integer("updated_at").notNull(),
+  // Audit breadcrumb: which admin last changed the drive. Deliberately NOT a
+  // foreign key — `deleteUser` (src/server/admin/users.ts) removes a user by
+  // deleting their child rows and then the user, so an FK here would make
+  // deleting any admin who had ever saved these settings fail on a constraint
+  // violation. A stale id is a much smaller problem than an undeletable account.
+  updatedBy: text("updated_by"),
+});
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Attempt = typeof attempts.$inferSelect;
@@ -253,3 +276,5 @@ export type NewMonstrProblem = typeof monstrProblems.$inferInsert;
 export type MonstrParticipant = typeof monstrParticipants.$inferSelect;
 export type MonstrSubmission = typeof monstrSubmissions.$inferSelect;
 export type NewMonstrSubmission = typeof monstrSubmissions.$inferInsert;
+export type RecruitmentSettingsRow = typeof recruitmentSettings.$inferSelect;
+export type NewRecruitmentSettingsRow = typeof recruitmentSettings.$inferInsert;
