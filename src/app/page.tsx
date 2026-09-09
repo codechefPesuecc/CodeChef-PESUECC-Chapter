@@ -245,6 +245,18 @@ export default function Home() {
             </Reveal>
           ))}
         </div>
+
+        <div className="mt-12 flex justify-center">
+          <Reveal delay={0.35}>
+            <Link
+              href="/join"
+              className="group mecha-btn mecha-btn--solid inline-flex items-center gap-2 text-sm"
+            >
+              Apply now
+              <span className="mecha-btn-arrow">&rarr;</span>
+            </Link>
+          </Reveal>
+        </div>
       </section>
 
       {/* Member voices */}

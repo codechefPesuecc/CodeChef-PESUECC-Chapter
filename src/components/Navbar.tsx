@@ -13,6 +13,7 @@ const links = [
   { href: "/initiatives", label: "Initiatives" },
   { href: "/team", label: "Team" },
   { href: "/monstr", label: "Monstr" },
+  { href: "/join", label: "Join" },
 ];
 
 export default function Navbar() {
