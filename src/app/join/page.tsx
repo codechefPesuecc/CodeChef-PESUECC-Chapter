@@ -2,9 +2,12 @@ import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import Link from "@/components/AppLink";
 import Reveal from "@/components/Reveal";
+import CountUp from "@/components/CountUp";
 import MechaPanel from "@/components/cp-arena/MechaPanel";
 import GoogleFormEmbed from "@/components/join/GoogleFormEmbed";
 import { getRecruitmentSettings } from "@/server/recruitment";
+import { getCurrentUser } from "@/server/auth/session";
+import { getAllEvents } from "@/lib/initiatives";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +27,24 @@ export const metadata: Metadata = {
  * cream card in dark mode. Overriding the variable keeps the fill opaque and
  * theme-aware, the same way `.mecha--ide` does it in globals.css.
  */
+/**
+ * Days until the drive closes, or null when there's no date (or it has passed).
+ *
+ * `closesOn` is a plain YYYY-MM-DD in IST, so both sides are pinned to UTC
+ * midnight to compare whole days — using local time would make the countdown
+ * tick over at a different moment for a student abroad than for the committee.
+ * Safe on every request because the page is force-dynamic.
+ */
+function daysUntil(closesOn: string | null): number | null {
+  if (!closesOn) return null;
+  const end = Date.parse(`${closesOn}T00:00:00Z`);
+  if (Number.isNaN(end)) return null;
+  const now = new Date();
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const days = Math.round((end - today) / 86_400_000);
+  return days >= 0 ? days : null;
+}
+
 const CALLOUT_FILL = {
   "--mecha-fill": "color-mix(in oklab, var(--color-bronze) 10%, var(--color-panel))",
 } as CSSProperties;
@@ -65,6 +86,45 @@ const domains = [
 // from the response sheet — no shortlist-then-task pipeline has been decided, so
 // the page shouldn't describe one. Promising applicants a round that may not
 // happen is worse than saying less.
+// Mirrors the homepage `metrics` array. Kept as a local copy rather than shared:
+// the homepage sells the chapter to everyone, this sells it to someone deciding
+// whether to apply, and the two will drift apart on purpose.
+const proofStats = [
+  { value: 50, suffix: "+", label: "Active members" },
+  { value: 3, suffix: "+", label: "Platforms in production" },
+  { value: 1500, prefix: "Rs ", suffix: "+", label: "Paid out monthly on the Arena" },
+];
+
+// First draft — rewrite these in the club's own voice before the drive opens.
+// The point of the section is to answer the questions that otherwise arrive as
+// Instagram DMs the week applications are live.
+const faqs = [
+  {
+    q: "Do I need to already know DSA or how to code?",
+    a: "No. Plenty of our members joined having never written a loop — that is what LeetCode 101 and the mentorship are for. We are looking for people who will keep showing up, not people who already know everything.",
+  },
+  {
+    q: "Can first-years apply?",
+    a: "Yes, and we want you to. Leave the SRN field blank on the form if yours has not been assigned yet — your PRN is enough.",
+  },
+  {
+    q: "Can I apply to more than one domain?",
+    a: "No — pick the one you would be most excited to work on. The form takes a single domain, and the questions you see are tailored to it.",
+  },
+  {
+    q: "How much time does this actually take?",
+    a: "Three to five hours a week is typical, and it goes up around events. Tell us honestly on the form how much you can give; we would rather know than find out in November.",
+  },
+  {
+    q: "I don't have an Arena account. Do I need one?",
+    a: "Yes — the form asks for your Arena username, and it is how we connect your application to your profile. Registering takes about a minute.",
+  },
+  {
+    q: "When will I hear back?",
+    a: "We read every application. If you are shortlisted we will email you about what comes next, so keep an eye on your inbox and your spam folder.",
+  },
+];
+
 const timeline = [
   {
     step: "01",
@@ -84,10 +144,17 @@ const timeline = [
 ];
 
 export default async function JoinPage() {
-  const settings = await getRecruitmentSettings();
+  // Both reads are already on the server; the session is what lets the Step 0
+  // callout tell a signed-in applicant the exact username to type.
+  const [settings, user] = await Promise.all([
+    getRecruitmentSettings(),
+    getCurrentUser(),
+  ]);
+  const events = getAllEvents();
   const isOpen = settings.canEmbed;
   const cycle = settings.cycle?.trim();
   const cycleBadge = cycle ? `Recruitment ${cycle}` : "Recruitment";
+  const daysLeft = isOpen ? daysUntil(settings.closesOn) : null;
 
   return (
     <main className="flex-1">
@@ -108,7 +175,13 @@ export default async function JoinPage() {
               {isOpen && settings.closesOn && (
                 <span className="inline-flex items-center gap-1.5 font-mono text-xs text-charcoal/70 dark:text-cream/70">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  Closes on {settings.closesOn}
+                  {daysLeft === 0
+                    ? "Closes today"
+                    : daysLeft === 1
+                      ? "Closes tomorrow"
+                      : daysLeft !== null
+                        ? `${daysLeft} days left · closes ${settings.closesOn}`
+                        : `Closes on ${settings.closesOn}`}
                 </span>
               )}
             </div>
@@ -166,20 +239,45 @@ export default async function JoinPage() {
                 bodyClassName="p-6"
               >
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h3 className="font-display text-base font-bold text-chocolate">
-                      Have you registered on the CP Arena?
-                    </h3>
-                    <p className="mt-1 text-sm text-charcoal/75">
-                      The application form asks for your CodeChef PESUECC Arena username so we can link your submission to your profile.
-                    </p>
-                  </div>
-                  <Link
-                    href="/register"
-                    className="mecha-btn mecha-btn--ghost shrink-0 text-xs self-start sm:self-auto"
-                  >
-                    Register account &rarr;
-                  </Link>
+                  {user ? (
+                    <>
+                      <div>
+                        <h3 className="font-display text-base font-bold text-chocolate">
+                          You&apos;re signed in as{" "}
+                          <span className="font-mono text-bronze">{user.username}</span>
+                        </h3>
+                        <p className="mt-1 text-sm text-charcoal/75">
+                          Enter exactly that when the form asks for your Arena username — it
+                          is how we match your application to your account.
+                        </p>
+                      </div>
+                      <Link
+                        href="/profile"
+                        className="mecha-btn mecha-btn--ghost shrink-0 text-xs self-start sm:self-auto"
+                      >
+                        View profile &rarr;
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <h3 className="font-display text-base font-bold text-chocolate">
+                          Register on the CP Arena first
+                        </h3>
+                        <p className="mt-1 text-sm text-charcoal/75">
+                          The form asks for your Arena username, so make an account before you
+                          start — it only takes a minute, and it is how we link your
+                          application to your profile.
+                        </p>
+                      </div>
+                      <Link
+                        href="/register"
+                        className="mecha-btn mecha-btn--ghost shrink-0 text-xs self-start sm:self-auto"
+                      >
+                        Register account &rarr;
+                      </Link>
+                    </>
+                  )}
                 </div>
               </MechaPanel>
             </Reveal>
@@ -253,6 +351,67 @@ export default async function JoinPage() {
         )}
       </section>
 
+      {/* Proof — the pitch above claims we ship things; this is the evidence */}
+      <section className="border-t border-hairline bg-panel/40 py-16 sm:py-20">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="grid gap-6 sm:grid-cols-3">
+            {proofStats.map((stat, i) => (
+              <Reveal key={stat.label} delay={i * 0.08}>
+                <div className="text-center">
+                  <p className="font-display text-4xl font-bold tracking-tight text-chocolate">
+                    <CountUp value={stat.value} prefix={stat.prefix} suffix={stat.suffix} />
+                  </p>
+                  <p className="mt-1 text-sm text-charcoal/70">{stat.label}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+
+          <Reveal className="mt-16 max-w-2xl">
+            <span className="font-mono text-xs font-semibold uppercase tracking-wider text-bronze">
+              What you&apos;d be working on
+            </span>
+            <h2 className="mt-3 text-balance font-display text-3xl font-bold tracking-tight text-chocolate sm:text-4xl">
+              Things we actually run
+            </h2>
+            <p className="mt-3 text-pretty text-charcoal/70">
+              Not hypothetical projects — these are live, and members build and run them.
+            </p>
+          </Reveal>
+
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {events.map((event, i) => (
+              <Reveal key={event.id} delay={i * 0.05} className="h-full">
+                <Link href={`/initiatives/${event.id}`} className="block h-full">
+                  <MechaPanel
+                    label={event.status}
+                    className="h-full transition-transform duration-200 hover:-translate-y-1"
+                    bodyClassName="p-5"
+                  >
+                    <h3 className="font-display text-base font-bold text-chocolate">
+                      {event.title}
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-charcoal/70">
+                      {event.cardBrief}
+                    </p>
+                  </MechaPanel>
+                </Link>
+              </Reveal>
+            ))}
+          </div>
+
+          <Reveal delay={0.2}>
+            <p className="mt-8 text-sm text-charcoal/70">
+              Curious who you&apos;d be working with?{" "}
+              <Link href="/team" className="text-bronze underline-offset-4 hover:underline">
+                Meet the team
+              </Link>
+              .
+            </p>
+          </Reveal>
+        </div>
+      </section>
+
       {/* Domains Section */}
       <section className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
         <Reveal className="max-w-2xl">
@@ -323,6 +482,59 @@ export default async function JoinPage() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* FAQ — answers the questions that otherwise arrive as DMs */}
+      <section className="mx-auto max-w-4xl px-6 py-16 sm:py-20">
+        <Reveal className="max-w-2xl">
+          <span className="font-mono text-xs font-semibold uppercase tracking-wider text-bronze">
+            Questions
+          </span>
+          <h2 className="mt-3 text-balance font-display text-3xl font-bold tracking-tight text-chocolate sm:text-4xl">
+            Before you apply
+          </h2>
+        </Reveal>
+
+        <div className="mt-10 space-y-3">
+          {faqs.map((faq, i) => (
+            <Reveal key={faq.q} delay={i * 0.05}>
+              <details className="group rounded-2xl border border-hairline bg-white/60 px-5 py-4 dark:bg-panel/60">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium text-chocolate">
+                  {faq.q}
+                  <span
+                    aria-hidden
+                    className="shrink-0 font-mono text-bronze transition-transform group-open:rotate-45"
+                  >
+                    +
+                  </span>
+                </summary>
+                <p className="mt-3 text-sm leading-6 text-charcoal/70">{faq.a}</p>
+              </details>
+            </Reveal>
+          ))}
+        </div>
+
+        <Reveal delay={0.2}>
+          <p className="mt-8 text-center text-sm text-charcoal/70">
+            Still unsure about something? Ask us on{" "}
+            <a
+              href="https://www.instagram.com/codechef_pesuecc/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-bronze underline-offset-4 hover:underline"
+            >
+              Instagram
+            </a>{" "}
+            or email{" "}
+            <a
+              href="mailto:codechef@pesu.pes.edu"
+              className="text-bronze underline-offset-4 hover:underline"
+            >
+              codechef@pesu.pes.edu
+            </a>
+            . No question is too basic.
+          </p>
+        </Reveal>
       </section>
     </main>
   );
