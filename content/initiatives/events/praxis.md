@@ -4,7 +4,7 @@ title: "Praxis Hackathon"
 category: "Rapid AI / Build Sprint"
 status: "Hackathon Engine"
 cadence: "Sprint format"
-description: "A high-pressure build sprint for shipping AI-assisted products, prototypes, and technical demos under real constraints."
+description: "A high-intensity hackathon designed around rapid experimentation, AI-assisted development, and end-to-end product building. Participants work under real-world constraints to transform ideas into functional prototypes, using modern AI tools and engineering practices to design, build, test, and present technical solutions within a focused sprint."
 highlights:
   - "Fast ideation"
   - "Demo-first judging"
@@ -22,68 +22,54 @@ gallery:
     src: "/events/praxis3.webp"
     caption: "Progress Report"
 href: "/initiatives/praxis"
+
+
+
 timeline:
-  - date: "09:00 AM"
-    title: "Check-in & Breakfast"
+  - date: "07:30 AM"
+    title: "Registration"
     tag: "Registration"
-    description: "Participants arrive, verify their registration, collect their badges, and get energized with a hearty breakfast before the intense competition begins."
-    stats:
-      - label: "Expected Arrival"
-        value: "800+"
-      - label: "Duration"
-        value: "60 mins"
-    features:
-      - "QR Code quick scanning"
-      - "Swag bag distribution"
-
-  - date: "10:00 AM"
-    title: "Opening Ceremony & Problem Release"
+    description: "Participants arrive and complete the registration process."
+    
+  - date: "08:00 AM"
+    title: "Introduction & Lamp Lighting"
     tag: "Ceremony"
-    description: "The official kickoff. We will explain the rules, introduce the judges, and reveal the primary encrypted problem statement that unlocks the first physical checkpoint."
-    image: "/events/praxisopen.webp"
-    stats:
-      - label: "Venue"
-        value: "Main Auditorium"
-    features:
-      - "Keynote by Lead Architect"
-      - "Live demonstration of the leaderboard platform"
+    description: "The event begins with an introduction followed by the traditional lamp lighting ceremony."
 
-  - date: "10:30 AM"
-    title: "Checkpoint 1: The Cryptography Node"
-    tag: "Hacking"
-    description: "Teams disperse across campus to their first physical node. They must decrypt a cipher to unlock the next GPS coordinates."
-    stats:
-      - label: "Difficulty"
-        value: "Medium"
-    features:
-      - "RSA decryption puzzles"
-      - "Physical lock boxes"
+  - date: "09:00 AM"
+    title: "Coding Round 1 & Mentoring"
+    tag: "Coding"
+    description: "Participants begin the first coding round while mentors provide guidance and support throughout the session."
+
+  - date: "12:00 PM"
+    title: "Lunch Break"
+    tag: "Break"
+    description: "Participants take a break for lunch."
 
   - date: "01:00 PM"
-    title: "Lunch & Networking"
+    title: "Coding Round 2"
+    tag: "Coding"
+    description: "Participants compete in the second coding round and work on the given problem statements."
+
+  - date: "03:00 PM"
+    title: "Coding Round 2 Evaluation"
+    tag: "Evaluation"
+    description: "Submissions from the second coding round are evaluated to determine the top-performing teams."
+
+  - date: "04:00 PM"
+    title: "Snacks"
     tag: "Break"
-    description: "A mandatory cool-down period where teams can refuel, discuss strategies with mentors, and check the global standings."
-    
-  - date: "02:00 PM"
-    title: "Checkpoint 2: The Hardware Node"
-    tag: "Hacking"
-    description: "The final sprint. Teams must interface their laptops with custom ESP32 hardware modules placed around the campus to execute their final algorithms."
-    image: "/dev-team.jpg"
-    stats:
-      - label: "Elimination"
-        value: "Bottom 50%"
-    features:
-      - "Arduino / ESP32 interfacing"
-      - "Reverse engineering binaries"
+    description: "Participants take a short break for snacks."
 
-  - date: "05:00 PM"
-    title: "Closing Ceremony & Winners"
-    tag: "Ceremony"
-    description: "The leaderboard freezes. We announce the top 3 teams, distribute prizes, and conclude the event with closing remarks from our sponsors."
-    stats:
-      - label: "Prize Pool"
-        value: "$5,000"
+  - date: "04:30 PM"
+    title: "Final Presentation of Top 7"
+    tag: "Finals"
+    description: "The top seven teams present their final solutions and ideas."
 
+  - date: "05:10 PM"
+    title: "Winner Announcements & Vote of Thanks"
+    tag: "Closing Ceremony"
+    description: "The winners are announced, followed by the vote of thanks and closing of the event."
 mentors:
   - name: "Aditya Raj"
     role: "Lead Architect"
