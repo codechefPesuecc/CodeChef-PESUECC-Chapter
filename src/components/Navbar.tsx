@@ -5,16 +5,19 @@ import Link from "@/components/AppLink";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { useUser } from "@/components/auth/useUser";
+import { useRecruitmentOpen } from "@/components/useRecruitmentOpen";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
-const links = [
+// Monstr is intentionally absent: it's a teacher-facing contest tool, not
+// something a visitor navigates to. It stays reachable at /monstr.
+const baseLinks = [
   { href: "/", label: "Home" },
   { href: "/cp-arena", label: "Arena" },
   { href: "/initiatives", label: "Initiatives" },
   { href: "/team", label: "Team" },
-  { href: "/monstr", label: "Monstr" },
-  { href: "/join", label: "Join" },
 ];
+
+const JOIN_LINK = { href: "/join", label: "Join" };
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -23,6 +26,10 @@ export default function Navbar() {
   const menuRef = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
   const user = useUser();
+  // Join only appears while the drive is actually open — the same condition
+  // /join uses to render the form, so the link can't lead to a closed notice.
+  const recruitmentOpen = useRecruitmentOpen();
+  const links = recruitmentOpen ? [...baseLinks, JOIN_LINK] : baseLinks;
 
   // Handle Escape key and focus trapping
   useEffect(() => {
