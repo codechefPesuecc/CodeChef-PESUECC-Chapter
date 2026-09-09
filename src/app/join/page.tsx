@@ -8,56 +8,41 @@ import { getRecruitmentSettings } from "@/server/recruitment";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Join the Team | CodeChef PESUECC",
+  title: "Join Us | CodeChef PESUECC",
   description:
-    "Apply to join the CodeChef PESUECC Chapter core team. Build real platforms, organize premier events, and level up together.",
+    "Apply to join CodeChef PESUECC Chapter. Build real platforms, organize premier events, and level up together.",
 };
 
 const domains = [
   {
     name: "Competitive Programming",
-    desc: "Curate challenge sets, lead training sessions, and mentor solvers in algorithmic problem solving.",
+    desc: "Curate challenge sets, host contests, lead algorithmic workshops, and mentor solvers in competitive programming.",
     tag: "CP",
   },
   {
-    name: "Frontend Development",
-    desc: "Build fast, accessible, and responsive user experiences with Next.js, React, and modern CSS.",
-    tag: "WEB",
+    name: "Technical",
+    desc: "Build and maintain chapter platforms, web applications, edge APIs, and internal tools with modern full-stack technologies.",
+    tag: "TECH",
   },
   {
-    name: "Backend & Systems",
-    desc: "Engineer resilient edge APIs, cloud databases, and sandboxed code execution environments.",
-    tag: "SYS",
+    name: "Design",
+    desc: "Craft user interfaces, branding assets, event posters, illustrations, and visual identities across web and digital media.",
+    tag: "DESIGN",
   },
   {
-    name: "Problem Setting",
-    desc: "Create original algorithmic challenges, write robust test suites, and draft detailed editorials.",
-    tag: "ALGO",
+    name: "Events",
+    desc: "Plan, organize, and execute flagship hackathons, coding contests, speaker sessions, bootcamps, and on-campus operations.",
+    tag: "EVENTS",
   },
   {
-    name: "Events & Workshops",
-    desc: "Plan and host flagship events like Praxis Hackathon, LeetCode 101, and technical bootcamps.",
-    tag: "OPS",
+    name: "Sponsorship",
+    desc: "Pitch to corporate sponsors, foster industry partnerships, secure event funding, and expand external outreach.",
+    tag: "SPONSOR",
   },
   {
-    name: "Social Media & Outreach",
-    desc: "Design visual identities, craft graphics, and manage digital media across campus channels.",
-    tag: "MEDIA",
-  },
-  {
-    name: "Sponsorship & PR",
-    desc: "Establish industry partnerships, external sponsorships, and inter-college connections.",
-    tag: "PR",
-  },
-  {
-    name: "Content & Editorial",
-    desc: "Write technical articles, event retrospectives, documentation, and educational guides.",
-    tag: "DOCS",
-  },
-  {
-    name: "Operations & Logistics",
-    desc: "Coordinate campus permissions, event spaces, logistics, and internal club workflows.",
-    tag: "MGMT",
+    name: "Social Media & Marketing",
+    desc: "Drive club publicity, manage social channels, craft engaging campaign copy, and amplify chapter initiatives across campus.",
+    tag: "MARKETING",
   },
 ];
 
@@ -65,29 +50,30 @@ const timeline = [
   {
     step: "01",
     title: "Application",
-    desc: "Submit your details, domain preferences, and background via the form below.",
+    desc: "Submit your details and domain preference through the application form.",
   },
   {
     step: "02",
     title: "Review & Shortlist",
-    desc: "Domain leads evaluate submissions, past projects, and alignment with club initiatives.",
+    desc: "Submissions and responses are reviewed by the respective domain leads.",
   },
   {
     step: "03",
     title: "Interaction / Task",
-    desc: "A short, friendly discussion or domain-specific task to gauge your enthusiasm and skills.",
+    desc: "A brief conversation or short task to understand your interest, skills, and enthusiasm.",
   },
   {
     step: "04",
     title: "Onboarding",
-    desc: "Welcome to the core team! Meet the team, get your platform access, and start building.",
+    desc: "Welcome to the team! Meet your peers, get your platform access set up, and start contributing.",
   },
 ];
 
 export default async function JoinPage() {
   const settings = await getRecruitmentSettings();
   const isOpen = settings.canEmbed;
-  const cycleLabel = settings.cycle || "2026–27";
+  const cycle = settings.cycle?.trim();
+  const cycleBadge = cycle ? `Recruitment ${cycle}` : "Recruitment";
 
   return (
     <main className="flex-1">
@@ -103,7 +89,7 @@ export default async function JoinPage() {
           <Reveal>
             <div className="flex flex-wrap items-center gap-3">
               <span className="inline-flex items-center rounded-full border border-hairline bg-panel/80 px-3 py-1 font-mono text-xs font-medium tracking-wide text-brown backdrop-blur">
-                {isOpen ? `Recruitment ${cycleLabel} · Open` : `Recruitment ${cycleLabel}`}
+                {isOpen ? `${cycleBadge} · Open` : cycleBadge}
               </span>
               {isOpen && settings.closesOn && (
                 <span className="inline-flex items-center gap-1.5 font-mono text-xs text-charcoal/70 dark:text-cream/70">
@@ -114,13 +100,13 @@ export default async function JoinPage() {
             </div>
 
             <h1 className="mt-5 text-balance font-display text-4xl font-bold tracking-tight text-chocolate sm:text-5xl lg:text-6xl">
-              {isOpen ? "Join the Core Team" : "Recruitment is Closed"}
+              {isOpen ? "Join CodeChef PESUECC" : "Recruitment Closed"}
             </h1>
 
             <p className="mt-6 max-w-2xl text-pretty text-lg leading-8 text-charcoal/80">
               {isOpen
                 ? "We build production platforms used daily by hundreds of students, author algorithmic problems in the open, and host flagship campus hackathons. Come help us shape what comes next."
-                : `Applications for the ${cycleLabel} cycle are currently closed. We hold recruitment drives at the beginning of each cycle. Explore our open domains below and stay tuned for the next drive.`}
+                : `Applications${cycle ? ` for the ${cycle} cycle` : ""} are currently closed. We hold recruitment drives periodically. Explore our domains below and stay tuned for the next drive.`}
             </p>
           </Reveal>
 
@@ -190,9 +176,11 @@ export default async function JoinPage() {
                   <h2 className="font-display text-2xl font-bold text-chocolate">
                     Application Form
                   </h2>
-                  <span className="font-mono text-xs text-bronze uppercase tracking-wider">
-                    {cycleLabel} Drive
-                  </span>
+                  {cycle && (
+                    <span className="font-mono text-xs text-bronze uppercase tracking-wider">
+                      {cycle} Drive
+                    </span>
+                  )}
                 </div>
 
                 <GoogleFormEmbed formUrl={settings.formUrl} />
@@ -225,11 +213,11 @@ export default async function JoinPage() {
               </div>
 
               <h2 className="mt-4 font-display text-2xl font-bold text-chocolate">
-                Recruitment is currently closed
+                Applications are not being accepted
               </h2>
 
               <p className="mx-auto mt-3 max-w-md text-pretty text-sm leading-6 text-charcoal/70">
-                Applications for the {cycleLabel} recruitment cycle are not accepting responses right now. Follow our announcements to catch the next drive.
+                The application form is not accepting responses right now{cycle ? ` for the ${cycle} cycle` : ""}. Follow our announcements or practice on the platform to stay prepared for upcoming opportunities.
               </p>
 
               <div className="mt-6 flex justify-center gap-4">
@@ -260,7 +248,7 @@ export default async function JoinPage() {
             Where you can contribute
           </h2>
           <p className="mt-3 text-pretty text-charcoal/70">
-            Pick domains that match your passions and what you want to learn. You can apply to more than one domain in your submission.
+            Choose the domain that best aligns with your interests and where you want to make an impact.
           </p>
         </Reveal>
 
