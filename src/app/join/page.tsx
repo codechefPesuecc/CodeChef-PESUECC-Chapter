@@ -46,26 +46,25 @@ const domains = [
   },
 ];
 
+// Deliberately three steps, not four. Everything after submission is handled
+// from the response sheet — no shortlist-then-task pipeline has been decided, so
+// the page shouldn't describe one. Promising applicants a round that may not
+// happen is worse than saying less.
 const timeline = [
   {
     step: "01",
-    title: "Application",
-    desc: "Submit your details and domain preference through the application form.",
+    title: "Apply",
+    desc: "Fill in the form above and pick the one domain you want to be considered for.",
   },
   {
     step: "02",
-    title: "Review & Shortlist",
-    desc: "Submissions and responses are reviewed by the respective domain leads.",
+    title: "We read it",
+    desc: "Every response is read by the team — there's no filter you have to get past first.",
   },
   {
     step: "03",
-    title: "Interaction / Task",
-    desc: "A brief conversation or short task to understand your interest, skills, and enthusiasm.",
-  },
-  {
-    step: "04",
-    title: "Onboarding",
-    desc: "Welcome to the team! Meet your peers, get your platform access set up, and start contributing.",
+    title: "We get in touch",
+    desc: "If you're shortlisted we'll email you about what comes next. Check your spam folder too.",
   },
 ];
 
@@ -285,11 +284,11 @@ export default async function JoinPage() {
               What happens next
             </h2>
             <p className="mt-3 text-pretty text-charcoal/70">
-              Our selection process is designed to be transparent, friendly, and learning-focused.
+              Short and simple — and we read everything that comes in.
             </p>
           </Reveal>
 
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {timeline.map((item, i) => (
               <Reveal key={item.step} delay={i * 0.08} className="h-full">
                 <MechaPanel
