@@ -25,7 +25,7 @@ export default function GoogleFormEmbed({ formUrl }: GoogleFormEmbedProps) {
         <iframe
           src={embedUrl}
           title="Club recruitment application form"
-          className="h-full min-h-[75vh] w-full rounded-xl border-0 sm:min-h-[1200px]"
+          className="h-full min-h-[520px] w-full rounded-xl border-0 sm:min-h-[760px]"
         >
           Loading application form…
         </iframe>
