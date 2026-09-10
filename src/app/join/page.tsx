@@ -4,7 +4,7 @@ import Link from "@/components/AppLink";
 import Reveal from "@/components/Reveal";
 import CountUp from "@/components/CountUp";
 import MechaPanel from "@/components/cp-arena/MechaPanel";
-import GoogleFormEmbed from "@/components/join/GoogleFormEmbed";
+import ApplyCard from "@/components/join/ApplyCard";
 import { getRecruitmentSettings } from "@/server/recruitment";
 import { getCurrentUser } from "@/server/auth/session";
 import { getAllEvents } from "@/lib/initiatives";
@@ -498,7 +498,7 @@ export default async function JoinPage() {
                   )}
                 </div>
 
-                <GoogleFormEmbed formUrl={settings.formUrl} />
+                <ApplyCard formUrl={settings.formUrl} />
               </div>
             </Reveal>
           </div>
