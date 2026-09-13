@@ -129,58 +129,13 @@
       ],
       "members": [
         {
-          "name": "Eve Rao",
-          "role": "Member — Problem Setter",
-          "bio": "Sets weekly competitive programming problems and maintains the editorial archive.",
-          "linkedin": "https://linkedin.com/in/everao",
-          "github": "https://github.com/everao",
-          "instagram": "",
-          "photo": "/team/2026/members/eve-rao/photo.svg"
-        },
-        {
-          "name": "Frank Iyer",
-          "role": "Member — Backend Developer",
-          "bio": "Works on the CP Arena backend and Cloudflare D1 integrations.",
-          "linkedin": "",
-          "github": "https://github.com/frankiyer",
-          "instagram": "",
-          "photo": "/team/2026/members/frank-iyer/photo.svg"
-        },
-        {
-          "name": "Grace Menon",
-          "role": "Member — Content & Outreach",
-          "bio": "Manages social media and event promotion for the chapter.",
-          "linkedin": "https://linkedin.com/in/gracemenon",
-          "github": "",
-          "instagram": "https://instagram.com/gracemenon",
-          "photo": "/team/2026/members/grace-menon/photo.svg"
-        },
-        {
-          "name": "Henry Gupta",
-          "role": "Member — Frontend Developer",
-          "bio": "Builds interactive UI components for the chapter's web platforms.",
-          "linkedin": "https://linkedin.com/in/henrygupta",
-          "github": "https://github.com/henrygupta",
-          "instagram": "",
-          "photo": "/team/2026/members/henry-gupta/photo.svg"
-        },
-        {
-          "name": "Iris Das",
-          "role": "Member — Problem Setter",
-          "bio": "Specialises in graph theory and dynamic programming problem design.",
-          "linkedin": "https://linkedin.com/in/irisdas",
-          "github": "https://github.com/irisdas",
-          "instagram": "",
-          "photo": "/team/2026/members/iris-das/photo.svg"
-        },
-        {
-          "name": "Jay Thomas",
-          "role": "Member — Operations",
-          "bio": "Handles logistics, scheduling, and venue coordination for all chapter events.",
-          "linkedin": "https://linkedin.com/in/jaythomas",
-          "github": "",
-          "instagram": "https://instagram.com/jaythomas",
-          "photo": "/team/2026/members/jay-thomas/photo.svg"
+          "name": "Sreevatshan S",
+          "role": "Competitive Programming - CP Mentor",
+          "bio": "My code is O(1) space because I have zero memory of how it works.",
+          "linkedin": "https://www.linkedin.com/in/sreevatshan-s-9a3873393/",
+          "github": "https://github.com/sreevats30",
+          "instagram": "https://www.instagram.com/_sreevats_?stkn=MWVqbnZqMGRpNTZ2dQ==",
+          "photo": "/team/2026/members/PES2UG25CS541/photo.png"
         }
       ]
     }
