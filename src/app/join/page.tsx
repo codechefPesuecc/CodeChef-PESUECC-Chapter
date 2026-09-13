@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import Link from "@/components/AppLink";
 import Reveal from "@/components/Reveal";
@@ -12,6 +13,20 @@ export const metadata: Metadata = {
   description:
     "Apply to join CodeChef PESUECC Chapter. Build real platforms, organize premier events, and level up together.",
 };
+
+/**
+ * Tint for the "register first" callout.
+ *
+ * Set through the panel's own `--mecha-fill` rather than a `bg-*` utility on the
+ * body. MechaPanel stacks an opaque `.mecha__body` over `.mecha__inline`, which
+ * paints the *outline* colour — so a utility background replaces that opaque
+ * fill and lets the light outline layer show through, which reads as a washed-out
+ * cream card in dark mode. Overriding the variable keeps the fill opaque and
+ * theme-aware, the same way `.mecha--ide` does it in globals.css.
+ */
+const CALLOUT_FILL = {
+  "--mecha-fill": "color-mix(in oklab, var(--color-bronze) 10%, var(--color-panel))",
+} as CSSProperties;
 
 const domains = [
   {
@@ -147,7 +162,8 @@ export default async function JoinPage() {
               <MechaPanel
                 label="Step 0"
                 index="Arena Account"
-                bodyClassName="p-6 bg-bronze/5 border-bronze/20"
+                style={CALLOUT_FILL}
+                bodyClassName="p-6"
               >
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
