@@ -279,8 +279,8 @@ doing only to avoid maintaining two versions of that text — it's a homepage re
     `/admin/teachers` (which had none) and the two problem pages.
 12. `npm run lint` and `npm run test` (the new `src/lib/recruitment.test.ts` runs here).
 
-Commit the `AGENTS.md` / `CLAUDE.md` block if `next dev` re-adds it — per `AGENTS.md`, dropping it
-from the diff only recreates the uncommitted change.
+Commit the `AGENTS.md` block if `next dev` re-adds it — per `AGENTS.md`, dropping it from the
+diff only recreates the uncommitted change.
 
 **On deploy:** run `npx wrangler d1 migrations apply pesuecc-arena --remote`, then set the form URL in
 `/admin/recruitment` on production — the settings row does not travel with the code.

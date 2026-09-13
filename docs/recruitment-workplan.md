@@ -157,7 +157,7 @@ The codebase is consistent. Match it rather than importing habits from elsewhere
   (`text-chocolate`, `text-bronze`, `border-hairline`) live in `globals.css`.
 - **Read `node_modules/next/dist/docs/` before writing Next-specific code.** This is Next 16 — for
   example `middleware.ts` is now `proxy.ts`. `AGENTS.md` requires this.
-- If `next dev` re-adds the block to `AGENTS.md` / `CLAUDE.md`, **commit it**. Dropping it from the
+- If `next dev` re-adds the block to `AGENTS.md`, **commit it**. Dropping it from the
   diff only recreates the uncommitted change.
 
 **CI runs on every PR:** `npm ci` → `npx tsc --noEmit` → `npm run lint` → `npm run test` →
