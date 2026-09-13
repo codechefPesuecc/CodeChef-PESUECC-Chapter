@@ -1,15 +1,12 @@
 /**
  * Google Forms URL handling for the recruitment drive.
  *
- * The form URL is entered by an admin at /admin/recruitment and ends up in an
- * iframe `src` on /join, so it gets validated on the way in rather than trusted.
- * Three layers guard that frame, and this module is the first:
- *
- *   1. `isGoogleFormUrl` — rejects anything that isn't an https Google Forms URL
- *      at write time (src/server/recruitment.ts) and again at render time.
- *   2. The `frame-src` allow-list in next.config.ts, which pins the frame to
- *      docs.google.com no matter what is stored.
- *   3. The iframe carries no `sandbox` relaxations of our own.
+ * The form URL is entered by an admin at /admin/recruitment and becomes the
+ * destination of a link on /join, so it is validated on the way in rather than
+ * trusted: `isGoogleFormUrl` rejects anything that isn't an https Google Forms
+ * URL at write time (src/server/recruitment.ts) and again at render time. That
+ * matters even for a plain link — an unchecked value here would let an admin
+ * account, or a mistake, point applicants anywhere.
  *
  * Pure string/URL logic only — no DB, no React — so it can be unit tested and
  * imported from both server and client code.
@@ -41,13 +38,19 @@ export function isGoogleFormUrl(value: string): boolean {
 }
 
 /**
- * The URL to put in the iframe. Google serves a chrome-less form when
- * `embedded=true` is present, so admins can paste either the plain "viewform"
- * link or the one from the `<>` embed dialog and get the same result.
+ * Adds `embedded=true`, which is how Google serves the chrome-less variant of a
+ * form.
+ *
+ * NOTE: nothing in the app calls this any more — /join links out to the form in
+ * a new tab rather than framing it, because Google will not serve its sign-in
+ * page inside an iframe and the form requires a sign-in. Kept, with its tests,
+ * because it is the documented inverse of `toShareUrl` (which is very much still
+ * used, since admins do paste the `<>` embed URL) and because reinstating an
+ * embed would otherwise mean rewriting and re-testing this from scratch. Delete
+ * it if that stops being plausible.
  *
  * Returns the input untouched if it can't be parsed — callers gate on
- * `isGoogleFormUrl` first, and silently swallowing a bad value here would hide
- * the reason the frame is empty.
+ * `isGoogleFormUrl` first.
  */
 export function toEmbedUrl(value: string): string {
   try {
