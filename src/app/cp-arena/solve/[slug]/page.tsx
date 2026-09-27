@@ -13,21 +13,9 @@
   import { ordinal } from "@/lib/points";
   import ProblemStatement from "@/components/cp-arena/ProblemStatement";
   import ArenaWorkspace from "@/components/cp-arena/ArenaWorkspace";
-  import NextProblemCountdown from "@/components/cp-arena/NextProblemCountdown";
 
   // The released set and today's daily are date-dependent — resolve per request.
   export const dynamic = "force-dynamic";
-
-  const MONTHS = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
-  ];
-
-  function formatDate(iso: string): string {
-    const [y, m, d] = iso.split("-").map(Number);
-    if (!y || !m || !d) return iso;
-    return `${MONTHS[m - 1]} ${d}, ${y}`;
-  }
 
   function formatClock(totalSeconds: number): string {
     const s = Math.max(0, Math.floor(totalSeconds));

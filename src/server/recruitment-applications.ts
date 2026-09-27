@@ -22,7 +22,7 @@ export interface ApplicationResponseData {
   branch: string;
   phone: string;
   heardFrom: string | null;
-  responses: Record<string, any>;
+  responses: Record<string, unknown>;
   status: "submitted" | "under_review" | "shortlisted" | "rejected" | "accepted";
   reviewerNotes: string | null;
   reviewedBy: string | null;
@@ -58,7 +58,7 @@ export interface SubmitApplicationInput {
   prn?: string;
   srn?: string;
   heardFrom?: string;
-  responses: Record<string, any>;
+  responses: Record<string, unknown>;
 }
 
 export type SubmitApplicationResult =
@@ -91,7 +91,7 @@ export async function getUserApplication(
     parsedDomains = [];
   }
 
-  let parsedResponses: Record<string, any> = {};
+  let parsedResponses: Record<string, unknown> = {};
   try {
     parsedResponses = JSON.parse(row.responses);
   } catch {
@@ -271,7 +271,7 @@ export async function submitOrUpdateApplication(
 
   // Ensure user profile also has phone, prn and srn saved
   try {
-    const userUpdate: Record<string, any> = { phone };
+    const userUpdate: { phone: string; prn?: string; srn?: string } = { phone };
     const rawPrn = input.prn ? String(input.prn).trim().toUpperCase() : null;
     const rawSrn = input.srn ? String(input.srn).trim().toUpperCase() : null;
     if (rawPrn) {
@@ -350,7 +350,7 @@ export async function getAdminApplications(
       parsedDomains = [];
     }
 
-    let parsedResponses: Record<string, any> = {};
+    let parsedResponses: Record<string, unknown> = {};
     try {
       parsedResponses = JSON.parse(app.responses);
     } catch {
@@ -399,7 +399,13 @@ export async function updateApplicationStatus(
   const db = getDb();
   const now = Date.now();
 
-  const updatePayload: Record<string, any> = {
+  const updatePayload: {
+    status: string;
+    reviewedBy: string;
+    reviewedAt: number;
+    updatedAt: number;
+    reviewerNotes?: string;
+  } = {
     status,
     reviewedBy: adminId,
     reviewedAt: now,
@@ -410,7 +416,7 @@ export async function updateApplicationStatus(
     updatePayload.reviewerNotes = reviewerNotes;
   }
 
-  const result = await db
+  await db
     .update(recruitmentApplications)
     .set(updatePayload)
     .where(eq(recruitmentApplications.id, applicationId));

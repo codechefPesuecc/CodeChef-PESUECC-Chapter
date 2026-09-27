@@ -41,14 +41,17 @@ export async function POST(req: Request) {
   ]);
   if (limited) return limited;
 
-  let body: any;
+  let body: unknown;
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ ok: false, error: "Invalid JSON." }, { status: 400 });
   }
 
-  const result = await submitOrUpdateApplication(user.id, body);
+  const result = await submitOrUpdateApplication(
+    user.id,
+    body as Parameters<typeof submitOrUpdateApplication>[1],
+  );
   if (!result.ok) {
     return NextResponse.json({ ok: false, error: result.error }, { status: result.status });
   }

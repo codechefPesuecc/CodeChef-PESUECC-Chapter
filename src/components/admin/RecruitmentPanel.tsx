@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import MechaPanel from "@/components/cp-arena/MechaPanel";
 import {
   RECRUITMENT_DOMAINS,
   DOMAIN_QUESTIONS,
@@ -706,7 +705,7 @@ export default function RecruitmentPanel({
                         <div key={q.id} className="space-y-1">
                           <p className="font-medium text-charcoal/70">{q.label}</p>
                           <div className="rounded-lg border border-hairline/60 bg-panel p-2.5 font-mono text-chocolate whitespace-pre-wrap">
-                            {Array.isArray(ans) ? ans.join(", ") : ans || "—"}
+                            {Array.isArray(ans) ? ans.join(", ") : ans != null ? String(ans) : "—"}
                           </div>
                         </div>
                       );
@@ -727,7 +726,7 @@ export default function RecruitmentPanel({
                       <div key={q.id} className="space-y-1">
                         <p className="font-medium text-charcoal/70">{q.label}</p>
                         <div className="rounded-lg border border-hairline/60 bg-panel p-2.5 font-mono text-chocolate whitespace-pre-wrap">
-                          {ans || "—"}
+                          {ans != null ? String(ans) : "—"}
                         </div>
                       </div>
                     );

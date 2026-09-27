@@ -44,7 +44,7 @@ export default function NativeRecruitmentForm({
   const [prn, setPrn] = useState(user.prn ?? "");
   const [srn, setSrn] = useState(user.srn ?? "");
   const [heardFrom, setHeardFrom] = useState(existingApp?.heardFrom ?? "");
-  const [responses, setResponses] = useState<Record<string, any>>(
+  const [responses, setResponses] = useState<Record<string, unknown>>(
     existingApp?.responses ?? {},
   );
 
@@ -74,7 +74,7 @@ export default function NativeRecruitmentForm({
     }
   };
 
-  const handleResponseChange = (qid: string, value: any) => {
+  const handleResponseChange = (qid: string, value: unknown) => {
     setResponses((prev) => ({ ...prev, [qid]: value }));
   };
 
@@ -303,7 +303,7 @@ export default function NativeRecruitmentForm({
                         <div key={q.id} className="space-y-0.5">
                           <p className="text-charcoal/60 font-medium">{q.label}</p>
                           <p className="text-chocolate whitespace-pre-wrap font-mono">
-                            {Array.isArray(ans) ? ans.join(", ") : ans || "—"}
+                            {Array.isArray(ans) ? ans.join(", ") : ans != null ? String(ans) : "—"}
                           </p>
                         </div>
                       );
@@ -321,7 +321,7 @@ export default function NativeRecruitmentForm({
                       <div key={q.id} className="space-y-0.5">
                         <p className="text-charcoal/60 font-medium">{q.label}</p>
                         <p className="text-chocolate whitespace-pre-wrap font-mono">
-                          {ans || "—"}
+                          {ans != null ? String(ans) : "—"}
                         </p>
                       </div>
                     );
@@ -750,8 +750,8 @@ function RenderQuestionField({
   onToggleCheckboxOption,
 }: {
   question: RecruitmentQuestion;
-  value: any;
-  onChange: (val: any) => void;
+  value: unknown;
+  onChange: (val: unknown) => void;
   onToggleCheckboxOption: (opt: string) => void;
 }) {
   const currentText = typeof value === "string" ? value : "";

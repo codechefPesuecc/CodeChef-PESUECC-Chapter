@@ -98,7 +98,6 @@ export default function ArenaWorkspace({
   const [myRank, setMyRank] = useState<number | null>(null);
   const [myPoints, setMyPoints] = useState<number | null>(null);
   const [myFlaggedSolve, setMyFlaggedSolve] = useState(false);
-  const [board, setBoard] = useState<LeaderRow[] | null>(null);
   const [pageFocused, setPageFocused] = useState(true);
   const [busyLabel, setBusyLabel] = useState("Running…");
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -173,7 +172,7 @@ export default function ArenaWorkspace({
 
   useEffect(() => {
     if (practice) return; // practice pages don't show the ranked today board
-    fetchBoardRows().then((rows) => setBoard(rows));
+    fetchBoardRows();
   }, [fetchBoardRows, practice]);
 
   // Blur the problem when the window/tab loses focus — a screenshot deterrent
@@ -498,7 +497,6 @@ export default function ArenaWorkspace({
           // Still refresh the board for display, but don't use it for self-identity
           // unless the server didn't return rank/points (older API or compute failure).
           const rows = await fetchBoardRows();
-          setBoard(rows);
 
           if (rank == null && points == null) {
             const me = rows.find((r) => r.display === user.username);
@@ -562,6 +560,11 @@ export default function ArenaWorkspace({
     }
   };
 
+  const submitRef = useRef(submit);
+  useEffect(() => {
+    submitRef.current = submit;
+  });
+
   // --- NEW CODE START: Keyboard shortcut for submit ---
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -579,14 +582,14 @@ export default function ArenaWorkspace({
         
         // Respect the disabled state of the button
         if (!running && !(turnstileConfigured && !solved && !turnstileToken)) {
-          submit();
+          submitRef.current();
         }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [running, solved, turnstileToken,  submit]);
+  }, [running, solved, turnstileToken]);
   // --- NEW CODE END ---
 
   const isCustomInput =
