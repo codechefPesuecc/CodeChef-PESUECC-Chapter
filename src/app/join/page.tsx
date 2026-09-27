@@ -4,9 +4,10 @@ import Link from "@/components/AppLink";
 import Reveal from "@/components/Reveal";
 import CountUp from "@/components/CountUp";
 import MechaPanel from "@/components/cp-arena/MechaPanel";
-import ApplyCard from "@/components/join/ApplyCard";
+import NativeRecruitmentForm from "@/components/join/NativeRecruitmentForm";
 import { getRecruitmentSettings } from "@/server/recruitment";
 import { getCurrentUser } from "@/server/auth/session";
+import { getUserApplication } from "@/server/recruitment-applications";
 import { getAllEvents } from "@/lib/initiatives";
 
 export const dynamic = "force-dynamic";
@@ -109,7 +110,7 @@ const faqs = [
   },
   {
     q: "Can I apply to more than one domain?",
-    a: "No — pick the one you would be most excited to work on. The form takes a single domain, and the questions you see are tailored to it.",
+    a: "Yes — you can select up to 2 domains on the application form, and you will be asked domain-specific questions for each.",
   },
   {
     q: "How much time does this actually take?",
@@ -117,7 +118,7 @@ const faqs = [
   },
   {
     q: "I don't have an Arena account. Do I need one?",
-    a: "Yes — the form asks for your Arena username, and it is how we connect your application to your profile. Registering takes about a minute.",
+    a: "Yes — applications are native to our platform, so you must register and sign in to submit your application. Registering takes about a minute.",
   },
   {
     q: "When will I hear back?",
@@ -129,7 +130,7 @@ const timeline = [
   {
     step: "01",
     title: "Apply",
-    desc: "Fill in the form above and pick the one domain you want to be considered for.",
+    desc: "Fill in the form above and pick up to 2 domains you want to be considered for.",
   },
   {
     step: "02",
@@ -139,20 +140,19 @@ const timeline = [
   {
     step: "03",
     title: "We get in touch",
-    desc: "If you're shortlisted we'll email you about what comes next. Check your spam folder too.",
+    desc: "If you're shortlisted we'll reach out about what comes next. Check your spam folder too.",
   },
 ];
 
 export default async function JoinPage() {
-  // Both reads are already on the server; the session is what lets the Step 0
-  // callout tell a signed-in applicant the exact username to type.
   const [settings, user] = await Promise.all([
     getRecruitmentSettings(),
     getCurrentUser(),
   ]);
-  const events = getAllEvents();
-  const isOpen = settings.canEmbed;
   const cycle = settings.cycle?.trim();
+  const existingApp = user ? await getUserApplication(user.id, cycle || "current") : null;
+  const events = getAllEvents();
+  const isOpen = settings.isOpen;
   const cycleBadge = cycle ? `Recruitment ${cycle}` : "Recruitment";
   const daysLeft = isOpen ? daysUntil(settings.closesOn) : null;
 
@@ -417,10 +417,10 @@ export default async function JoinPage() {
             </a>{" "}
             or email{" "}
             <a
-              href="mailto:codechef@pesu.pes.edu"
+              href="mailto:codechef.ecc@pes.edu"
               className="text-bronze underline-offset-4 hover:underline"
             >
-              codechef@pesu.pes.edu
+              codechef.ecc@pes.edu
             </a>
             . No question is too basic.
           </p>
@@ -428,79 +428,114 @@ export default async function JoinPage() {
       </section>
 
       {/* Application form — last, after the case for applying has been made */}
-      <section id="apply"
-        className="mx-auto max-w-4xl scroll-mt-24 px-6 py-10 pb-24">
-        {isOpen && settings.formUrl ? (
+      <section id="apply" className="mx-auto max-w-4xl scroll-mt-24 px-6 py-10 pb-24">
+        {isOpen ? (
           <div className="space-y-8">
-            {/* Prerequisite Callout */}
-            <Reveal>
-              <MechaPanel
-                label="Step 0"
-                index="Arena Account"
-                style={CALLOUT_FILL}
-                bodyClassName="p-6"
-              >
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  {user ? (
-                    <>
-                      <div>
-                        <h3 className="font-display text-base font-bold text-chocolate">
-                          You&apos;re signed in as{" "}
-                          <span className="font-mono text-bronze">{user.username}</span>
-                        </h3>
-                        <p className="mt-1 text-sm text-charcoal/75">
-                          Enter exactly that when the form asks for your Arena username — it
-                          is how we match your application to your account.
-                        </p>
-                      </div>
-                      <Link
-                        href="/profile"
-                        className="mecha-btn mecha-btn--ghost shrink-0 text-xs self-start sm:self-auto"
-                      >
-                        View profile &rarr;
-                      </Link>
-                    </>
-                  ) : (
-                    <>
-                      <div>
-                        <h3 className="font-display text-base font-bold text-chocolate">
-                          Register on the CP Arena first
-                        </h3>
-                        <p className="mt-1 text-sm text-charcoal/75">
-                          The form asks for your Arena username, so make an account before you
-                          start — it only takes a minute, and it is how we link your
-                          application to your profile.
-                        </p>
-                      </div>
-                      <Link
-                        href="/register"
-                        className="mecha-btn mecha-btn--ghost shrink-0 text-xs self-start sm:self-auto"
-                      >
-                        Register account &rarr;
-                      </Link>
-                    </>
-                  )}
-                </div>
-              </MechaPanel>
-            </Reveal>
+            {!user ? (
+              /* Not signed in prompt */
+              <Reveal>
+                <MechaPanel
+                  label="Application Gate"
+                  index="Sign In Required"
+                  style={CALLOUT_FILL}
+                  bodyClassName="p-8 text-center space-y-4"
+                >
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-bronze/10 text-bronze">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="22"
+                      height="22"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-display text-2xl font-bold text-chocolate">
+                      Sign in or Register to Apply
+                    </h3>
+                    <p className="mx-auto mt-2 max-w-md text-sm text-charcoal/75">
+                      Recruitment applications are tied to your CodeChef PESUECC platform account. Create an account or sign in to complete your application.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-3 pt-2">
+                    <Link
+                      href="/register"
+                      className="mecha-btn mecha-btn--solid text-xs inline-flex items-center gap-2"
+                    >
+                      Create Account &rarr;
+                    </Link>
+                    <Link
+                      href="/login"
+                      className="mecha-btn mecha-btn--ghost text-xs inline-flex items-center gap-2"
+                    >
+                      Sign in
+                    </Link>
+                  </div>
+                </MechaPanel>
+              </Reveal>
+            ) : process.env.REQUIRE_EMAIL_VERIFICATION === "true" && !user.emailVerified ? (
+              /* Unverified email prompt */
+              <Reveal>
+                <MechaPanel
+                  label="Verification Required"
+                  index="Email OTP"
+                  style={CALLOUT_FILL}
+                  bodyClassName="p-8 text-center space-y-4"
+                >
+                  <h3 className="font-display text-2xl font-bold text-chocolate">
+                    Verify your email address
+                  </h3>
+                  <p className="mx-auto mt-2 max-w-md text-sm text-charcoal/75">
+                    Your account (<span className="font-mono font-medium text-chocolate">{user.email}</span>) needs to be verified before submitting a recruitment application.
+                  </p>
+                  <div className="pt-2">
+                    <Link
+                      href="/verify"
+                      className="mecha-btn mecha-btn--solid text-xs inline-flex items-center gap-2"
+                    >
+                      Verify Email &rarr;
+                    </Link>
+                  </div>
+                </MechaPanel>
+              </Reveal>
+            ) : (
+              /* Native Recruitment Form */
+              <Reveal delay={0.1}>
+                <div className="space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-hairline pb-4">
+                    <div>
+                      <h2 className="font-display text-2xl font-bold text-chocolate">
+                        Application Form
+                      </h2>
+                      <p className="text-xs text-charcoal/70">
+                        Select your domain(s) and submit your responses below.
+                      </p>
+                    </div>
+                    {cycle && (
+                      <span className="font-mono text-xs text-bronze uppercase tracking-wider self-start sm:self-auto">
+                        {cycle} Drive
+                      </span>
+                    )}
+                  </div>
 
-            {/* Google Form Embed */}
-            <Reveal delay={0.1}>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="font-display text-2xl font-bold text-chocolate">
-                    Application Form
-                  </h2>
-                  {cycle && (
-                    <span className="font-mono text-xs text-bronze uppercase tracking-wider">
-                      {cycle} Drive
-                    </span>
-                  )}
+                  <NativeRecruitmentForm
+                    user={user}
+                    existingApp={existingApp}
+                    cycle={cycle || "2026-27"}
+                    isOpen={isOpen}
+                  />
                 </div>
-
-                <ApplyCard formUrl={settings.formUrl} />
-              </div>
-            </Reveal>
+              </Reveal>
+            )}
           </div>
         ) : (
           /* Closed Notice */

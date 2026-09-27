@@ -48,6 +48,7 @@ export async function POST(req: Request) {
 
   const username = String(body.username ?? "").trim().toLowerCase();
   const name = String(body.name ?? "").trim();
+  const phone = String(body.phone ?? "").trim();
   const email = String(body.email ?? "").trim().toLowerCase();
   const prn = String(body.prn ?? "").trim().toUpperCase();
   const srn = body.srn ? String(body.srn).trim().toUpperCase() : null;
@@ -62,6 +63,12 @@ export async function POST(req: Request) {
   if (name.length < 1 || name.length > 80) {
     return NextResponse.json(
       { ok: false, error: "Enter your name (up to 80 characters)." },
+      { status: 400 },
+    );
+  }
+  if (phone && (phone.length < 10 || phone.length > 20)) {
+    return NextResponse.json(
+      { ok: false, error: "Enter a valid phone/WhatsApp number." },
       { status: 400 },
     );
   }
@@ -103,6 +110,7 @@ export async function POST(req: Request) {
       id,
       username,
       name,
+      phone: phone || null,
       email,
       srn,
       prn,
@@ -120,6 +128,7 @@ export async function POST(req: Request) {
     id,
     username,
     name,
+    phone: phone || null,
     email,
     emailVerified: false,
     srn,

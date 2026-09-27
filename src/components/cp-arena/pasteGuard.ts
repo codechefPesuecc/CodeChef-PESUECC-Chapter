@@ -58,3 +58,107 @@ export function isBulkInjection(tr: Transaction, allowed: readonly string[]): bo
   const text = normalizeClip(insertedText(tr));
   return text.length >= BULK_INSERT_THRESHOLD && !allowed.includes(text);
 }
+
+/** Minimum number of consecutive inputs needed to calculate cadence metrics. */
+export const CADENCE_WINDOW_MIN = 12;
+/** Auto-typer timer variance limit: standard deviation under 12ms at steady speed. */
+export const CADENCE_MAX_STDDEV = 12;
+/** Upper bound for mean interval of an active simulated typer (e.g. 200-400ms). */
+export const CADENCE_MAX_MEAN = 450;
+/** Single interval above this is considered a human thinking pause and resets the continuous burst. */
+export const CADENCE_BURST_PAUSE_MS = 1500;
+
+/**
+ * Calculates standard deviation and mean for a series of inter-keystroke intervals (IKIs).
+ * Returns true if the cadence exhibits robotic, metronomic regularity characteristic of
+ * auto-typers / paste-typer browser extensions.
+ */
+export function isRoboticCadence(intervals: readonly number[]): boolean {
+  if (intervals.length < CADENCE_WINDOW_MIN) return false;
+
+  const n = intervals.length;
+  const mean = intervals.reduce((sum, val) => sum + val, 0) / n;
+
+  // Superhuman continuous macro typing (< 35ms per character sustained across the window)
+  if (mean < 35) return true;
+
+  // If average speed is slower than plausible auto-typer range (e.g. > 450ms/char), not flagged
+  if (mean > CADENCE_MAX_MEAN) return false;
+
+  // Sample variance and standard deviation
+  const variance = intervals.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / (n - 1);
+  const stdDev = Math.sqrt(variance);
+
+  // Auto-typers using setInterval/setTimeout or fixed delays have near-zero jitter (stdDev < 12ms)
+  return stdDev <= CADENCE_MAX_STDDEV;
+}
+
+/**
+ * State tracker for continuous typing cadence in the editor.
+ */
+export class CadenceTracker {
+  private intervals: number[] = [];
+  private chars: string[] = [];
+  private lastTime: number | null = null;
+  private maxWindow: number;
+
+  constructor(maxWindow = 30) {
+    this.maxWindow = maxWindow;
+  }
+
+  /**
+   * Records a keystroke/transaction timestamp and the inserted text snippet.
+   * Returns true if robotic cadence is detected.
+   */
+  record(
+    char = "",
+    now: number = typeof performance !== "undefined" ? performance.now() : Date.now(),
+  ): boolean {
+    if (this.lastTime === null) {
+      this.lastTime = now;
+      if (char) this.chars = [char];
+      return false;
+    }
+
+    const delta = now - this.lastTime;
+    this.lastTime = now;
+
+    // A thinking pause breaks the continuous burst
+    if (delta > CADENCE_BURST_PAUSE_MS) {
+      this.intervals = [];
+      this.chars = [];
+      return false;
+    }
+
+    // Ignore negative or identical timestamps from batch processing
+    if (delta < 1) return false;
+
+    this.intervals.push(delta);
+    if (char) this.chars.push(char);
+
+    if (this.intervals.length > this.maxWindow) {
+      this.intervals.shift();
+    }
+    if (this.chars.length > this.maxWindow) {
+      this.chars.shift();
+    }
+
+    // If holding down a single key (e.g. key-repeat for "------", spaces, or "00000"),
+    // character variety is low (< 4 distinct characters), which is legitimate human behavior.
+    if (this.chars.length >= CADENCE_WINDOW_MIN) {
+      const uniqueChars = new Set(this.chars);
+      if (uniqueChars.size < 4) {
+        return false;
+      }
+    }
+
+    return isRoboticCadence(this.intervals);
+  }
+
+  reset(): void {
+    this.intervals = [];
+    this.chars = [];
+    this.lastTime = null;
+  }
+}
+

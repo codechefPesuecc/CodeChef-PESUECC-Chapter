@@ -23,7 +23,8 @@ export type IntegrityEvent =
   | "tab-switch"
   | "context-menu"
   | "screenshot"
-  | "window-blur";
+  | "window-blur"
+  | "simulated-typing";
 
 const MESSAGES: Record<IntegrityEvent, string> = {
   paste: "Only code copied from the editor can be pasted.",
@@ -33,6 +34,7 @@ const MESSAGES: Record<IntegrityEvent, string> = {
   "context-menu": "Right-click is disabled in the arena.",
   screenshot: "Screen capture detected — this is recorded for review.",
   "window-blur": "You left the window — this is recorded for review.",
+  "simulated-typing": "Simulated or automated typing detected — this is recorded for review.",
 };
 
 export interface IntegrityCounts {
@@ -43,6 +45,7 @@ export interface IntegrityCounts {
   contextMenu: number;
   screenshot: number;
   windowBlur: number;
+  simulatedTyping: number;
 }
 
 const EMPTY: IntegrityCounts = {
@@ -53,6 +56,7 @@ const EMPTY: IntegrityCounts = {
   contextMenu: 0,
   screenshot: 0,
   windowBlur: 0,
+  simulatedTyping: 0,
 };
 
 const KEY: Record<IntegrityEvent, keyof IntegrityCounts> = {
@@ -63,6 +67,7 @@ const KEY: Record<IntegrityEvent, keyof IntegrityCounts> = {
   "context-menu": "contextMenu",
   screenshot: "screenshot",
   "window-blur": "windowBlur",
+  "simulated-typing": "simulatedTyping",
 };
 
 // Every recorded event counts toward the FLAG_LIMIT penalty cap, including
@@ -76,6 +81,7 @@ const PENALISED: ReadonlySet<IntegrityEvent> = new Set([
   "context-menu",
   "screenshot",
   "window-blur",
+  "simulated-typing",
 ]);
 
 // Merge server counts with the local ones, never dropping below the local value.
@@ -198,7 +204,8 @@ export function useIntegrityMonitor(active: boolean, slug?: string) {
     counts.tabSwitch +
     counts.contextMenu +
     counts.screenshot +
-    counts.windowBlur;
+    counts.windowBlur +
+    counts.simulatedTyping;
 
   return { counts, notice, total, flagged: total > FLAG_LIMIT, record, PENALISED };
 }

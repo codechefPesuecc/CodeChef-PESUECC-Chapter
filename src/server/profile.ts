@@ -99,6 +99,7 @@ export type UpdateProfileResult =
 export interface ProfileInput {
   name?: unknown;
   username?: unknown;
+  phone?: unknown;
   srn?: unknown;
   prn?: unknown;
 }
@@ -116,6 +117,7 @@ export async function updateProfile(
   const patch: {
     name?: string;
     username?: string;
+    phone?: string | null;
     srn?: string | null;
     prn?: string;
   } = {};
@@ -138,6 +140,14 @@ export async function updateProfile(
       };
     }
     patch.username = username;
+  }
+
+  if (input.phone !== undefined) {
+    const raw = String(input.phone).trim();
+    if (raw && (raw.length < 10 || raw.length > 20)) {
+      return { ok: false, status: 400, error: "Enter a valid phone/WhatsApp number." };
+    }
+    patch.phone = raw || null;
   }
 
   if (input.prn !== undefined) {

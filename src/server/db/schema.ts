@@ -15,6 +15,8 @@ export const users = sqliteTable("users", {
   username: text("username").notNull().unique(),
   // Full name captured at registration. Nullable so existing rows are unaffected.
   name: text("name"),
+  // WhatsApp / phone number. Nullable so existing rows are unaffected.
+  phone: text("phone"),
   email: text("email").notNull().unique(),
   emailVerified: integer("email_verified", { mode: "boolean" })
     .notNull()
@@ -259,6 +261,33 @@ export const recruitmentSettings = sqliteTable("recruitment_settings", {
   updatedBy: text("updated_by"),
 });
 
+// In-house recruitment applications table. One active application per user per cycle.
+// Holds candidate's chosen domains (JSON array up to 2), year of study, branch, WhatsApp phone,
+// answers to domain and wrapping-up questions (JSON object), review status, and reviewer notes.
+export const recruitmentApplications = sqliteTable(
+  "recruitment_applications",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    cycle: text("cycle").notNull(),
+    domains: text("domains").notNull(), // JSON string[] (e.g. ["Technical", "Design"])
+    yearOfStudy: text("year_of_study").notNull(), // '1st' | '2nd' | '3rd' | '4th'
+    branch: text("branch").notNull(),
+    phone: text("phone").notNull(),
+    heardFrom: text("heard_from"),
+    responses: text("responses").notNull(), // JSON Record<string, any>
+    status: text("status").notNull().default("submitted"), // "submitted" | "under_review" | "shortlisted" | "rejected" | "accepted"
+    reviewerNotes: text("reviewer_notes"),
+    reviewedBy: text("reviewed_by"),
+    reviewedAt: integer("reviewed_at"),
+    createdAt: integer("created_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+  },
+  (t) => [unique().on(t.userId, t.cycle)],
+);
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Attempt = typeof attempts.$inferSelect;
@@ -278,3 +307,5 @@ export type MonstrSubmission = typeof monstrSubmissions.$inferSelect;
 export type NewMonstrSubmission = typeof monstrSubmissions.$inferInsert;
 export type RecruitmentSettingsRow = typeof recruitmentSettings.$inferSelect;
 export type NewRecruitmentSettingsRow = typeof recruitmentSettings.$inferInsert;
+export type RecruitmentApplication = typeof recruitmentApplications.$inferSelect;
+export type NewRecruitmentApplication = typeof recruitmentApplications.$inferInsert;

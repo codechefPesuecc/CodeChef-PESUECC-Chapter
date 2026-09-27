@@ -8,6 +8,7 @@ const inputCls = "mecha-input";
 export interface ProfileEditValues {
   name: string | null;
   username: string;
+  phone?: string | null;
   srn: string | null;
   prn: string;
 }
@@ -22,6 +23,7 @@ export default function ProfileEditForm({ user }: { user: ProfileEditValues }) {
   const initial = {
     name: user.name ?? "",
     username: user.username,
+    phone: user.phone ?? "",
     srn: user.srn ?? "",
     prn: user.prn,
   };
@@ -73,6 +75,9 @@ export default function ProfileEditForm({ user }: { user: ProfileEditValues }) {
         <DetailRow label="Name">
           <span className="text-charcoal/80">{user.name ?? "—"}</span>
         </DetailRow>
+        <DetailRow label="WhatsApp">
+          <span className="font-mono text-charcoal/80">{user.phone ?? "Not linked"}</span>
+        </DetailRow>
         <DetailRow label="PRN">
           <span className="font-mono text-charcoal/80">{user.prn}</span>
         </DetailRow>
@@ -108,6 +113,16 @@ export default function ProfileEditForm({ user }: { user: ProfileEditValues }) {
           onChange={set("username")}
           autoComplete="username"
           required
+        />
+      </Field>
+      <Field label="WhatsApp / Phone number" hint="Used for club recruitment and announcements.">
+        <input
+          type="tel"
+          className={inputCls}
+          placeholder="+91 98765 43210"
+          value={form.phone}
+          onChange={set("phone")}
+          autoComplete="tel"
         />
       </Field>
       <div className="grid grid-cols-2 gap-3">

@@ -6,7 +6,7 @@ import MechaPanel from "@/components/cp-arena/MechaPanel";
 
 const inputCls = "mecha-input";
 
-const empty = { name: "", username: "", email: "", prn: "", srn: "", password: "", confirm: "" };
+const empty = { name: "", username: "", email: "", phone: "", prn: "", srn: "", password: "", confirm: "" };
 
 export default function RegisterForm() {
   const [form, setForm] = useState(empty);
@@ -38,6 +38,7 @@ export default function RegisterForm() {
           name: form.name,
           username: form.username,
           email: form.email,
+          phone: form.phone || undefined,
           prn: form.prn,
           srn: form.srn || undefined,
           password: form.password,
@@ -91,6 +92,17 @@ export default function RegisterForm() {
               value={form.email}
               onChange={set("email")}
               autoComplete="email"
+              required
+            />
+          </Field>
+          <Field label="WhatsApp / Phone number" hint="For club updates and recruitments.">
+            <input
+              type="tel"
+              className={inputCls}
+              value={form.phone}
+              onChange={set("phone")}
+              placeholder="+91 98765 43210"
+              autoComplete="tel"
               required
             />
           </Field>

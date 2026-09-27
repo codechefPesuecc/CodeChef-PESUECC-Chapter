@@ -12,7 +12,7 @@ import { StreamLanguage } from "@codemirror/language";
 import { csharp } from "@codemirror/legacy-modes/mode/clike";
 import type { LanguageId } from "./mockData";
 import type { IntegrityEvent } from "./useIntegrityMonitor";
-import { isDisallowedPaste, isBulkInjection, normalizeClip } from "./pasteGuard";
+import { isDisallowedPaste, isBulkInjection, normalizeClip, CadenceTracker, insertedText } from "./pasteGuard";
 import { useThemeMode } from "./useThemeMode";
 
 // C and C++ share the cpp highlighter; Kotlin/C# use the legacy clike modes;
@@ -81,6 +81,8 @@ export default function CodeMirrorEditor({
   // We keep a short history rather than a single value so the OS clipboard history
   // (e.g. Windows Win+V re-pasting an earlier copy) doesn't trip a false block.
   const internalCopies = useRef<string[]>([]);
+  const cadenceTracker = useRef<CadenceTracker>(new CadenceTracker());
+
   const remember = (text: string) => {
     const n = normalizeClip(text);
     if (!n) return;
@@ -103,7 +105,38 @@ export default function CodeMirrorEditor({
         // never during render — safe, but the rule can't see the deferred closures.
         // eslint-disable-next-line react-hooks/refs
         EditorView.domEventHandlers({
+          beforeinput(event) {
+            // Block simulated typing extensions dispatching synthetic input events
+            if (!event.isTrusted) {
+              event.preventDefault();
+              onBlocked?.("simulated-typing");
+              return true;
+            }
+            return false;
+          },
+          keydown(event) {
+            // Block synthetic keyboard events dispatched by automation scripts / extensions
+            if (!event.isTrusted) {
+              event.preventDefault();
+              onBlocked?.("simulated-typing");
+              return true;
+            }
+            return false;
+          },
+          input(event) {
+            if (!event.isTrusted) {
+              event.preventDefault();
+              onBlocked?.("simulated-typing");
+              return true;
+            }
+            return false;
+          },
           paste(event) {
+            if (!event.isTrusted) {
+              event.preventDefault();
+              onBlocked?.("paste");
+              return true;
+            }
             const incoming = normalizeClip(event.clipboardData?.getData("text") ?? "");
             // Only accept clipboard content that was copied from within this editor;
             // let CodeMirror insert it natively. Anything else is outside text.
@@ -162,6 +195,18 @@ export default function CodeMirrorEditor({
             // not inside this transaction computation.
             setTimeout(() => onBlocked?.("paste"), 0);
             return [];
+          }
+          if (
+            tr.docChanged &&
+            tr.isUserEvent("input.type") &&
+            !tr.isUserEvent("input.type.compose")
+          ) {
+            // Detect robotic cadence / metronomic typing from extensions simulating typing
+            const text = insertedText(tr);
+            if (cadenceTracker.current.record(text)) {
+              setTimeout(() => onBlocked?.("simulated-typing"), 0);
+              return [];
+            }
           }
           return tr;
         }),

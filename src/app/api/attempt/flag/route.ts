@@ -26,6 +26,7 @@ const EVENT_KEY: Record<string, string> = {
   "context-menu": "contextMenu",
   screenshot: "screenshot",
   "window-blur": "windowBlur",
+  "simulated-typing": "simulatedTyping",
 };
 
 // Events that DO NOT increment the penalty flag total (`attempts.flags`).
@@ -35,7 +36,7 @@ const EVENT_KEY: Record<string, string> = {
 // un-flagged — so it now penalises like the rest.)
 const NON_PENALISED: ReadonlySet<string> = new Set();
 
-const ZERO = { paste: 0, copy: 0, cut: 0, tabSwitch: 0, contextMenu: 0, screenshot: 0, windowBlur: 0 };
+const ZERO = { paste: 0, copy: 0, cut: 0, tabSwitch: 0, contextMenu: 0, screenshot: 0, windowBlur: 0, simulatedTyping: 0 };
 type Counts = typeof ZERO;
 
 function parseCounts(json: string | null | undefined): Counts {
@@ -51,6 +52,7 @@ function parseCounts(json: string | null | undefined): Counts {
       contextMenu: n(o.contextMenu),
       screenshot: n(o.screenshot),
       windowBlur: n(o.windowBlur),
+      simulatedTyping: n(o.simulatedTyping),
     };
   } catch {
     return { ...ZERO };

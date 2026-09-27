@@ -70,7 +70,7 @@ export async function getRecruitmentSettings(): Promise<RecruitmentState> {
     closesOn: row.closesOn,
     updatedAt: row.updatedAt,
     updatedBy: row.updatedBy,
-    canEmbed: row.isOpen && !!row.formUrl && isGoogleFormUrl(row.formUrl),
+    canEmbed: row.isOpen,
   };
 }
 
@@ -161,16 +161,6 @@ export async function updateRecruitmentSettings(
     cycle: patch.cycle !== undefined ? patch.cycle : current.cycle,
     closesOn: patch.closesOn !== undefined ? patch.closesOn : current.closesOn,
   };
-
-  // Opening the drive with nowhere to apply would publish a /join page whose
-  // whole purpose is missing. Refuse rather than ship an empty frame.
-  if (next.isOpen && !next.formUrl) {
-    return {
-      ok: false,
-      status: 400,
-      error: "Add the Google Form link before opening recruitment.",
-    };
-  }
 
   const db = getDb();
   const row = {

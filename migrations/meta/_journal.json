@@ -85,6 +85,13 @@
       "when": 1788887877125,
       "tag": "0011_flashy_sunfire",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1790417991321,
+      "tag": "0012_outgoing_dagger",
+      "breakpoints": true
     }
   ]
 }
