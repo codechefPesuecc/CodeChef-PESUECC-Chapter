@@ -210,202 +210,34 @@
       "category": "Learning Pipeline",
       "status": "Cohort Program",
       "cadence": "Weekly foundations",
-      "description": "A guided problem-solving pipeline for students moving from syntax comfort to interview-ready competitive thinking.",
+      "description": "A structured learning program that takes students through the fundamentals of problem solving, data structures, algorithms, and coding patterns through guided sessions. LeetCode 101 focuses on building strong foundations, developing systematic approaches to unfamiliar problems, and gradually preparing participants for competitive programming, technical interviews, and real-world engineering challenges.",
       "highlights": [
         "Pattern-first sessions",
         "Mentor-led reviews",
         "Editorial practice"
       ],
       "accent": "02",
-      "image": "/events/leetcode101.jpg",
+      "image": "/events/leetcode101-pushkar.webp",
       "gallery": [
         {
-          "src": "/events/leetcode101.jpg",
+          "src": "/events/leetcode101-pushkar1.webp",
           "caption": "Mentor-led pattern sessions"
         },
         {
-          "src": "/dev-team.jpg",
+          "src": "/events/leetcode101.webp",
           "caption": "Weekly practice cohorts"
         },
         {
-          "src": "/dev-team.jpg",
+          "src": "/events/leetcode101-sid.webp",
           "caption": "Editorial review circles"
         }
       ],
       "href": "/initiatives/leetcode-101",
-      "timeline": [
-        {
-          "date": "09:00 AM",
-          "title": "Check-in & Breakfast",
-          "tag": "Registration",
-          "description": "Participants arrive, verify their registration, collect their badges, and get energized with a hearty breakfast before the intense competition begins.",
-          "stats": [
-            {
-              "label": "Expected Arrival",
-              "value": "800+"
-            },
-            {
-              "label": "Duration",
-              "value": "60 mins"
-            }
-          ],
-          "features": [
-            "QR Code quick scanning",
-            "Swag bag distribution"
-          ]
-        },
-        {
-          "date": "10:00 AM",
-          "title": "Opening Ceremony & Problem Release",
-          "tag": "Ceremony",
-          "description": "The official kickoff. We will explain the rules, introduce the judges, and reveal the primary encrypted problem statement that unlocks the first physical checkpoint.",
-          "image": "/dev-team.jpg",
-          "stats": [
-            {
-              "label": "Venue",
-              "value": "Main Auditorium"
-            }
-          ],
-          "features": [
-            "Keynote by Lead Architect",
-            "Live demonstration of the leaderboard platform"
-          ]
-        },
-        {
-          "date": "10:30 AM",
-          "title": "Checkpoint 1: The Cryptography Node",
-          "tag": "Hacking",
-          "description": "Teams disperse across campus to their first physical node. They must decrypt a cipher to unlock the next GPS coordinates.",
-          "stats": [
-            {
-              "label": "Difficulty",
-              "value": "Medium"
-            }
-          ],
-          "features": [
-            "RSA decryption puzzles",
-            "Physical lock boxes"
-          ]
-        },
-        {
-          "date": "01:00 PM",
-          "title": "Lunch & Networking",
-          "tag": "Break",
-          "description": "A mandatory cool-down period where teams can refuel, discuss strategies with mentors, and check the global standings.",
-          "stats": [],
-          "features": []
-        },
-        {
-          "date": "02:00 PM",
-          "title": "Checkpoint 2: The Hardware Node",
-          "tag": "Hacking",
-          "description": "The final sprint. Teams must interface their laptops with custom ESP32 hardware modules placed around the campus to execute their final algorithms.",
-          "image": "/dev-team.jpg",
-          "stats": [
-            {
-              "label": "Elimination",
-              "value": "Bottom 50%"
-            }
-          ],
-          "features": [
-            "Arduino / ESP32 interfacing",
-            "Reverse engineering binaries"
-          ]
-        },
-        {
-          "date": "05:00 PM",
-          "title": "Closing Ceremony & Winners",
-          "tag": "Ceremony",
-          "description": "The leaderboard freezes. We announce the top 3 teams, distribute prizes, and conclude the event with closing remarks from our sponsors.",
-          "stats": [
-            {
-              "label": "Prize Pool",
-              "value": "$5,000"
-            }
-          ],
-          "features": []
-        }
-      ],
-      "mentors": [
-        {
-          "name": "Aditya Raj",
-          "role": "Lead Architect",
-          "photo": "/dev-team.jpg",
-          "linkedin": "https://linkedin.com"
-        },
-        {
-          "name": "Aniket Barun",
-          "role": "Problem Setter",
-          "photo": "/dev-team.jpg",
-          "linkedin": "https://linkedin.com"
-        },
-        {
-          "name": "Shivansh",
-          "role": "Platform Engineer",
-          "photo": "/dev-team.jpg",
-          "linkedin": "https://linkedin.com"
-        }
-      ],
-      "winners": [
-        {
-          "team": "Team Enigma",
-          "achievement": "1st Place Champions",
-          "heroImage": "/dev-team.jpg",
-          "members": [
-            {
-              "name": "Alex Chen",
-              "linkedin": "https://linkedin.com"
-            },
-            {
-              "name": "Sarah Jenkins",
-              "linkedin": "https://linkedin.com"
-            },
-            {
-              "name": "Rahul Patel",
-              "linkedin": "https://linkedin.com"
-            }
-          ],
-          "experience": "The combination of algorithmic thinking and sprinting across campus was unparalleled. We spent 20 minutes debugging Dijkstra while physically standing in the rain at the final checkpoint. It pushed us to our absolute limits!"
-        },
-        {
-          "team": "Runtime Terrors",
-          "achievement": "2nd Place Runner Ups",
-          "heroImage": "/dev-team.jpg",
-          "members": [
-            {
-              "name": "David Kim",
-              "linkedin": "https://linkedin.com"
-            },
-            {
-              "name": "Priya Singh",
-              "linkedin": "https://linkedin.com"
-            }
-          ],
-          "experience": "We lost our lead because we forgot a semicolon in the cryptography round, but making up the time during the campus sprint was thrilling."
-        },
-        {
-          "team": "O(1) Braincells",
-          "achievement": "3rd Place",
-          "heroImage": "/dev-team.jpg",
-          "members": [
-            {
-              "name": "Michael Chang",
-              "linkedin": "https://linkedin.com"
-            },
-            {
-              "name": "Emily Watson",
-              "linkedin": "https://linkedin.com"
-            },
-            {
-              "name": "Zack Taylor",
-              "linkedin": "https://linkedin.com"
-            }
-          ],
-          "experience": "Getting onto the podium was incredible. The hardware node reverse engineering completely blew our minds. Best event of the year!"
-        }
-      ],
-      "cardBrief": "LeetCode 101 is our flagship mentorship program engineered to systematically break down data structures and algorithms.",
-      "detailedExplanation": "LeetCode 101 is our flagship mentorship program engineered to systematically break down data structures and algorithms."
+      "timeline": [],
+      "mentors": [],
+      "winners": [],
+      "cardBrief": "LeetCode 101 is our flagship mentorship program designed to help students build a strong foundation in data structures, algorithms, and problem-solving.\r \r What is LeetCode 101?\r \r   LeetCode 101 is a guided learning program focused on developing the...",
+      "detailedExplanation": "LeetCode 101 is our flagship mentorship program designed to help students build a strong foundation in data structures, algorithms, and problem-solving.\r\n\r\n## What is LeetCode 101?\r\n\r\n  LeetCode 101 is a guided learning program focused on developing the problem-solving habits required for competitive programming and technical interviews.\r\n\r\n  Instead of treating problem solving as a collection of tricks to memorize, the program focuses on understanding the patterns behind problems and learning how to recognize those patterns when encountering something new.\r\n\r\n## What We Focus On\r\n\r\n### Data Structures\r\n\r\n  We build a practical understanding of the data structures that appear frequently in programming problems. The emphasis is not simply on learning what a data structure is, but on understanding when and why it should be used.\r\n\r\n### Problem-Solving Patterns\r\n\r\n  A major part of LeetCode 101 is learning to recognize recurring patterns. Students learn to break unfamiliar problems down, identify useful structures, and develop systematic approaches rather than memorizing individual solutions.\r\n\r\n### Complexity and Optimization\r\n\r\n  Students compare different approaches and examine their time and space complexity, learning how to identify unnecessary work and improve solutions as input sizes grow.\r\n\r\n## Learning Through Problems\r\n\r\n  The program is built around solving problems rather than passively watching explanations. Students learn to understand the problem, break it into smaller parts, develop possible approaches, implement a solution, analyze its complexity, and review alternative approaches.\r\n\r\n## Mentor-Led Reviews\r\n\r\n  Mentorship is a core part of the program. Solutions are reviewed beyond simply checking whether they pass, with attention given to the chosen approach, implementation, complexity, clarity, and possible improvements.\r\n## Editorial Practice\r\n\r\n  Students learn how to read and write problem editorials by identifying the key observation, explaining the algorithm, and reasoning about its complexity.\r\n\r\n## From Foundations to Competitive Programming\r\n\r\n  LeetCode 101 provides the foundation for students who want to continue into deeper competitive programming and technical interview preparation. The goal is to develop consistent problem-solving habits, recognize algorithmic patterns, analyze complexity, learn from failed approaches, and communicate technical reasoning clearly.\r\n\r\n## Start With the Problem, Not the Solution\r\n\r\n  Problem solving is a skill that improves through deliberate practice. Every difficult problem is an opportunity to identify a new pattern, question an existing approach, and become better at breaking down unfamiliar problems.\r\n\r\n  LeetCode 101 provides the structure, mentorship, and practice environment to make that process consistent."
     },
     {
       "id": "algohunt",
@@ -413,262 +245,163 @@
       "category": "Gamified Algorithmic Event",
       "status": "Flagship Contest",
       "cadence": "Campus-scale hunt",
-      "description": "A physical-digital contest where algorithms unlock checkpoints, clues, and leaderboard momentum across campus.",
+      "description": "A campus-scale algorithmic challenge that combines competitive programming, problem solving, and real-world exploration into a single gamified experience. Participants solve progressively challenging algorithmic tasks to unlock checkpoints, discover clues, and advance through the hunt, with performance, speed, and strategic thinking shaping their position on the leaderboard.",
       "highlights": [
         "Puzzle-backed routes",
         "Live scoring",
         "Team-based solving"
       ],
       "accent": "03",
-      "image": "/events/algohunt.jpg",
+      "image": "/events/algohunt3.webp",
       "gallery": [
         {
-          "src": "/events/algohunt.jpg",
-          "caption": "Campus checkpoints and clue drops"
+          "src": "/events/algohunt1.webp",
+          "caption": "The Arena"
         },
         {
-          "src": "/dev-team.jpg",
-          "caption": "Team solving under live pressure"
+          "src": "/events/algohunt2.webp",
+          "caption": "Team solving under pressure"
         },
         {
-          "src": "/dev-team.jpg",
-          "caption": "Leaderboard-driven finale"
+          "src": "/events/algohunt3.webp",
+          "caption": "The team"
         }
       ],
       "href": "/initiatives/algohunt",
-      "timeline": [
-        {
-          "date": "09:00 AM",
-          "title": "Check-in & Breakfast",
-          "tag": "Registration",
-          "description": "Participants arrive, verify their registration, collect their badges, and get energized with a hearty breakfast before the intense competition begins.",
-          "stats": [
-            {
-              "label": "Expected Arrival",
-              "value": "800+"
-            },
-            {
-              "label": "Duration",
-              "value": "60 mins"
-            }
-          ],
-          "features": [
-            "QR Code quick scanning",
-            "Swag bag distribution"
-          ]
-        },
-        {
-          "date": "10:00 AM",
-          "title": "Opening Ceremony & Problem Release",
-          "tag": "Ceremony",
-          "description": "The official kickoff. We will explain the rules, introduce the judges, and reveal the primary encrypted problem statement that unlocks the first physical checkpoint.",
-          "image": "/dev-team.jpg",
-          "stats": [
-            {
-              "label": "Venue",
-              "value": "Main Auditorium"
-            }
-          ],
-          "features": [
-            "Keynote by Lead Architect",
-            "Live demonstration of the leaderboard platform"
-          ]
-        },
-        {
-          "date": "10:30 AM",
-          "title": "Checkpoint 1: The Cryptography Node",
-          "tag": "Hacking",
-          "description": "Teams disperse across campus to their first physical node. They must decrypt a cipher to unlock the next GPS coordinates.",
-          "stats": [
-            {
-              "label": "Difficulty",
-              "value": "Medium"
-            }
-          ],
-          "features": [
-            "RSA decryption puzzles",
-            "Physical lock boxes"
-          ]
-        },
-        {
-          "date": "01:00 PM",
-          "title": "Lunch & Networking",
-          "tag": "Break",
-          "description": "A mandatory cool-down period where teams can refuel, discuss strategies with mentors, and check the global standings.",
-          "stats": [],
-          "features": []
-        },
-        {
-          "date": "02:00 PM",
-          "title": "Checkpoint 2: The Hardware Node",
-          "tag": "Hacking",
-          "description": "The final sprint. Teams must interface their laptops with custom ESP32 hardware modules placed around the campus to execute their final algorithms.",
-          "image": "/dev-team.jpg",
-          "stats": [
-            {
-              "label": "Elimination",
-              "value": "Bottom 50%"
-            }
-          ],
-          "features": [
-            "Arduino / ESP32 interfacing",
-            "Reverse engineering binaries"
-          ]
-        },
-        {
-          "date": "05:00 PM",
-          "title": "Closing Ceremony & Winners",
-          "tag": "Ceremony",
-          "description": "The leaderboard freezes. We announce the top 3 teams, distribute prizes, and conclude the event with closing remarks from our sponsors.",
-          "stats": [
-            {
-              "label": "Prize Pool",
-              "value": "$5,000"
-            }
-          ],
-          "features": []
-        }
-      ],
-      "mentors": [
-        {
-          "name": "Aditya Raj",
-          "role": "Lead Architect",
-          "photo": "/dev-team.jpg",
-          "linkedin": "https://linkedin.com"
-        },
-        {
-          "name": "Aniket Barun",
-          "role": "Problem Setter",
-          "photo": "/dev-team.jpg",
-          "linkedin": "https://linkedin.com"
-        },
-        {
-          "name": "Shivansh",
-          "role": "Platform Engineer",
-          "photo": "/dev-team.jpg",
-          "linkedin": "https://linkedin.com"
-        }
-      ],
+      "timeline": [],
+      "mentors": [],
       "winners": [
         {
-          "team": "Binary Beasts",
+          "team": "Alakazam",
           "achievement": "1st Place Champions",
           "track": "Easy Track",
           "badge": "Easy Track Champions",
-          "heroImage": "/dev-team.jpg",
+          "heroImage": "/events/algohunt-winner-eas.webp",
           "members": [
             {
-              "name": "Aarav Sharma",
-              "linkedin": "https://linkedin.com"
+              "name": "Venkata Srivaibhav Nukaraju"
             },
             {
-              "name": "Tanvi Rao",
-              "linkedin": "https://linkedin.com"
+              "name": "Kritheesh N V"
             },
             {
-              "name": "Kavya Nair",
-              "linkedin": "https://linkedin.com"
+              "name": "Maaya Mohan"
+            },
+            {
+              "name": "Krish Arun"
             }
           ],
-          "experience": "As freshers, navigating the checkpoints while writing clean Python scripts was an adrenaline rush. Winning the Easy Track boosted our confidence tremendously!"
+          "experience": "Navigating campus while solving algorithmic challenges was an adrenaline rush. Winning the Easy Track boosted our confidence tremendously!"
         },
         {
-          "team": "Syntax Strikers",
+          "team": "Code Hunters",
           "achievement": "2nd Place Runner-Up",
           "track": "Easy Track",
           "heroImage": "/dev-team.jpg",
           "members": [
             {
-              "name": "Rohan Gupta",
-              "linkedin": "https://linkedin.com"
+              "name": "Sreehaas Vangara"
             },
             {
-              "name": "Meera Iyer",
-              "linkedin": "https://linkedin.com"
+              "name": "Rithvik R"
+            },
+            {
+              "name": "Sahil Shirish Badgujar"
+            },
+            {
+              "name": "Yashas C Sathal"
             }
           ],
-          "experience": "We were neck-and-neck until the final checkpoint puzzle. A memorable 2nd place finish!"
+          "experience": ""
         },
         {
-          "team": "Bug Squishers",
+          "team": "Loopphiles",
           "achievement": "3rd Place Podium",
           "track": "Easy Track",
           "heroImage": "/dev-team.jpg",
           "members": [
             {
-              "name": "Arjun Verma",
-              "linkedin": "https://linkedin.com"
+              "name": "Achyuth Jois M"
             },
             {
-              "name": "Sneha Reddy",
-              "linkedin": "https://linkedin.com"
+              "name": "Suchita R Reddy"
+            },
+            {
+              "name": "Greeshma N Shetty"
+            },
+            {
+              "name": "Charan Reddy K N"
             }
           ],
-          "experience": "Cracking the sliding window problem under time pressure was electric. So proud of our podium spot!"
+          "experience": ""
         },
         {
-          "team": "Team Enigma",
+          "team": "CodeBlooded",
           "achievement": "1st Place Champions",
-          "track": "Tough Track",
-          "badge": "Tough Track Champions",
-          "heroImage": "/dev-team.jpg",
+          "track": "Advanced Track",
+          "badge": "Advanced Track Champions",
+          "heroImage": "/events/algohunt-winner-adv.webp",
           "members": [
             {
-              "name": "Alex Chen",
-              "linkedin": "https://linkedin.com"
+              "name": "Sriniket Deeduvanu"
             },
             {
-              "name": "Sarah Jenkins",
-              "linkedin": "https://linkedin.com"
+              "name": "Sushant Hiremath"
             },
             {
-              "name": "Rahul Patel",
-              "linkedin": "https://linkedin.com"
+              "name": "Surya R Naik"
+            },
+            {
+              "name": "Arpan Gupta"
             }
           ],
-          "experience": "The combination of advanced graph algorithms and sprinting across campus in the rain was unparalleled. It pushed our debugging limits to the extreme!"
+          "experience": "Standing on the Advanced Track podium against the sharpest minds on campus was incredible. Balancing speed and tricky algorithmic puzzles under pressure made this unforgettable!"
         },
         {
-          "team": "Circuit Breakers",
+          "team": "Synergy 4X",
           "achievement": "2nd Place Runner-Up",
-          "track": "Tough Track",
+          "track": "Advanced Track",
           "heroImage": "/dev-team.jpg",
           "members": [
             {
-              "name": "David Kim",
-              "linkedin": "https://linkedin.com"
+              "name": "Kishan Bhardwaj"
             },
             {
-              "name": "Priya Singh",
-              "linkedin": "https://linkedin.com"
+              "name": "Mayank Kedia"
+            },
+            {
+              "name": "Ayush Kumar"
+            },
+            {
+              "name": "Bismun Singh Makkarh"
             }
           ],
-          "experience": "Reverse-engineering the physical ESP32 node while decoding ciphertexts was hands-down the coolest challenge we have ever tackled."
+          "experience": ""
         },
         {
-          "team": "O(1) Braincells",
+          "team": "SegFaults",
           "achievement": "3rd Place Podium",
-          "track": "Tough Track",
+          "track": "Advanced Track",
           "heroImage": "/dev-team.jpg",
           "members": [
             {
-              "name": "Michael Chang",
-              "linkedin": "https://linkedin.com"
+              "name": "Sai Jaswanth Akula"
             },
             {
-              "name": "Emily Watson",
-              "linkedin": "https://linkedin.com"
+              "name": "Jeel Nada"
             },
             {
-              "name": "Zack Taylor",
-              "linkedin": "https://linkedin.com"
+              "name": "Navneet Nayak"
+            },
+            {
+              "name": "Manvith M Nayak"
             }
           ],
-          "experience": "Standing on the Tough Track podium against the sharpest minds on campus was incredible. Worth every drop of sweat!"
+          "experience": ""
         }
       ],
-      "cardBrief": "AlgoHunt transforms competitive programming into a high-octane physical reality. It demands a unique hybrid of rapid code execution, team communication under pressure, and physical stamina. AlgoHunt tests not just how well you know Dijkstra's algorithm, but...",
-      "detailedExplanation": "AlgoHunt transforms competitive programming into a high-octane physical reality. It demands a unique hybrid of rapid code execution, team communication under pressure, and physical stamina. AlgoHunt tests not just how well you know Dijkstra's algorithm, but how fast your team can debug it while racing against the clock to the next checkpoint."
+      "cardBrief": "AlgoHunt\r \r AlgoHunt transforms competitive programming into a high-octane physical reality.\r \r AlgoHunt was conducted by CodeChef PESU-ECC as part of MAAYA, the official fest of PES University, Electronic City Campus. The event combined competitive...",
+      "detailedExplanation": "# AlgoHunt\r\n\r\n**AlgoHunt transforms competitive programming into a high-octane physical reality.**\r\n\r\nAlgoHunt was conducted by **CodeChef PESU-ECC** as part of **MAAYA, the official fest of PES University, Electronic City Campus**. The event combined competitive programming with a campus-wide treasure hunt, creating a format where solving code was only half the challenge.\r\n\r\n## What Is AlgoHunt?\r\n\r\nWhat happens when **logic meets chaos, speed meets strategy, and code meets the thrill of a treasure hunt?**\r\n\r\nYou get **AlgoHunt** — MAAYA's most electrifying tech event.\r\n\r\nHeld on **11th October 2024** at **PES University, Electronic City Campus**, AlgoHunt brought together **100+ passionate coders and explorers** for a competition that demanded both technical ability and teamwork.\r\n\r\nThe event was structured across **two competitive tracks**:\r\n\r\n- **Easy Track** — designed for beginners and participants taking their first steps into competitive programming.\r\n- **Advanced Track** — designed for experienced competitive programmers looking for a more challenging contest.\r\n\r\n## Coding Meets the Treasure Hunt\r\n\r\nAlgoHunt was built around a simple idea: **the entire team could not rely on just one kind of skill.**\r\n\r\nDuring the event, teams split their efforts between two parallel challenges. **Half of the team searched for a key hidden somewhere around the campus, while the remaining members worked on a competitive programming problem.**\r\n\r\nThis combination meant that teams had to continuously balance:\r\n\r\n- **Problem-solving**\r\n- **Speed**\r\n- **Exploration**\r\n- **Team coordination**\r\n- **Creative thinking**\r\n\r\nA strong performance required more than writing correct code. Teams had to communicate quickly, divide responsibilities effectively, and make decisions under pressure.\r\n\r\n## The Hunt\r\n\r\nAcross **7 intense rounds**, participants moved between programming challenges and physical clues spread throughout the competition.\r\n\r\nThe rounds brought together:\r\n\r\n> **Cryptic clues + Competitive programming + Campus exploration + Teamwork**\r\n\r\nParticipants decoded riddles, solved programming challenges, searched for clues, and raced against the clock as they attempted to stay ahead of the competition.\r\n\r\nEvery round introduced another opportunity to gain an advantage — but also another opportunity to fall behind.\r\n\r\n## Two Tracks, One Challenge\r\n\r\n### Easy Track\r\n\r\nThe **Easy Track** gave beginners an opportunity to experience competitive programming in a more accessible and engaging format.\r\n\r\nRather than being limited to a conventional coding contest, participants were introduced to programming challenges alongside the excitement of the physical hunt.\r\n\r\n### Advanced Track\r\n\r\nThe **Advanced Track** pushed experienced competitive programmers further, combining more demanding programming problems with the same fast-paced treasure-hunt format.\r\n\r\nFor these teams, technical proficiency had to be matched with speed and coordination.\r\n\r\n## Beyond Competitive Programming\r\n\r\nAlgoHunt was designed to test skills that extend beyond solving a programming problem.\r\n\r\nParticipants had to constantly adapt to changing situations, communicate with teammates, and decide how to divide their time and effort between the coding challenge and the physical hunt.\r\n\r\nThe event encouraged participants to:\r\n\r\n- **Think differently** when approaching problems.\r\n- **Collaborate creatively** under time pressure.\r\n- **Adapt quickly** as new clues and challenges appeared.\r\n- **Balance strategy and execution** throughout the competition.\r\n\r\n## The Experience\r\n\r\nWith **100+ participants**, **7 rounds**, **two competitive tracks**, and a **₹15,000 prize pool**, AlgoHunt created an atmosphere that was as competitive as it was energetic.\r\n\r\nFrom cryptic clues to brain-twisting code, every stage demanded a different combination of skills. The campus itself became part of the challenge, turning what would normally be a coding contest into an experience that participants had to physically navigate as a team.\r\n\r\n## More Than a Competition\r\n\r\nAlgoHunt was more than a competition — it was an experience that blended **coding brilliance with on-ground strategy**.\r\n\r\nBy bringing competitive programming out of the conventional contest environment and into a physical treasure hunt, AlgoHunt captured the spirit of experimentation, collaboration, and problem-solving that defines **CodeChef PESU-ECC**.\r\n\r\n**Code. Hunt. Collaborate. Conquer.**\r\n\r\nThat was AlgoHunt."
     },
     {
       "id": "praxis",
@@ -676,117 +409,103 @@
       "category": "Rapid AI / Build Sprint",
       "status": "Hackathon Engine",
       "cadence": "Sprint format",
-      "description": "A high-pressure build sprint for shipping AI-assisted products, prototypes, and technical demos under real constraints.",
+      "description": "A high-intensity hackathon designed around rapid experimentation, AI-assisted development, and end-to-end product building. Participants work under real-world constraints to transform ideas into functional prototypes, using modern AI tools and engineering practices to design, build, test, and present technical solutions within a focused sprint.",
       "highlights": [
         "Fast ideation",
         "Demo-first judging",
         "Production mindset"
       ],
       "accent": "04",
-      "image": "/events/praxis-2024.jpg",
+      "image": "/events/praxis2.webp",
       "gallery": [
         {
-          "src": "/events/praxis-2024.jpg",
-          "caption": "Rapid AI product ideation"
+          "src": "/events/praxis1.webp",
+          "caption": "Hall Of Fame"
         },
         {
-          "src": "/dev-team.jpg",
-          "caption": "Build sprint execution"
+          "src": "/events/praxis2.webp",
+          "caption": "Working Under pressure"
         },
         {
-          "src": "/dev-team.jpg",
-          "caption": "Final demos and judging"
+          "src": "/events/praxis3.webp",
+          "caption": "Progress Report"
         }
       ],
       "href": "/initiatives/praxis",
       "timeline": [
         {
-          "date": "09:00 AM",
-          "title": "Check-in & Breakfast",
+          "date": "07:30 AM",
+          "title": "Registration",
           "tag": "Registration",
-          "description": "Participants arrive, verify their registration, collect their badges, and get energized with a hearty breakfast before the intense competition begins.",
-          "stats": [
-            {
-              "label": "Expected Arrival",
-              "value": "800+"
-            },
-            {
-              "label": "Duration",
-              "value": "60 mins"
-            }
-          ],
-          "features": [
-            "QR Code quick scanning",
-            "Swag bag distribution"
-          ]
-        },
-        {
-          "date": "10:00 AM",
-          "title": "Opening Ceremony & Problem Release",
-          "tag": "Ceremony",
-          "description": "The official kickoff. We will explain the rules, introduce the judges, and reveal the primary encrypted problem statement that unlocks the first physical checkpoint.",
-          "image": "/dev-team.jpg",
-          "stats": [
-            {
-              "label": "Venue",
-              "value": "Main Auditorium"
-            }
-          ],
-          "features": [
-            "Keynote by Lead Architect",
-            "Live demonstration of the leaderboard platform"
-          ]
-        },
-        {
-          "date": "10:30 AM",
-          "title": "Checkpoint 1: The Cryptography Node",
-          "tag": "Hacking",
-          "description": "Teams disperse across campus to their first physical node. They must decrypt a cipher to unlock the next GPS coordinates.",
-          "stats": [
-            {
-              "label": "Difficulty",
-              "value": "Medium"
-            }
-          ],
-          "features": [
-            "RSA decryption puzzles",
-            "Physical lock boxes"
-          ]
-        },
-        {
-          "date": "01:00 PM",
-          "title": "Lunch & Networking",
-          "tag": "Break",
-          "description": "A mandatory cool-down period where teams can refuel, discuss strategies with mentors, and check the global standings.",
+          "description": "Participants arrive and complete the registration process.",
           "stats": [],
           "features": []
         },
         {
-          "date": "02:00 PM",
-          "title": "Checkpoint 2: The Hardware Node",
-          "tag": "Hacking",
-          "description": "The final sprint. Teams must interface their laptops with custom ESP32 hardware modules placed around the campus to execute their final algorithms.",
-          "image": "/dev-team.jpg",
-          "stats": [
-            {
-              "label": "Elimination",
-              "value": "Bottom 50%"
-            }
-          ],
-          "features": [
-            "Arduino / ESP32 interfacing",
-            "Reverse engineering binaries"
-          ]
+          "date": "08:00 AM",
+          "title": "Introduction & Lamp Lighting",
+          "tag": "Ceremony",
+          "description": "The event begins with an introduction followed by the traditional lamp lighting ceremony.",
+          "stats": [],
+          "features": []
         },
         {
-          "date": "05:00 PM",
-          "title": "Closing Ceremony & Winners",
-          "tag": "Ceremony",
-          "description": "The leaderboard freezes. We announce the top 3 teams, distribute prizes, and conclude the event with closing remarks from our sponsors.",
+          "date": "09:00 AM",
+          "title": "Coding Round 1 & Mentoring",
+          "tag": "Coding",
+          "description": "Participants begin the first coding round while mentors provide guidance and support throughout the session.",
+          "stats": [],
+          "features": []
+        },
+        {
+          "date": "12:00 PM",
+          "title": "Lunch Break",
+          "tag": "Break",
+          "description": "Participants take a break for lunch.",
+          "stats": [],
+          "features": []
+        },
+        {
+          "date": "01:00 PM",
+          "title": "Coding Round 2",
+          "tag": "Coding",
+          "description": "Participants compete in the second coding round and work on the given problem statements.",
+          "stats": [],
+          "features": []
+        },
+        {
+          "date": "03:00 PM",
+          "title": "Coding Round 2 Evaluation",
+          "tag": "Evaluation",
+          "description": "Submissions from the second coding round are evaluated to determine the top-performing teams.",
+          "stats": [],
+          "features": []
+        },
+        {
+          "date": "04:00 PM",
+          "title": "Snacks",
+          "tag": "Break",
+          "description": "Participants take a short break for snacks.",
+          "stats": [],
+          "features": []
+        },
+        {
+          "date": "04:30 PM",
+          "title": "Final Presentation of Top 7",
+          "tag": "Finals",
+          "description": "The top seven teams present their final solutions and ideas.",
+          "stats": [],
+          "features": []
+        },
+        {
+          "date": "05:10 PM",
+          "title": "Winner Announcements & Vote of Thanks",
+          "tag": "Closing Ceremony",
+          "description": "The winners are announced, followed by the vote of thanks and closing of the event.",
           "stats": [
             {
               "label": "Prize Pool",
-              "value": "$5,000"
+              "value": "₹35,000"
             }
           ],
           "features": []
@@ -814,64 +533,84 @@
       ],
       "winners": [
         {
-          "team": "Team Enigma",
+          "team": "Lawgorithm ",
           "achievement": "1st Place Champions",
-          "heroImage": "/dev-team.jpg",
+          "heroImage": "/events/praxis-p1.webp",
           "members": [
             {
-              "name": "Alex Chen",
+              "name": "Harika S",
               "linkedin": "https://linkedin.com"
             },
             {
-              "name": "Sarah Jenkins",
+              "name": "Meghana Kallepalli",
               "linkedin": "https://linkedin.com"
             },
             {
-              "name": "Rahul Patel",
+              "name": "Harika K",
               "linkedin": "https://linkedin.com"
             }
           ],
           "experience": "The combination of algorithmic thinking and sprinting across campus was unparalleled. We spent 20 minutes debugging Dijkstra while physically standing in the rain at the final checkpoint. It pushed us to our absolute limits!"
         },
         {
-          "team": "Runtime Terrors",
+          "team": "sem4back",
           "achievement": "2nd Place Runner Ups",
-          "heroImage": "/dev-team.jpg",
+          "heroImage": "/events/praxis-p2.webp",
           "members": [
             {
-              "name": "David Kim",
+              "name": "Hemanth Kumar R",
               "linkedin": "https://linkedin.com"
             },
             {
-              "name": "Priya Singh",
+              "name": "I.V.Thanvitha",
+              "linkedin": "https://linkedin.com"
+            },
+            {
+              "name": "Sanjana Chunduri",
+              "linkedin": "https://linkedin.com"
+            },
+            {
+              "name": "Pranay Shah",
               "linkedin": "https://linkedin.com"
             }
           ],
           "experience": "We lost our lead because we forgot a semicolon in the cryptography round, but making up the time during the campus sprint was thrilling."
         },
         {
-          "team": "O(1) Braincells",
+          "team": "bazooka",
           "achievement": "3rd Place",
-          "heroImage": "/dev-team.jpg",
+          "heroImage": "/events/praxis-p3.webp",
           "members": [
             {
-              "name": "Michael Chang",
+              "name": "Vanshitha Soma",
               "linkedin": "https://linkedin.com"
             },
             {
-              "name": "Emily Watson",
+              "name": "Lakshita Negi",
               "linkedin": "https://linkedin.com"
             },
             {
-              "name": "Zack Taylor",
+              "name": "Ayesha Moghis ",
               "linkedin": "https://linkedin.com"
             }
           ],
           "experience": "Getting onto the podium was incredible. The hardware node reverse engineering completely blew our minds. Best event of the year!"
+        },
+        {
+          "team": "SingleThread",
+          "achievement": "Best First Year Team",
+          "heroImage": "/events/praxis-run.webp",
+          "members": [
+            {
+              "name": "Sreevathsan S",
+              "linkedin": "https://linkedin.com"
+            }
+          ],
+          "experience": "We lost our lead because we forgot a semicolon in the cryptography round, but making up the time during the campus sprint was thrilling."
         }
       ],
-      "cardBrief": "Praxis is designed to push developers out of tutorial hell and into the builder's mindset.",
-      "detailedExplanation": "Praxis is designed to push developers out of tutorial hell and into the builder's mindset."
+      "cardBrief": "About Praxis\r \r Praxis is the official hackathon conducted by CodeChef PESU ECC.\r \r The event gives participants a problem statement based on real-life challenges. Teams then work on building solutions to these problems, with Artificial Intelligence and...",
+      "detailedExplanation": "## About Praxis\r\n\r\nPraxis is the official hackathon conducted by CodeChef PESU ECC.\r\n\r\nThe event gives participants a problem statement based on real-life challenges. Teams then work on building solutions to these problems, with **Artificial Intelligence and Machine Learning (AI/ML) serving as the backbone of their approach**.\r\n\r\n## What Is Praxis?\r\n\r\nPraxis is centered around turning ideas into working solutions.\r\n\r\nParticipants are presented with problem statements that have an intersection between **real-world problems and AI/ML**. The objective is not simply to build a prototype, but to think about how AI/ML can be used as a core part of solving the problem.\r\n\r\nThe hackathon gives participants an environment where they can take a problem, explore possible approaches, build a solution, and turn their ideas into something tangible.\r\n\r\n## The Problem Statements\r\n\r\nThe foundation of Praxis is its problem statements.\r\n\r\nEach problem is designed around a real-life challenge and requires participants to think beyond conventional solutions. Teams need to understand the problem, identify where AI/ML can add value, and develop a solution around that intersection.\r\n\r\nThis makes the hackathon as much about **understanding the problem** as it is about building the technology.\r\n\r\n## AI/ML as the Backbone\r\n\r\nA central idea behind Praxis is using AI/ML as a backbone for solving problems.\r\n\r\nRather than treating AI/ML as an isolated feature added at the end of a project, participants explore how it can contribute to the core solution.\r\n\r\nThis encourages teams to think about:\r\n\r\n* How AI/ML can address the underlying problem\r\n* Where intelligent systems can improve an existing process\r\n* How a real-world challenge can be translated into a technical solution\r\n* How an idea can be turned into a functional prototype\r\n\r\n## From Idea to Solution\r\n\r\nPraxis is about taking a problem statement and turning it into something that works.\r\n\r\nThe process involves understanding the challenge, brainstorming possible solutions, selecting an approach, and building a working implementation.\r\n\r\nTeams get the opportunity to move through the entire journey from **problem → idea → implementation → solution**.\r\n\r\n## Building Under Pressure\r\n\r\nAs a hackathon, Praxis challenges participants to build within a limited amount of time.\r\n\r\nThis means teams have to make practical decisions about what to build, how to approach the problem, and where to focus their effort.\r\n\r\nThe result is an environment that encourages rapid experimentation, collaboration, and execution.\r\n\r\n## The Goal\r\n\r\nThe goal of Praxis is to encourage students to approach real-world problems through technology and explore the possibilities of AI/ML as a foundation for building solutions.\r\n\r\nIt is an opportunity to move beyond simply learning concepts and put them into practice by building something that addresses a meaningful problem."
     }
   ],
   "systems": [
