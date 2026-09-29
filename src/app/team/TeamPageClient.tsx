@@ -23,9 +23,12 @@ export default function TeamPageClient({ data }: TeamPageClientProps) {
     setSelectedYear(year);
   };
 
+  const heads = yearData?.heads ?? [];
+  const coreTeam = yearData?.core ?? [];
+
   const sections = yearData && (
     <>
-      {/* FR2 — Coordinator → Core → Members order */}
+      {/* FR2 — Coordinator → Club Heads → Core → Members order */}
       <TeamSection
         eyebrow="Leadership"
         title="Club Coordinator"
@@ -35,9 +38,16 @@ export default function TeamPageClient({ data }: TeamPageClientProps) {
       />
 
       <TeamSection
+        eyebrow="Leadership"
+        title="Club Heads"
+        members={heads}
+        columns="center"
+      />
+
+      <TeamSection
         eyebrow="Engineering &amp; Operations"
         title="Core Team"
-        members={yearData.core}
+        members={coreTeam}
         columns="3"
       />
 
@@ -48,8 +58,9 @@ export default function TeamPageClient({ data }: TeamPageClientProps) {
         columns="4"
       />
 
-      {/* Empty state — all three groups are empty */}
+      {/* Empty state — all groups are empty */}
       {yearData.coordinators.length === 0 &&
+        heads.length === 0 &&
         yearData.core.length === 0 &&
         yearData.members.length === 0 && (
           <div className="mt-20 text-center">

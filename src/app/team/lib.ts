@@ -22,6 +22,7 @@ export interface MemberInfo {
 export interface YearData {
   year: string;
   coordinators: MemberInfo[];
+  heads: MemberInfo[];
   core: MemberInfo[];
   members: MemberInfo[];
 }
@@ -48,9 +49,9 @@ export function getAvailableYears(): string[] {
   return data.years;
 }
 
-/** All three groups for a single year (empty groups if the year is unknown). */
+/** All four groups for a single year (empty groups if the year is unknown). */
 export function getYearData(year: string): YearData {
-  return data.byYear[year] ?? { year, coordinators: [], core: [], members: [] };
+  return data.byYear[year] ?? { year, coordinators: [], heads: [], core: [], members: [] };
 }
 
 /**

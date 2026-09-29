@@ -17,6 +17,7 @@
           "photo": "/team/2025/coordinator/Ruby_Dinakar/photo.png"
         }
       ],
+      "heads": [],
       "core": [
         {
           "name": "Sneha Murthy",
@@ -71,10 +72,30 @@
           "photo": "/team/2026/coordinator/Ruby_Dinakar/photo.png"
         }
       ],
+      "heads": [
+        {
+          "name": "Aniket Barun",
+          "role": "Club Head",
+          "bio": "Choices have Consequences",
+          "linkedin": "https://www.linkedin.com/in/barunaniket",
+          "github": "https://github.com/barunaniket",
+          "instagram": "https://www.instagram.com/barun_aniket1/",
+          "photo": "/team/2026/heads/PES2UG24AM019/photo.png"
+        },
+        {
+          "name": "Navya Kishore Dash",
+          "role": "Vice Club Head",
+          "bio": "A competitive programmer who loves solving problems and building cool stuff",
+          "linkedin": "https://www.linkedin.com/in/navyakishore-dash-8813b7333/",
+          "github": "https://github.com/NavyakishoreDash",
+          "instagram": "https://www.instagram.com/navyakishore_d/",
+          "photo": "/team/2026/heads/PES2UG24CS307/photo.png"
+        }
+      ],
       "core": [
         {
           "name": "Aditya Raj",
-          "role": "Core Team — CP Lead",
+          "role": "Core Team — CP Head",
           "bio": "Optimizing logic, empowering the team.",
           "linkedin": "https://www.linkedin.com/in/aditya-raj-04adi/",
           "github": "https://github.com/hagemaruwu",
@@ -83,8 +104,8 @@
         },
         {
           "name": "Aniket Barun",
-          "role": "Core Team — Club Head",
-          "bio": "Choices of Consequences",
+          "role": "Core Team — Technical Head",
+          "bio": "Choices have Consequences",
           "linkedin": "https://www.linkedin.com/in/barunaniket",
           "github": "https://github.com/barunaniket",
           "instagram": "https://www.instagram.com/barun_aniket1/",
@@ -92,7 +113,7 @@
         },
         {
           "name": "Navya Kishore Dash",
-          "role": "Core Team — Vice Club Head",
+          "role": "Core Team — Design Head",
           "bio": "A competitive programmer who loves solving problems and building cool stuff",
           "linkedin": "https://www.linkedin.com/in/navyakishore-dash-8813b7333/",
           "github": "https://github.com/NavyakishoreDash",
@@ -101,7 +122,7 @@
         },
         {
           "name": "Sejal Sisodia",
-          "role": "Core Team — Sponsorship Lead",
+          "role": "Core Team — Sponsorship Head",
           "bio": "Building strategic partnerships today to fund our greatest innovations tomorrow.",
           "linkedin": "https://www.linkedin.com/in/sejalsisodia08",
           "github": "https://github.com/SEJAL-SISODIA08",
@@ -110,7 +131,7 @@
         },
         {
           "name": "Shivansh Sharma",
-          "role": "Core Team — Events Lead",
+          "role": "Core Team — Events Head",
           "bio": "I'm driven by the belief that the best solutions come from unexpected intersections.",
           "linkedin": "https://linkedin.com/in/shivansh-sharma-386377352",
           "github": "https://github.com/shivanshpap",
@@ -119,7 +140,7 @@
         },
         {
           "name": "Vaibhav Tulsian",
-          "role": "Core Team — SMM Lead",
+          "role": "Core Team — SMM Head",
           "bio": "Great marketing doesn't just chase trends it engineers the moments",
           "linkedin": "https://www.linkedin.com/in/vaibhav-tulsian-144213334/",
           "github": "https://github.com/vaibhavtulsian",
@@ -129,13 +150,193 @@
       ],
       "members": [
         {
+          "name": "Aakash Agarwal",
+          "role": "Core Team - Technical",
+          "bio": "hmm",
+          "linkedin": "https://www.linkedin.com/in/aakashagarwal2006",
+          "github": "https://github.com/aakash-agarwal-cs",
+          "instagram": "https://www.instagram.com/aakash.agarwal_",
+          "photo": "/team/2026/members/PES2UG24CS009/photo.jpeg"
+        },
+        {
+          "name": "Adarsh Prakash",
+          "role": "Competetive Programming - Member",
+          "bio": "Trust the Process",
+          "linkedin": "https://www.linkedin.com/in/adarsh-prakash-6a364130b",
+          "github": "https://github.com/Adarshsharath",
+          "instagram": "https://www.instagram.com/its_adarsh_sharath/",
+          "photo": "/team/2026/members/PES2UG24CS027/photo.jpeg"
+        },
+        {
+          "name": "Aditya Sehal",
+          "role": "Technical — Member",
+          "bio": "Visualizing possibilities and designing solutions.",
+          "linkedin": "https://www.linkedin.com/in/adityasehal",
+          "github": "https://github.com/adityaSehal07",
+          "instagram": "https://www.instagram.com/sehal_07_",
+          "photo": "/team/2026/members/PES2UG24CS035/photo.jpeg"
+        },
+        {
+          "name": "Ankit Uttarakar",
+          "role": "Operations - Member",
+          "bio": "Creating my own kind of chaos.",
+          "linkedin": "https://www.linkedin.com/in/ankituttarakar",
+          "github": "https://github.com/ankituttarakar",
+          "instagram": "https://www.instagram.com/ankit.uttarakar/",
+          "photo": "/team/2026/members/PES2UG24CS070/photo.jpeg"
+        },
+        {
+          "name": "Aryan Mittal",
+          "role": "Marketing - Member",
+          "bio": "Taking it one day at a time.",
+          "linkedin": "https://www.linkedin.com/in/aryan-mittal-9564542aa/",
+          "github": "https://github.com/aryanmittal2107",
+          "instagram": "https://www.instagram.com/aryanmittal_07?stkn=MTFsZ2syanB3czZj",
+          "photo": "/team/2026/members/PES2UG24CS089/photo.jpeg"
+        },
+        {
+          "name": "Bismun Singh",
+          "role": "Events - Member",
+          "bio": "shhhe🤫",
+          "linkedin": "https://www.linkedin.com/in/bismun-singh-makkarh-6ba3b3314",
+          "github": "https://github.com/Ekaaaasss02",
+          "instagram": "https://www.instagram.com/bismunsingh02",
+          "photo": "/team/2026/members/PES2UG24AM042/photo.jpeg"
+        },
+        {
+          "name": "G Sree Akshaya",
+          "role": "Sponsorship — Member",
+          "bio": "Learning, building, figuring it out",
+          "linkedin": "https://www.linkedin.com/in/g-sree-akshaya",
+          "github": "https://github.com/gsreakshaya25-arch",
+          "instagram": "https://www.instagram.com/itsakshaya._?stkn=MXVsZWRzaXBrYjRyeA==",
+          "photo": "/team/2026/members/PES2UG24EC030/photo.jpeg"
+        },
+        {
+          "name": "Harshith Tata",
+          "role": "Competetive Programming - Member",
+          "bio": "Work hard, play harder",
+          "linkedin": "https://www.linkedin.com/in/harshith-tata/",
+          "github": "https://github.com/tataharshith7",
+          "instagram": "https://www.instagram.com/tataharshith",
+          "photo": "/team/2026/members/PES2UG25CS205/photo.jpeg"
+        },
+        {
+          "name": "KNS Shanmukh",
+          "role": "Design — Member ",
+          "bio": " Pixel perfectionist & embedded enthusiast ",
+          "linkedin": "https://www.linkedin.com/in/shanmukh-kns-b93a54394/",
+          "github": "https://github.com/KNSSHANMUKH",
+          "instagram": "https://www.instagram.com/phoenix_surya_007/",
+          "photo": "/team/2026/members/PES2UG25EC066/photo.jpeg"
+        },
+        {
+          "name": "Lakshit Talreja ",
+          "role": "Events - Member ",
+          "bio": "Coffee with a shot of cynicism ",
+          "linkedin": " https://www.linkedin.com/in/lakshit-talreja-649574273?utm_source=share_via&utm_content=profile&utm_medium=member_android ",
+          "github": "https://github.com/LakshitTalreja",
+          "instagram": "https://www.instagram.com/talrejalakshit/",
+          "photo": "/team/2026/members/PES2UG25CS274/photo.jpeg"
+        },
+        {
+          "name": "Mayank Kedia ",
+          "role": "Core Team - Technical",
+          "bio": "Can I borrow a kiss? I promise I’ll give it back.",
+          "linkedin": " https://www.linkedin.com/in/mayankkedia01/",
+          "github": "https://github.com/mayankkedia19/",
+          "instagram": "https://www.instagram.com/mayxnk_.06/",
+          "photo": "/team/2026/members/PES2UG24AM088/photo.jpeg"
+        },
+        {
+          "name": "Meha Mahajan",
+          "role": "Events - Member",
+          "bio": "404: Motivation not found",
+          "linkedin": "https://www.linkedin.com/in/meha-mahajan-3a8b70213/",
+          "github": "https://github.com/MahajanMeha",
+          "instagram": "",
+          "photo": "/team/2026/members/PES2UG24AM090/photo.jpg"
+        },
+        {
+          "name": "Naivadh Shrivastava",
+          "role": "Core Team — Outreach Head",
+          "bio": "The Night Shall Begin",
+          "linkedin": "https://www.linkedin.com/in/naivadh-shrivastava-aa853a269",
+          "github": "https://github.com/naivadhshrivastava-tech",
+          "instagram": "https://www.instagram.com/naivadhhh?stkn=bmU5a2Q1ZWwwenlu",
+          "photo": "/team/2026/members/PES2UG24CS297/photo.jpeg"
+        },
+        {
+          "name": "Preethi T",
+          "role": "Competetive Programming - Member",
+          "bio": "Building, learning, and creating — one step at a time.",
+          "linkedin": "https://www.linkedin.com/in/preethi-tatikonda-974416330",
+          "github": "https://github.com/PREETHI-T0511",
+          "instagram": "https://www.instagram.com/preethi_.7281/",
+          "photo": "/team/2026/members/PES2UG24CS900/photo.jpeg"
+        },
+        {
+          "name": "Shaurya Ishan",
+          "role": "Core Team — Technical - Member",
+          "bio": "High token limit, zero latency.",
+          "linkedin": "www.linkedin.com/in/shaurya-i-b46156325",
+          "github": "https://github.com/ishanshaurya",
+          "instagram": "",
+          "photo": "/team/2026/members/PES2UG24CS464/photo.jpeg"
+        },
+        {
+          "name": "Shriram Chandrasekar",
+          "role": "Technical - Member",
+          "bio": "Code. Build. Repeat.",
+          "linkedin": "https://www.linkedin.com/in/shriram-chandrasekar-208033319/",
+          "github": "https://github.com/Shriram60",
+          "instagram": "https://www.instagram.com/_shriram.c?stkn=dGRwbGJuaGoxMHlz&utm_source=qr",
+          "photo": "/team/2026/members/PES2UG24CS495/photo.jpeg"
+        },
+        {
+          "name": "Sneha Panini",
+          "role": "Competitive Programming - Member",
+          "bio": "life's a Schrodinger's :):",
+          "linkedin": "https://www.linkedin.com/in/sneha-panini-a33a53328?utm_source=share_via&utm_content=profile&utm_medium=member_android",
+          "github": "https://github.com/sneha-panini",
+          "instagram": "https://www.instagram.com/sneha_panini?stkn=bjlsbG1kbDh6ZXBm",
+          "photo": "/team/2026/members/PES2UG24CS508/photo.jpeg"
+        },
+        {
           "name": "Sreevatshan S",
-          "role": "Competitive Programming - CP Mentor",
+          "role": "Core Team - CP Mentor",
           "bio": "My code is O(1) space because I have zero memory of how it works.",
           "linkedin": "https://www.linkedin.com/in/sreevatshan-s-9a3873393/",
           "github": "https://github.com/sreevats30",
           "instagram": "https://www.instagram.com/_sreevats_?stkn=MWVqbnZqMGRpNTZ2dQ==",
           "photo": "/team/2026/members/PES2UG25CS541/photo.png"
+        },
+        {
+          "name": "Tanya Roy",
+          "role": "Core Team - Sponsorship and SMM",
+          "bio": "Error 404: life plan not found,  just a girl with too many tabs open",
+          "linkedin": "https://www.linkedin.com/in/roy-tanya/",
+          "github": "https://github.com/tanyaroy00",
+          "instagram": "",
+          "photo": "/team/2026/members/PES2UG25CS579/photo.png"
+        },
+        {
+          "name": "Tarsh Choudhary",
+          "role": "Events - Member",
+          "bio": "Ukiyo",
+          "linkedin": "https://www.linkedin.com/in/tarsh-choudhary-09a092315/",
+          "github": "https://github.com/TARSH3",
+          "instagram": "https://www.instagram.com/tarshchoudhary/",
+          "photo": "/team/2026/members/PES2UG24CS556/photo.jpeg"
+        },
+        {
+          "name": "Tejashree D Samant",
+          "role": "Core Team - Design Lead",
+          "bio": "Now is all you have",
+          "linkedin": "https://in.linkedin.com/in/tejashree-samant-3b88b13a6",
+          "github": "https://github.com/TEJ-A-SHREE",
+          "instagram": "https://www.instagram.com/tejashreeee?stkn=MWRlZ3p3YmxxZnVkbA==",
+          "photo": "/team/2026/members/PES2UG25CS582/photo.jpg"
         }
       ]
     }

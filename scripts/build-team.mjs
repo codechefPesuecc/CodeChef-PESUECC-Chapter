@@ -80,9 +80,18 @@ export function buildTeamManifest() {
   const byYear = {};
   for (const year of years) {
     const yearDir = path.join(TEAM_ROOT, year);
+    const heads = loadGroup(yearDir, "heads", year);
+    heads.sort((a, b) => {
+      const aIsVice = /vice/i.test(a.role);
+      const bIsVice = /vice/i.test(b.role);
+      if (aIsVice !== bIsVice) return aIsVice ? 1 : -1;
+      return a.name.localeCompare(b.name);
+    });
+
     byYear[year] = {
       year,
       coordinators: loadGroup(yearDir, "coordinator", year),
+      heads,
       core: loadGroup(yearDir, "core", year),
       members: loadGroup(yearDir, "members", year),
     };

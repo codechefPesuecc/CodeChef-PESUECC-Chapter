@@ -85,17 +85,19 @@ export default function MemberCard({
 
   return (
     <article
-      className="group animate-card-in opacity-0 transition-all duration-300 hover:-translate-y-1"
+      className="group flex h-full w-full max-w-xs mx-auto animate-card-in flex-col opacity-0 transition-all duration-300 hover:-translate-y-1"
       style={{ animationDelay: `${Math.min(index * 50, 500)}ms` }}
     >
       <MechaPanel
         ticks={true}
-        bodyClassName="flex flex-col items-center p-6"
+        className="h-full w-full"
+        bodyClassName="flex h-full flex-col items-center p-6 text-center"
       >
         {/* Photo / Initials fallback */}
         <div
-          className={`relative overflow-hidden rounded-full border-2 border-bronze/30 transition-colors group-hover:border-bronze ${isCoordinator ? "h-32 w-32" : "h-[104px] w-[104px]"
-            }`}
+          className={`relative shrink-0 overflow-hidden rounded-full border-2 border-bronze/30 transition-colors group-hover:border-bronze ${
+            isCoordinator ? "h-32 w-32" : "h-[104px] w-[104px]"
+          }`}
         >
           {member.photo ? (
             <Image
@@ -117,62 +119,67 @@ export default function MemberCard({
 
         {/* Name */}
         <h3
-          className={`mt-4 text-center font-display font-bold text-chocolate ${isCoordinator ? "text-lg" : "text-base"
-            }`}
+          className={`mt-4 font-display font-bold text-chocolate line-clamp-1 ${
+            isCoordinator ? "text-lg" : "text-base"
+          }`}
         >
           {member.name}
         </h3>
 
-        {/* Role */}
-        <p className="mt-1 text-center text-xs font-medium text-bronze">
-          {member.role}
-        </p>
-
-        {/* Bio — visible on hover (desktop) or always visible on mobile */}
-        {member.bio && (
-          <p className="mt-3 line-clamp-2 text-center text-xs leading-5 text-charcoal/60 transition-colors group-hover:text-charcoal/80">
-            {member.bio}
+        {/* Role - fixed min-height for uniform alignment */}
+        <div className="mt-1 flex min-h-[2.25rem] items-center justify-center">
+          <p className="line-clamp-2 text-xs font-medium text-bronze">
+            {member.role}
           </p>
-        )}
+        </div>
 
-        {/* Social links */}
-        {hasSocials && (
-          <div className="mt-4 flex items-center gap-3">
-            {member.linkedin && (
-              <a
-                href={member.linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`${member.name} on LinkedIn`}
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-hairline text-charcoal/50 transition-all hover:border-bronze/40 hover:text-bronze"
-              >
-                <LinkedInIcon />
-              </a>
-            )}
-            {member.github && (
-              <a
-                href={member.github}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`${member.name} on GitHub`}
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-hairline text-charcoal/50 transition-all hover:border-bronze/40 hover:text-bronze"
-              >
-                <GitHubIcon />
-              </a>
-            )}
-            {member.instagram && (
-              <a
-                href={member.instagram}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`${member.name} on Instagram`}
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-hairline text-charcoal/50 transition-all hover:border-bronze/40 hover:text-bronze"
-              >
-                <InstagramIcon />
-              </a>
-            )}
-          </div>
-        )}
+        {/* Bio - fixed min-height for uniform alignment */}
+        <div className="mt-3 flex min-h-[2.5rem] items-center justify-center">
+          <p className="line-clamp-2 text-xs leading-5 text-charcoal/60 transition-colors group-hover:text-charcoal/80">
+            {member.bio || ""}
+          </p>
+        </div>
+
+        {/* Social links - pinned to the bottom */}
+        <div className="mt-auto flex min-h-[3rem] items-center justify-center gap-3 pt-4">
+          {hasSocials && (
+            <>
+              {member.linkedin && (
+                <a
+                  href={member.linkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`${member.name} on LinkedIn`}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-hairline text-charcoal/50 transition-all hover:border-bronze/40 hover:text-bronze"
+                >
+                  <LinkedInIcon />
+                </a>
+              )}
+              {member.github && (
+                <a
+                  href={member.github}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`${member.name} on GitHub`}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-hairline text-charcoal/50 transition-all hover:border-bronze/40 hover:text-bronze"
+                >
+                  <GitHubIcon />
+                </a>
+              )}
+              {member.instagram && (
+                <a
+                  href={member.instagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`${member.name} on Instagram`}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-hairline text-charcoal/50 transition-all hover:border-bronze/40 hover:text-bronze"
+                >
+                  <InstagramIcon />
+                </a>
+              )}
+            </>
+          )}
+        </div>
       </MechaPanel>
     </article>
   );
