@@ -294,6 +294,15 @@
           "photo": "/team/2026/members/PES2UG24AM088/photo.jpeg"
         },
         {
+          "name": "Medha Singh",
+          "role": "Technical — Member",
+          "bio": "building things, breaking things",
+          "linkedin": "",
+          "github": "https://github.com/MedhaSingh-code",
+          "instagram": "https://www.instagram.com/medhinindia",
+          "photo": "/team/2026/members/PES2UG24CS274/photo.png"
+        },
+        {
           "name": "Meha Mahajan",
           "role": "Events - Member",
           "bio": "404: Motivation not found",
@@ -418,6 +427,15 @@
           "github": "https://github.com/TEJ-A-SHREE",
           "instagram": "https://www.instagram.com/tejashreeee?stkn=MWRlZ3p3YmxxZnVkbA==",
           "photo": "/team/2026/members/PES2UG25CS582/photo.jpg"
+        },
+        {
+          "name": "Vidushi ",
+          "role": "Operations - Member",
+          "bio": "Making it Count",
+          "linkedin": "https://www.linkedin.com/in/vidushi-singh-96a231331/?isSelfProfile=true",
+          "github": "https://github.com/V4895s",
+          "instagram": "https://www.instagram.com/vidushi_ii_/",
+          "photo": "/team/2026/members/PES2UG24CS581/photo.png"
         }
       ]
     }
