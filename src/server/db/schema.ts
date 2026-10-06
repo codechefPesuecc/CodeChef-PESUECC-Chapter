@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, unique, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, unique, uniqueIndex, index } from "drizzle-orm/sqlite-core";
 
 /**
  * Arena persistence (SQLite via libSQL in dev, Cloudflare D1 in prod / Drizzle).
@@ -309,3 +309,280 @@ export type RecruitmentSettingsRow = typeof recruitmentSettings.$inferSelect;
 export type NewRecruitmentSettingsRow = typeof recruitmentSettings.$inferInsert;
 export type RecruitmentApplication = typeof recruitmentApplications.$inferSelect;
 export type NewRecruitmentApplication = typeof recruitmentApplications.$inferInsert;
+
+// ───────────────────────────── AlgoHunt 2.0 ─────────────────────────────
+// All tables prefixed ah_. Timestamps are epoch milliseconds from the server clock.
+// JSON columns are TEXT. Columns marked SECRET must never reach a participant response.
+export const ahEvents = sqliteTable("ah_events", {
+  id: text("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  name: text("name").notNull(),
+  isTest: integer("is_test", { mode: "boolean" }).notNull().default(false),
+  status: text("status").notNull().default("DRAFT"),
+  maxTeamSize: integer("max_team_size").notNull().default(4),
+  rankingMode: text("ranking_mode").notNull().default("SOLVED_THEN_TIME"),
+  leaderboardVisible: integer("leaderboard_visible", { mode: "boolean" }).notNull().default(true),
+  submissionsEnabled: integer("submissions_enabled", { mode: "boolean" }).notNull().default(true),
+  codesEnabled: integer("codes_enabled", { mode: "boolean" }).notNull().default(true),
+  startedAt: integer("started_at"),
+  pausedAt: integer("paused_at"),
+  endedAt: integer("ended_at"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+export const ahTeams = sqliteTable("ah_teams", {
+  id: text("id").primaryKey(),
+  eventId: text("event_id").notNull().references(() => ahEvents.id),
+  teamCode: text("team_code").notNull(),
+  teamName: text("team_name").notNull(),
+  college: text("college"),
+  passwordHash: text("password_hash").notNull(), // SECRET
+  sessionEpoch: integer("session_epoch").notNull().default(0),
+  status: text("status").notNull().default("REGISTERED"),
+  checkedInAt: integer("checked_in_at"),
+  finishedAt: integer("finished_at"),
+  disqualifiedAt: integer("disqualified_at"),
+  disqualificationReason: text("disqualification_reason"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (t) => [
+  unique("ah_teams_event_code_unique").on(t.eventId, t.teamCode),
+  unique("ah_teams_event_name_unique").on(t.eventId, t.teamName),
+  index("ah_teams_event_idx").on(t.eventId),
+]);
+
+export const ahTeamMembers = sqliteTable("ah_team_members", {
+  id: text("id").primaryKey(),
+  teamId: text("team_id").notNull().references(() => ahTeams.id),
+  name: text("name").notNull(),
+  email: text("email"),
+  phone: text("phone"),
+  isCaptain: integer("is_captain", { mode: "boolean" }).notNull().default(false),
+  createdAt: integer("created_at").notNull(),
+}, (t) => [index("ah_team_members_team_idx").on(t.teamId)]);
+
+export const ahChallenges = sqliteTable("ah_challenges", {
+  id: text("id").primaryKey(),
+  eventId: text("event_id").notNull().references(() => ahEvents.id),
+  slug: text("slug").notNull(),
+  title: text("title").notNull(),
+  difficulty: text("difficulty").notNull().default("Unrated"),
+  statement: text("statement").notNull(),
+  inputFormat: text("input_format"),
+  outputFormat: text("output_format"),
+  constraints: text("constraints"),
+  samples: text("samples").notNull().default("[]"),
+  contentHtml: text("content_html"),
+  checker: text("checker").notNull().default('{"type":"token"}'),
+  timeLimit: text("time_limit").notNull().default("2s"),
+  memoryLimit: text("memory_limit").notNull().default("256MB"),
+  languages: text("languages"),
+  referenceSolution: text("reference_solution"), // SECRET
+  bruteSolution: text("brute_solution"), // SECRET
+  editorial: text("editorial"), // SECRET
+  author: text("author"), // SECRET
+  verifiedAt: integer("verified_at"),
+  sourceSha256: text("source_sha256"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (t) => [unique("ah_challenges_event_slug_unique").on(t.eventId, t.slug)]);
+
+export const ahTestCases = sqliteTable("ah_test_cases", {
+  id: text("id").primaryKey(),
+  challengeId: text("challenge_id").notNull().references(() => ahChallenges.id),
+  idx: integer("idx").notNull(),
+  input: text("input").notNull(), // SECRET
+  output: text("output").notNull(), // SECRET
+  isSample: integer("is_sample", { mode: "boolean" }).notNull().default(false),
+  createdAt: integer("created_at").notNull(),
+}, (t) => [unique("ah_test_cases_challenge_idx_unique").on(t.challengeId, t.idx)]);
+
+export const ahStages = sqliteTable("ah_stages", {
+  id: text("id").primaryKey(),
+  eventId: text("event_id").notNull().references(() => ahEvents.id),
+  stageNumber: integer("stage_number").notNull(),
+  challengeId: text("challenge_id").notNull().references(() => ahChallenges.id),
+  points: integer("points").notNull().default(100),
+  isFinal: integer("is_final", { mode: "boolean" }).notNull().default(false),
+  enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (t) => [
+  unique("ah_stages_event_number_unique").on(t.eventId, t.stageNumber),
+  unique("ah_stages_event_challenge_unique").on(t.eventId, t.challengeId),
+]);
+
+export const ahStageProgress = sqliteTable("ah_stage_progress", {
+  id: text("id").primaryKey(),
+  eventId: text("event_id").notNull().references(() => ahEvents.id),
+  teamId: text("team_id").notNull().references(() => ahTeams.id),
+  stageId: text("stage_id").notNull().references(() => ahStages.id),
+  challengeSolved: integer("challenge_solved", { mode: "boolean" }).notNull().default(false),
+  challengeSolvedAt: integer("challenge_solved_at"),
+  solvedSubmissionId: text("solved_submission_id"),
+  codeRedeemed: integer("code_redeemed", { mode: "boolean" }).notNull().default(false),
+  codeRedeemedAt: integer("code_redeemed_at"),
+  redeemedCodeId: text("redeemed_code_id"),
+  completed: integer("completed", { mode: "boolean" }).notNull().default(false),
+  completedAt: integer("completed_at"),
+  completionRequestId: text("completion_request_id"),
+  manualOverride: integer("manual_override", { mode: "boolean" }).notNull().default(false),
+  overrideReason: text("override_reason"),
+  overrideBy: text("override_by"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (t) => [
+  unique("ah_stage_progress_team_stage_unique").on(t.teamId, t.stageId),
+  index("ah_stage_progress_team_idx").on(t.teamId),
+  index("ah_stage_progress_event_idx").on(t.eventId),
+]);
+
+export const ahSubmissions = sqliteTable("ah_submissions", {
+  id: text("id").primaryKey(),
+  eventId: text("event_id").notNull().references(() => ahEvents.id),
+  teamId: text("team_id").notNull().references(() => ahTeams.id),
+  stageId: text("stage_id").notNull().references(() => ahStages.id),
+  challengeId: text("challenge_id").notNull().references(() => ahChallenges.id),
+  language: text("language").notNull(),
+  code: text("code").notNull(),
+  status: text("status").notNull().default("QUEUED"),
+  verdict: text("verdict"),
+  passed: integer("passed"),
+  total: integer("total"),
+  failedOn: integer("failed_on"),
+  detail: text("detail"),
+  runtimeMs: integer("runtime_ms"),
+  clientRequestId: text("client_request_id"),
+  createdAt: integer("created_at").notNull(),
+  finishedAt: integer("finished_at"),
+}, (t) => [
+  unique("ah_submissions_team_request_unique").on(t.teamId, t.clientRequestId),
+  index("ah_submissions_team_created_idx").on(t.teamId, t.createdAt),
+  index("ah_submissions_event_created_idx").on(t.eventId, t.createdAt),
+]);
+
+export const ahCodeBatches = sqliteTable("ah_code_batches", {
+  id: text("id").primaryKey(),
+  eventId: text("event_id").notNull().references(() => ahEvents.id),
+  name: text("name").notNull(),
+  size: integer("size").notNull(),
+  createdBy: text("created_by").notNull(),
+  createdAt: integer("created_at").notNull(),
+}, (t) => [index("ah_code_batches_event_idx").on(t.eventId)]);
+
+export const ahCodes = sqliteTable("ah_codes", {
+  id: text("id").primaryKey(),
+  eventId: text("event_id").notNull().references(() => ahEvents.id),
+  batchId: text("batch_id").notNull().references(() => ahCodeBatches.id),
+  serial: integer("serial").notNull(),
+  code: text("code").notNull(), // SECRET
+  status: text("status").notNull().default("ACTIVE"),
+  usedByTeamId: text("used_by_team_id"),
+  usedAfterStageId: text("used_after_stage_id"),
+  usedAt: integer("used_at"),
+  disabledAt: integer("disabled_at"),
+  disabledBy: text("disabled_by"),
+  disabledReason: text("disabled_reason"),
+  placementNote: text("placement_note"),
+  createdAt: integer("created_at").notNull(),
+}, (t) => [
+  unique("ah_codes_code_unique").on(t.code),
+  unique("ah_codes_event_serial_unique").on(t.eventId, t.serial),
+  index("ah_codes_event_status_idx").on(t.eventId, t.status),
+  index("ah_codes_used_by_idx").on(t.usedByTeamId),
+]);
+
+export const ahCodeAttempts = sqliteTable("ah_code_attempts", {
+  id: text("id").primaryKey(),
+  eventId: text("event_id").notNull().references(() => ahEvents.id),
+  teamId: text("team_id").notNull().references(() => ahTeams.id),
+  stageId: text("stage_id"),
+  submittedCode: text("submitted_code"),
+  result: text("result").notNull(),
+  codeId: text("code_id"),
+  ip: text("ip"),
+  createdAt: integer("created_at").notNull(),
+}, (t) => [
+  index("ah_code_attempts_team_created_idx").on(t.teamId, t.createdAt),
+  index("ah_code_attempts_event_created_idx").on(t.eventId, t.createdAt),
+]);
+
+export const ahVolunteers = sqliteTable("ah_volunteers", {
+  id: text("id").primaryKey(),
+  eventId: text("event_id").notNull().references(() => ahEvents.id),
+  userId: text("user_id").notNull(),
+  active: integer("active", { mode: "boolean" }).notNull().default(true),
+  createdAt: integer("created_at").notNull(),
+}, (t) => [unique("ah_volunteers_event_user_unique").on(t.eventId, t.userId)]);
+
+export const ahAnnouncements = sqliteTable("ah_announcements", {
+  id: text("id").primaryKey(),
+  eventId: text("event_id").notNull().references(() => ahEvents.id),
+  message: text("message").notNull(),
+  priority: text("priority").notNull().default("INFO"),
+  active: integer("active", { mode: "boolean" }).notNull().default(true),
+  createdBy: text("created_by").notNull(),
+  createdAt: integer("created_at").notNull(),
+}, (t) => [index("ah_announcements_event_created_idx").on(t.eventId, t.createdAt)]);
+
+export const ahDisqualifications = sqliteTable("ah_disqualifications", {
+  id: text("id").primaryKey(),
+  eventId: text("event_id").notNull().references(() => ahEvents.id),
+  teamId: text("team_id").notNull().references(() => ahTeams.id),
+  reason: text("reason").notNull(),
+  createdBy: text("created_by").notNull(),
+  createdAt: integer("created_at").notNull(),
+  revokedAt: integer("revoked_at"),
+  revokedBy: text("revoked_by"),
+  revokeReason: text("revoke_reason"),
+});
+
+export const ahAuditLogs = sqliteTable("ah_audit_logs", {
+  id: text("id").primaryKey(),
+  eventId: text("event_id"),
+  teamId: text("team_id"),
+  actorType: text("actor_type").notNull(),
+  actorId: text("actor_id"),
+  action: text("action").notNull(),
+  targetType: text("target_type"),
+  targetId: text("target_id"),
+  metadata: text("metadata").notNull().default("{}"),
+  ip: text("ip"),
+  userAgent: text("user_agent"),
+  createdAt: integer("created_at").notNull(),
+}, (t) => [
+  index("ah_audit_event_created_idx").on(t.eventId, t.createdAt),
+  index("ah_audit_team_created_idx").on(t.teamId, t.createdAt),
+]);
+
+export type AhEvent = typeof ahEvents.$inferSelect;
+export type NewAhEvent = typeof ahEvents.$inferInsert;
+export type AhTeam = typeof ahTeams.$inferSelect;
+export type NewAhTeam = typeof ahTeams.$inferInsert;
+export type AhTeamMember = typeof ahTeamMembers.$inferSelect;
+export type NewAhTeamMember = typeof ahTeamMembers.$inferInsert;
+export type AhChallenge = typeof ahChallenges.$inferSelect;
+export type NewAhChallenge = typeof ahChallenges.$inferInsert;
+export type AhTestCase = typeof ahTestCases.$inferSelect;
+export type NewAhTestCase = typeof ahTestCases.$inferInsert;
+export type AhStage = typeof ahStages.$inferSelect;
+export type NewAhStage = typeof ahStages.$inferInsert;
+export type AhStageProgress = typeof ahStageProgress.$inferSelect;
+export type NewAhStageProgress = typeof ahStageProgress.$inferInsert;
+export type AhSubmission = typeof ahSubmissions.$inferSelect;
+export type NewAhSubmission = typeof ahSubmissions.$inferInsert;
+export type AhCodeBatch = typeof ahCodeBatches.$inferSelect;
+export type NewAhCodeBatch = typeof ahCodeBatches.$inferInsert;
+export type AhCode = typeof ahCodes.$inferSelect;
+export type NewAhCode = typeof ahCodes.$inferInsert;
+export type AhCodeAttempt = typeof ahCodeAttempts.$inferSelect;
+export type NewAhCodeAttempt = typeof ahCodeAttempts.$inferInsert;
+export type AhVolunteer = typeof ahVolunteers.$inferSelect;
+export type NewAhVolunteer = typeof ahVolunteers.$inferInsert;
+export type AhAnnouncement = typeof ahAnnouncements.$inferSelect;
+export type NewAhAnnouncement = typeof ahAnnouncements.$inferInsert;
+export type AhDisqualification = typeof ahDisqualifications.$inferSelect;
+export type NewAhDisqualification = typeof ahDisqualifications.$inferInsert;
+export type AhAuditLog = typeof ahAuditLogs.$inferSelect;
+export type NewAhAuditLog = typeof ahAuditLogs.$inferInsert;
