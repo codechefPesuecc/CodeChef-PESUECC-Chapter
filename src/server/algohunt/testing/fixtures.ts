@@ -103,12 +103,17 @@ export async function seedFixture(opts: {
     size: opts.codes ?? 8, createdBy: "fixture-admin", createdAt: now,
   }).returning();
   const codes: AhCode[] = [];
+  const usedCodes = new Set((await db.select({ code: ahCodes.code }).from(ahCodes)).map((row) => row.code));
+  let alternateCodeIndex = 1_000;
   for (let i = 0; i < (opts.codes ?? 8); i += 1) {
+    let codeValue = fixtureCode(i);
+    while (usedCodes.has(codeValue)) codeValue = fixtureCode(alternateCodeIndex++);
     const [code] = await db.insert(ahCodes).values({
       id: crypto.randomUUID(), eventId, batchId: batch.id,
-      serial: i + 1, code: fixtureCode(i), createdAt: now,
+      serial: i + 1, code: codeValue, createdAt: now,
     }).returning();
     codes.push(code);
+    usedCodes.add(codeValue);
   }
   return { event, stages, challenges, batch, codes, teams };
 }

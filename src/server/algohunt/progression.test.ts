@@ -123,15 +123,12 @@ describe("progression engine", () => {
 
   it("does not consume disabled, unknown or another event's codes", async () => {
     const fixture = await seedFixture();
-    const other = await seedFixture({ codes: 0 });
-    await getDb().insert(ahCodes).values({
-      id: "foreign-code", eventId: other.event.id, batchId: other.batch.id,
-      serial: 1, code: "WWWW9999", createdAt: Date.now(),
-    });
+    const other = await seedFixture({ codes: 3 });
+    expect(other.codes[0].code).not.toBe(fixture.codes[0].code);
     const ctx = ctxFor(fixture);
     await recordChallengeSolved({ ctx, stageId: fixture.stages[0].id, submissionId: "submission-1" });
     await getDb().update(ahCodes).set({ status: "DISABLED" }).where(eq(ahCodes.id, fixture.codes[0].id));
-    for (const code of [fixture.codes[0].code, "ZZZZZZZZ", "WWWW9999"]) {
+    for (const code of [fixture.codes[0].code, "ZZZZZZZZ", other.codes[0].code]) {
       expect(await redeemCode({ ctx, stageId: fixture.stages[0].id, code }))
         .toEqual({ outcome: "INVALID", codeId: null });
     }
