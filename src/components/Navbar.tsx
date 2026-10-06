@@ -13,6 +13,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 const baseLinks = [
   { href: "/", label: "Home" },
   { href: "/cp-arena", label: "Arena" },
+  { href: "/algohunt/login", label: "AlgoHunt" },
   { href: "/initiatives", label: "Initiatives" },
   { href: "/team", label: "Team" },
 ];
@@ -123,8 +124,11 @@ export default function Navbar() {
     });
   };
 
-  const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname.startsWith(href);
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/";
+    if (href === "/algohunt/login") return pathname.startsWith("/algohunt");
+    return pathname.startsWith(href);
+  };
 
   return (
     <header
@@ -159,7 +163,7 @@ export default function Navbar() {
         </Link>
 
         {/* Centered floating pill (desktop) */}
-        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 rounded-full border border-hairline bg-white/70 p-1.5 shadow-sm backdrop-blur md:flex dark:bg-panel/70">
+        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 rounded-full border border-hairline bg-white/70 p-1.5 shadow-sm backdrop-blur lg:flex dark:bg-panel/70">
           {links.map((link) => (
             <Link
               key={link.href}
@@ -227,7 +231,7 @@ export default function Navbar() {
             aria-label="Toggle navigation menu"
             aria-expanded={open}
             aria-controls="mobile-menu"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-hairline bg-white/70 text-chocolate shadow-sm backdrop-blur md:hidden dark:bg-panel/70"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-hairline bg-white/70 text-chocolate shadow-sm backdrop-blur lg:hidden dark:bg-panel/70"
           >
             <svg
               width="18"
@@ -251,7 +255,7 @@ export default function Navbar() {
 
       {/* Mobile dropdown */}
       {open && (
-        <div className="mx-auto max-w-6xl px-6 md:hidden">
+        <div className="mx-auto max-w-6xl px-6 lg:hidden">
           <nav 
               ref={menuRef}
               id="mobile-menu"
@@ -279,5 +283,3 @@ export default function Navbar() {
     </header>
   );
 }
-
-
