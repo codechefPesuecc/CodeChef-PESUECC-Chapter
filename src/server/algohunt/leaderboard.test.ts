@@ -1,16 +1,23 @@
 process.env.DATABASE_URL = ":memory:";
 
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { and, eq } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import { ahEvents, ahStageProgress, ahStages, ahTeams } from "@/server/db/schema";
+import { GET as leaderboardRoute } from "@/app/api/algohunt/leaderboard/route";
 import { computeLeaderboard } from "./leaderboard";
 import { adminCompleteStage, disqualifyTeam, redeemCode } from "./progression";
 import { resetAlgoHuntTables, setupTestDb } from "./testing/db";
 import { ctxFor, seedFixture, solveCurrent, type Fixture } from "./testing/fixtures";
+import { clearCookies, setTeamCookie } from "./testing/next-headers-mock";
+
+vi.mock("next/headers", () => import("@/server/algohunt/testing/next-headers-mock"));
 
 beforeAll(setupTestDb);
-beforeEach(resetAlgoHuntTables);
+beforeEach(async () => {
+  clearCookies();
+  await resetAlgoHuntTables();
+});
 
 /** Solve the current question and, unless it's the final one, redeem the next unused code. */
 async function advance(fixture: Fixture, teamIndex: number, stageIndex: number, code: { next: number }) {
@@ -128,5 +135,47 @@ describe("computeLeaderboard", () => {
     expect(rows.map((row) => row.rank)).toEqual([1, 2, 2, 4]);
     expect(rows.map((row) => row.isYou)).toEqual([false, true, false, false]);
     expect(rows[1]).toMatchObject({ teamId: fixture.teams[2].team.id, teamCode: "AH2-T003", disqualified: false });
+  });
+});
+
+describe("GET /api/algohunt/leaderboard", () => {
+  it("requires a team session", async () => {
+    expect((await leaderboardRoute()).status).toBe(401);
+  });
+
+  it("13. returns no rows while the leaderboard is hidden", async () => {
+    const fixture = await seedFixture();
+    await solveCurrent(fixture, 1);
+    await getDb().update(ahEvents).set({ leaderboardVisible: false }).where(eq(ahEvents.id, fixture.event.id));
+    setTeamCookie(fixture.teams[0].team.id);
+    const response = await leaderboardRoute();
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    const body = await response.json();
+    expect(body).toMatchObject({ ok: true, visible: false, mode: "SOLVED_THEN_TIME", rows: [] });
+    expect(typeof body.updatedAt).toBe("number");
+  });
+
+  it("13. never exposes teamId, teamCode or disqualified, and hides disqualified teams", async () => {
+    const fixture = await seedFixture({ teams: 3 });
+    await solveCurrent(fixture, 1);
+    await disqualifyTeam({
+      eventId: fixture.event.id, teamId: fixture.teams[2].team.id, adminId: "admin", reason: "Test disqualification",
+    });
+    setTeamCookie(fixture.teams[0].team.id);
+    const body = await (await leaderboardRoute()).json();
+    expect(body).toMatchObject({ ok: true, visible: true, mode: "SOLVED_THEN_TIME" });
+    expect(body.rows.map((row: { teamName: string }) => row.teamName)).toEqual(["Team Beta", "Team Alpha"]);
+    expect(body.rows.map((row: { isYou: boolean }) => row.isYou)).toEqual([false, true]);
+    for (const row of body.rows) {
+      expect(Object.keys(row).sort()).toEqual([
+        "college", "finished", "finishedAt", "isYou", "lastSolvedAt", "points", "questionsSolved", "rank", "teamName",
+      ]);
+    }
+    const json = JSON.stringify(body);
+    for (const { team } of fixture.teams) {
+      expect(json).not.toContain(team.id);
+      expect(json).not.toContain(team.teamCode);
+    }
   });
 });
