@@ -17,7 +17,8 @@
     "cf:build": "opennextjs-cloudflare build",
     "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare populateCache remote && wrangler deploy",
     "judge:up": "docker compose up -d",
-    "judge:down": "docker compose down"
+    "judge:down": "docker compose down",
+    "algohunt:validate": "tsx scripts/algohunt/validate-question.ts"
   },
   "dependencies": {
     "@codemirror/lang-cpp": "^6.0.3",
