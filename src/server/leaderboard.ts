@@ -30,12 +30,12 @@ export interface LeaderRow {
 // the queries INNER JOIN users, so every scored id has one.
 const UNKNOWN_SOLVER = { display: "unknown", name: null, identity: "—" };
 
-/** Today's problem: solve-time standings with the speed-bounty points (fastest arena
- * timer ranks first). Only live (ranked) accepted solves count — a past-problem
- * practice solve of the same slug never appears here. */
-export async function todayLeaderboard(): Promise<LeaderRow[]> {
-  const daily = await getDailyChallenge();
-  if (!daily) return [];
+/** Today's problem(s): solve-time standings with the speed-bounty points (fastest arena
+ * timer ranks first). Accepts an optional challengeSlug to query standings for a specific
+ * POTD of the day; defaults to the primary daily challenge if omitted. */
+export async function todayLeaderboard(challengeSlug?: string): Promise<LeaderRow[]> {
+  const targetSlug = challengeSlug ?? (await getDailyChallenge())?.slug;
+  if (!targetSlug) return [];
 
   const db = getDb();
   const rows = await db
@@ -54,7 +54,7 @@ export async function todayLeaderboard(): Promise<LeaderRow[]> {
     .innerJoin(users, eq(submissions.userId, users.id))
     .where(
       and(
-        eq(submissions.challengeSlug, daily.slug),
+        eq(submissions.challengeSlug, targetSlug),
         eq(submissions.status, "AC"),
         eq(submissions.ranked, true),
       ),

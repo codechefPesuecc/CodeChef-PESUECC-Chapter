@@ -31,12 +31,23 @@ export default function LeaderboardView() {
   const [ascending, setAscending] = useState(false);
   const [languageFilter, setLanguageFilter] = useState("all");
 
+  const [todayChallenges, setTodayChallenges] = useState<
+    { slug: string; title: string; difficulty: string }[]
+  >([]);
+  const [selectedChallenge, setSelectedChallenge] = useState<string | null>(null);
+
   useEffect(() => {
-    if (fetched.current.has(scope)) return;
+    const key = scope === "today" && selectedChallenge ? `today:${selectedChallenge}` : scope;
+    if (fetched.current.has(key as LeaderScope)) return;
 
     let alive = true;
 
-    fetch(`/api/leaderboard?scope=${scope}`)
+    const url =
+      scope === "today" && selectedChallenge
+        ? `/api/leaderboard?scope=today&challenge=${encodeURIComponent(selectedChallenge)}`
+        : `/api/leaderboard?scope=${scope}`;
+
+    fetch(url)
       .then(async (r) => {
         const d = await r.json();
         if (!r.ok) throw new Error(d.error || "Failed to load standings.");
@@ -45,9 +56,15 @@ export default function LeaderboardView() {
       .then((d) => {
         if (!alive) return;
 
-        fetched.current.add(scope);
+        fetched.current.add(key as LeaderScope);
         setErrors((e) => ({ ...e, [scope]: null }));
-        setCache((c) => ({ ...c, [scope]: d.rows ?? [] }));
+        setCache((c) => ({ ...c, [key]: d.rows ?? [] }));
+        if (d.challenges && Array.isArray(d.challenges)) {
+          setTodayChallenges(d.challenges);
+          if (!selectedChallenge && d.challenge) {
+            setSelectedChallenge(d.challenge);
+          }
+        }
       })
       .catch((err) => {
         if (!alive) return;
@@ -58,9 +75,11 @@ export default function LeaderboardView() {
     return () => {
       alive = false;
     };
-  }, [scope]);
+  }, [scope, selectedChallenge]);
 
-  const rows = cache[scope];
+  const activeKey =
+    scope === "today" && selectedChallenge ? `today:${selectedChallenge}` : scope;
+  const rows = cache[activeKey as LeaderScope];
 
   const activeLabel =
     TABS.find((t) => t.scope === scope)?.label ?? "Standings";
@@ -139,6 +158,28 @@ export default function LeaderboardView() {
           </button>
         ))}
       </div>
+
+      {scope === "today" && todayChallenges.length > 1 && (
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="font-mono text-xs font-semibold uppercase tracking-wider text-charcoal/50 dark:text-white/50">
+            Problem:
+          </span>
+          {todayChallenges.map((c) => (
+            <button
+              key={c.slug}
+              type="button"
+              onClick={() => setSelectedChallenge(c.slug)}
+              className={`rounded border px-3 py-1.5 text-xs font-medium transition-colors ${
+                selectedChallenge === c.slug
+                  ? "border-bronze bg-bronze/15 text-bronze font-semibold"
+                  : "border-hairline bg-cream text-charcoal/70 hover:bg-bronze/10 dark:bg-white/5 dark:text-white/70"
+              }`}
+            >
+              {c.title}
+            </button>
+          ))}
+        </div>
+      )}
 
       {rows !== undefined && !errors[scope] && (
         <div className="mt-4 flex flex-wrap items-center gap-3">

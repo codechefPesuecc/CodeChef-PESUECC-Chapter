@@ -4,7 +4,7 @@
   import { notFound, redirect } from "next/navigation";
   import {
     getChallengeBySlug,
-    getDailyChallenge,
+    isLiveChallenge,
     toPublicContent,
   } from "@/lib/challenges";
   import { getCurrentUser } from "@/server/auth/session";
@@ -54,8 +54,7 @@
 
     // If this isn't today's live problem, it should be solved as practice via
     // the archive route, not the ranked solve route.
-    const daily = await getDailyChallenge();
-    const isLive = daily?.slug === slug;
+    const isLive = await isLiveChallenge(slug);
 
     // Today's ranked Problem of the Day is members-only — gate viewing behind
     // login. Past problems (isLive === false) stay open as practice.
