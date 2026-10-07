@@ -1,17 +1,19 @@
-/**
- * Client for the high-performance self-hosted Rust Judge Sandbox.
- * Reached at JUDGE_URL (defaults to http://localhost:8080 or remote Azure VM).
- */
-const JUDGE_URL = process.env.JUDGE_URL ?? "http://localhost:8080";
-const JUDGE_SECRET = process.env.JUDGE_SECRET || process.env.JUDGE_API_SECRET;
+function getJudgeUrl(): string {
+  return process.env.JUDGE_URL || "http://localhost:8080";
+}
+
+function getJudgeSecret(): string | undefined {
+  return process.env.JUDGE_SECRET || process.env.JUDGE_API_SECRET;
+}
 
 function getHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
-  if (JUDGE_SECRET) {
-    headers["X-Judge-Secret"] = JUDGE_SECRET;
-    headers["Authorization"] = `Bearer ${JUDGE_SECRET}`;
+  const secret = getJudgeSecret();
+  if (secret) {
+    headers["X-Judge-Secret"] = secret;
+    headers["Authorization"] = `Bearer ${secret}`;
   }
   return headers;
 }
@@ -116,7 +118,7 @@ export function decodeOutput(val: number[] | string | undefined | null): string 
 }
 
 export async function judgeHealth(): Promise<JudgeHealth> {
-  const res = await fetch(`${JUDGE_URL}/health`, {
+  const res = await fetch(`${getJudgeUrl()}/health`, {
     headers: getHeaders(),
     cache: "no-store",
     signal: AbortSignal.timeout(10_000),
@@ -159,7 +161,7 @@ export async function judgeExecute(params: {
     let lastErrorText = "";
 
     while (attempt <= MAX_RETRIES) {
-      res = await fetch(`${JUDGE_URL}/api/v1/submit`, {
+      res = await fetch(`${getJudgeUrl()}/api/v1/submit`, {
         method: "POST",
         headers: getHeaders(),
         cache: "no-store",

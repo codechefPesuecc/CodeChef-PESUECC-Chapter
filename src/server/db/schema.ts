@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, unique, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, unique, index } from "drizzle-orm/sqlite-core";
 
 /**
  * Arena persistence (SQLite via libSQL in dev, Cloudflare D1 in prod / Drizzle).
@@ -165,9 +165,8 @@ export const challenges = sqliteTable("challenges", {
   createdAt: integer("created_at").notNull(),
   updatedAt: integer("updated_at").notNull(),
 }, (t) => ({
-  // One problem per calendar day (the Problem of the Day). NULL dates (pool) are
-  // exempt — SQLite unique indexes treat NULLs as distinct, so the pool is unbounded.
-  dateUnique: uniqueIndex("challenges_date_unique").on(t.date),
+  // Multiple problems per calendar day (Multi-POTD). Non-unique index for fast lookup by date.
+  dateIdx: index("challenges_date_idx").on(t.date),
 }));
 
 export const monstrContests = sqliteTable("monstr_contests", {

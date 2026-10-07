@@ -4,7 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import { attempts } from "@/server/db/schema";
 import { getCurrentUser } from "@/server/auth/session";
-import { getDailyChallenge } from "@/lib/challenges";
+import { isLiveChallenge } from "@/lib/challenges";
 import { clientIp, enforceRateLimits } from "@/server/rateLimit";
 
 export const dynamic = "force-dynamic";
@@ -43,10 +43,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "slug is required." }, { status: 400 });
   }
 
-  // Only the current, ranked Problem of the Day starts a clock. Anything else
+  // Only current, ranked Problems of the Day start a clock. Anything else
   // (a past problem opened for practice) is intentionally not tracked.
-  const daily = await getDailyChallenge();
-  if (daily?.slug !== slug) {
+  const isLive = await isLiveChallenge(slug);
+  if (!isLive) {
     return NextResponse.json({ ok: true, ranked: false, startedAt: null });
   }
 

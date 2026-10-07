@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import {
   getChallengeBySlug,
-  getDailyChallenge,
+  isLiveChallenge,
   toPublicContent,
 } from "@/lib/challenges";
 import ProblemStatement from "@/components/cp-arena/ProblemStatement";
@@ -34,9 +34,8 @@ export default async function ArchiveProblemPage({
   // Unreleased or unknown slugs don't resolve — no early leak of a future set.
   if (!challenge) notFound();
 
-  // Today's live problem is always solved ranked at /cp-arena/solve/[slug], never as practice.
-  const daily = await getDailyChallenge();
-  if (daily?.slug === slug) redirect(`/cp-arena/solve/${slug}`);
+  // Today's live problems are always solved ranked at /cp-arena/solve/[slug], never as practice.
+  if (await isLiveChallenge(slug)) redirect(`/cp-arena/solve/${slug}`);
 
   const sample = challenge.samples[0];
 

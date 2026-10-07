@@ -92,6 +92,13 @@
       "when": 1790417991321,
       "tag": "0012_outgoing_dagger",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1791401825998,
+      "tag": "0013_familiar_sage",
+      "breakpoints": true
     }
   ]
 }

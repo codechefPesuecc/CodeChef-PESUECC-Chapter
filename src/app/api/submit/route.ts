@@ -4,7 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import { submissions, attempts } from "@/server/db/schema";
 import { getCurrentUser } from "@/server/auth/session";
-import { getDailyChallenge } from "@/lib/challenges";
+import { isLiveChallenge } from "@/lib/challenges";
 import { judge } from "@/server/judge";
 import { hasSolvedRanked } from "@/server/solves";
 import { rateLimit, clientIp } from "@/server/rateLimit";
@@ -99,11 +99,10 @@ export async function POST(req: Request) {
     );
   }
 
-  // Only the current Problem of the Day is ranked (speed-bounty by finish order).
+  // Only current Problems of the Day are ranked (speed-bounty by finish order).
   // A past problem is practice: an accepted solve earns the flat base score, but
   // it never mints speed-bounty points or shifts the live board.
-  const daily = await getDailyChallenge();
-  const ranked = daily?.slug === slug;
+  const ranked = await isLiveChallenge(slug);
 
   // Hide-after-solve, enforced server-side: once a user has a live AC for today's
   // problem, the solve page stops serving it AND a crafted re-submit is rejected.
