@@ -1,5 +1,3 @@
-import { cookieName } from "../src/server/auth/token";
-
 const BASE = "http://localhost:3000";
 
 async function login(username: string, password: string): Promise<string> {
@@ -164,6 +162,10 @@ if __name__ == '__main__':
   console.log("Fetching Today's Leaderboard for potd-invert-tree:");
   const lbInvertTree = await getLeaderboard("today", "potd-invert-tree");
   console.log(JSON.stringify(lbInvertTree.data, null, 2));
+
+  console.log("Fetching Today's Combined Leaderboard (all problems):");
+  const lbAll = await getLeaderboard("today", "all");
+  console.log(JSON.stringify(lbAll.data, null, 2));
 
   console.log("Fetching Month Aggregate Leaderboard:");
   const lbMonth = await getLeaderboard("month");

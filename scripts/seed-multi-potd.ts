@@ -2,7 +2,6 @@ import { hashPassword } from "../src/server/auth/password";
 import { getDb } from "../src/server/db";
 import { users, challenges } from "../src/server/db/schema";
 import { todayStr } from "../src/lib/challenges";
-import { sql } from "drizzle-orm";
 
 async function main() {
   const db = getDb();
@@ -20,7 +19,7 @@ async function main() {
       username: "admin",
       name: "Admin User",
       email: "admin@pes.edu",
-      role: "admin",
+      isAdmin: true,
       passwordHash: adminPassHash,
       emailVerified: true,
       prn: "PES1UGADMIN001",
@@ -29,7 +28,7 @@ async function main() {
     .onConflictDoUpdate({
       target: users.username,
       set: {
-        role: "admin",
+        isAdmin: true,
         passwordHash: adminPassHash,
         emailVerified: true,
       },
@@ -44,7 +43,7 @@ async function main() {
       username: "alice",
       name: "Alice Smith",
       email: "alice@pes.edu",
-      role: "student",
+      isAdmin: false,
       passwordHash: alicePassHash,
       emailVerified: true,
       prn: "PES1UG22CS001",
@@ -67,7 +66,7 @@ async function main() {
       username: "bob",
       name: "Bob Jones",
       email: "bob@pes.edu",
-      role: "student",
+      isAdmin: false,
       passwordHash: bobPassHash,
       emailVerified: true,
       prn: "PES1UG22CS002",

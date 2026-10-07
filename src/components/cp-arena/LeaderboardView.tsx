@@ -84,8 +84,10 @@ export default function LeaderboardView() {
   const activeLabel =
     TABS.find((t) => t.scope === scope)?.label ?? "Standings";
 
+  const isCombinedToday = scope === "today" && selectedChallenge === "all";
+
   const languages = useMemo(() => {
-    if (!rows) return [];
+    if (!rows || isCombinedToday) return [];
 
     return Array.from(
       new Set(
@@ -94,14 +96,14 @@ export default function LeaderboardView() {
           .filter((language): language is string => Boolean(language)),
       ),
     ).sort();
-  }, [rows]);
+  }, [rows, isCombinedToday]);
 
   const processedRows = useMemo(() => {
     if (!rows) return undefined;
 
     let result = [...rows];
 
-    if (scope === "today" && languageFilter !== "all") {
+    if (scope === "today" && !isCombinedToday && languageFilter !== "all") {
       result = result.filter((row) => row.language === languageFilter);
     }
 
@@ -124,7 +126,7 @@ export default function LeaderboardView() {
     });
 
     return result;
-  }, [rows, scope, sortKey, ascending, languageFilter]);
+  }, [rows, scope, isCombinedToday, sortKey, ascending, languageFilter]);
 
   function changeScope(nextScope: LeaderScope) {
     setScope(nextScope);
@@ -164,11 +166,28 @@ export default function LeaderboardView() {
           <span className="font-mono text-xs font-semibold uppercase tracking-wider text-charcoal/50 dark:text-white/50">
             Problem:
           </span>
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedChallenge("all");
+              setSortKey("points");
+            }}
+            className={`rounded border px-3 py-1.5 text-xs font-medium transition-colors ${
+              selectedChallenge === "all"
+                ? "border-bronze bg-bronze/15 text-bronze font-semibold"
+                : "border-hairline bg-cream text-charcoal/70 hover:bg-bronze/10 dark:bg-white/5 dark:text-white/70"
+            }`}
+          >
+            All Today&apos;s Problems (Combined)
+          </button>
           {todayChallenges.map((c) => (
             <button
               key={c.slug}
               type="button"
-              onClick={() => setSelectedChallenge(c.slug)}
+              onClick={() => {
+                setSelectedChallenge(c.slug);
+                setSortKey("points");
+              }}
               className={`rounded border px-3 py-1.5 text-xs font-medium transition-colors ${
                 selectedChallenge === c.slug
                   ? "border-bronze bg-bronze/15 text-bronze font-semibold"
@@ -195,7 +214,7 @@ export default function LeaderboardView() {
             <option value="points">Points</option>
             <option value="solver">Solver</option>
 
-            {scope === "today" ? (
+            {scope === "today" && !isCombinedToday ? (
               <option value="time">Time</option>
             ) : (
               <option value="solved">Solved</option>
@@ -210,7 +229,7 @@ export default function LeaderboardView() {
             {ascending ? "Ascending ↑" : "Descending ↓"}
           </button>
 
-          {scope === "today" && languages.length > 0 && (
+          {scope === "today" && !isCombinedToday && languages.length > 0 && (
             <>
               <label className="text-xs font-semibold uppercase tracking-wider text-charcoal/50 dark:text-white/50">
                 Language
@@ -260,6 +279,7 @@ export default function LeaderboardView() {
           <LeaderboardTable
             rows={processedRows}
             scope={scope}
+            isCombined={isCombinedToday}
             currentIdentity={user?.username}
           />
         )}

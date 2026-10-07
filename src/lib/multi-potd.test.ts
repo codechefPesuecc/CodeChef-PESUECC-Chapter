@@ -10,7 +10,7 @@ import {
   isLiveChallenge,
   todayStr,
 } from "@/lib/challenges";
-import { todayLeaderboard, aggregateLeaderboard } from "@/server/leaderboard";
+import { todayLeaderboard, todayCommonLeaderboard, aggregateLeaderboard } from "@/server/leaderboard";
 
 describe("Multiple Problems of the Day (Multi-POTD)", () => {
   beforeAll(async () => {
@@ -190,7 +190,16 @@ describe("Multiple Problems of the Day (Multi-POTD)", () => {
     expect(boardBeta[1].rank).toBe(2);
     expect(boardBeta[1].points).toBe(800);
 
-    // 6. Test aggregate month leaderboard:
+    // 6. Test today's common/combined leaderboard across both POTDs:
+    // Both Alice and Bob have 1000 + 800 = 1800 pts. Alice finished second problem at now+25s, Bob at now+30s.
+    const commonBoard = await todayCommonLeaderboard();
+    expect(commonBoard).toHaveLength(2);
+    expect(commonBoard[0].points).toBe(1800);
+    expect(commonBoard[0].solved).toBe(2);
+    expect(commonBoard[1].points).toBe(1800);
+    expect(commonBoard[1].solved).toBe(2);
+
+    // 7. Test aggregate month leaderboard:
     // Both solved 2 problems, both have 1000 + 800 = 1800 total points!
     const monthBoard = await aggregateLeaderboard("month");
     expect(monthBoard).toHaveLength(2);

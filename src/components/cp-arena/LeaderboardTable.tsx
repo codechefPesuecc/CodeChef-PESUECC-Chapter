@@ -22,19 +22,21 @@ export interface LeaderRow {
 export default function LeaderboardTable({
   rows,
   scope,
+  isCombined = false,
   currentIdentity,
 }: {
   rows: LeaderRow[];
   scope: LeaderScope;
+  isCombined?: boolean;
   currentIdentity?: string | null;
 }) {
-  const isToday = scope === "today";
+  const isToday = scope === "today" && !isCombined;
 
   if (rows.length === 0) {
     return (
       <p className="px-6 py-10 text-center text-sm text-charcoal/50 ">
         No solvers yet
-        {isToday ? " — be the first to crack today's problem." : "."}
+        {scope === "today" ? " — be the first to crack today's problem." : "."}
       </p>
     );
   }
