@@ -31,7 +31,7 @@ interface SubmissionListProps {
   refresh?: number;
 }
 
-export default function SubmissionList({ stageNumber, teamCode: _teamCode, refresh = 0 }: SubmissionListProps) {
+export default function SubmissionList({ stageNumber, refresh = 0 }: SubmissionListProps) {
   const [submissions, setSubmissions] = useState<SubmissionWithCode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,8 +39,6 @@ export default function SubmissionList({ stageNumber, teamCode: _teamCode, refre
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
     fetch("/api/algohunt/submissions")
       .then((r) => r.json())
       .then((data) => {

@@ -12,6 +12,7 @@ import type { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 export async function GET(_req: Request): Promise<NextResponse> {
+  void _req;
   const ctx = await requireTeam();
   if (!("team" in ctx)) return ctx as NextResponse;
 

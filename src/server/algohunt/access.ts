@@ -27,11 +27,57 @@ export interface TeamProgress {
   finished: boolean;
 }
 
-/**
- * Get a team's full progress across all stages.
- * TODO(M1): Replace with real DB query implementation.
- */
 export async function getTeamProgress(_ctx: TeamContext): Promise<TeamProgress> {
+  // In development, return mock stage 1 progress so the workspace can be rendered
+  if (process.env.NODE_ENV === "development") {
+    const stage1: AhStage = {
+      id: "stage-1",
+      eventId: "evt-test-1",
+      stageNumber: 1,
+      challengeId: "ch-sample-1",
+      points: 100,
+      isFinal: false,
+      enabled: true,
+      createdAt: Date.now() - 3600_000,
+      updatedAt: Date.now() - 3600_000,
+    };
+    const current: StageWithProgress = {
+      stage: stage1,
+      challengeTitle: "Sum of Two Integers",
+      progress: {
+        id: "sp-1",
+        eventId: "evt-test-1",
+        teamId: "team-test-1",
+        stageId: "stage-1",
+        challengeSolved: false,
+        challengeSolvedAt: null,
+        solvedSubmissionId: null,
+        codeRedeemed: false,
+        codeRedeemedAt: null,
+        redeemedCodeId: null,
+        completed: false,
+        completedAt: null,
+        completionRequestId: null,
+        manualOverride: false,
+        overrideReason: null,
+        overrideBy: null,
+        createdAt: Date.now() - 3600_000,
+        updatedAt: Date.now() - 3600_000,
+      },
+      accessible: true,
+      hasSubmission: false,
+      state: "AVAILABLE",
+    };
+    return {
+      stages: [current],
+      current,
+      solvedCount: 0,
+      completedCount: 0,
+      totalStages: 3,
+      finished: false,
+    };
+  }
+
   // M1 stub: returns empty progress until M1 lands.
   return {
     stages: [],

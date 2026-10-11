@@ -55,7 +55,8 @@ export async function POST(req: Request): Promise<NextResponse> {
   return ok(result.result);
 }
 
-export async function GET(req: Request): Promise<NextResponse> {
+export async function GET(_req: Request): Promise<NextResponse> {
+  void _req;
   const ctx = await requireTeam();
   if (!("team" in ctx)) return ctx as NextResponse;
 

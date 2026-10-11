@@ -62,19 +62,24 @@ export default async function SubmissionsPage() {
   const cur = progress.current;
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6">
+    <div className="mx-auto max-w-3xl px-4 py-8">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="font-display text-lg font-bold text-chocolate dark:text-cream">
-          Your submissions for Question {cur.stage.stageNumber}
-        </h1>
-        <Link href="/algohunt/challenge" className="text-sm text-bronze hover:underline">
-          ← Back to Question
+        <Link href="/algohunt/challenge" className="mecha-btn h-8 text-xs font-semibold">
+          ← Back to Challenge
         </Link>
+        <span className="font-mono text-xs text-charcoal/50 dark:text-cream/50">
+          Team: {team.teamCode}
+        </span>
       </div>
-      <p className="mb-4 text-xs text-charcoal/50 dark:text-cream/50">
-        Earlier questions can&apos;t be reopened. Only the current question&apos;s submissions are shown.
-      </p>
-      <SubmissionList stageNumber={cur.stage.stageNumber} teamCode={team.teamCode} />
+      <MechaPanel label={`SUBMISSIONS · QUESTION ${cur.stage.stageNumber}`} bodyClassName="p-6">
+        <h1 className="mb-2 font-display text-xl font-bold text-chocolate dark:text-cream">
+          Submissions for Question {cur.stage.stageNumber}
+        </h1>
+        <p className="mb-6 text-xs text-charcoal/50 dark:text-cream/50">
+          Earlier questions cannot be reopened. Only the current question&apos;s submissions are recorded and displayed here.
+        </p>
+        <SubmissionList stageNumber={cur.stage.stageNumber} teamCode={team.teamCode} />
+      </MechaPanel>
     </div>
   );
 }

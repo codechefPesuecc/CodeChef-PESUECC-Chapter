@@ -2,8 +2,9 @@
  * AlgoHunt challenge server helpers (Module 2).
  * Loads the current challenge, builds view models, and prepares judge inputs.
  */
+import { sql } from "drizzle-orm";
 import { getDb } from "@/server/db";
-import type { AhChallenge, AhStage, AhTestCase } from "@/lib/algohunt/_mock-db-types";
+import type { AhChallenge, AhStage } from "@/lib/algohunt/_mock-db-types";
 import type { ChallengeView, LanguageOption } from "@/lib/algohunt/types";
 import { parseTimeLimitMs, parseMemoryLimitBytes } from "@/lib/challenges";
 import type { Checker, TestCase, ChallengeContent, RenderedContent } from "@/lib/challenges";
@@ -76,7 +77,7 @@ export async function getStageChallenge(stageId: string): Promise<StageChallenge
   // TODO(M1): Replace with proper Drizzle join once M1's schema.ts is merged.
   try {
     const rows = await db.run(
-      `SELECT s.id as stage_id, s.event_id, s.stage_number, s.challenge_id, s.points,
+      sql`SELECT s.id as stage_id, s.event_id, s.stage_number, s.challenge_id, s.points,
               s.is_final, s.enabled, s.created_at as stage_created_at, s.updated_at as stage_updated_at,
               c.id as ch_id, c.event_id as ch_event_id, c.slug, c.title, c.difficulty,
               c.statement, c.input_format, c.output_format, c.constraints, c.samples,
@@ -86,17 +87,68 @@ export async function getStageChallenge(stageId: string): Promise<StageChallenge
               c.created_at as ch_created_at, c.updated_at as ch_updated_at
        FROM ah_stages s
        JOIN ah_challenges c ON c.id = s.challenge_id
-       WHERE s.id = ?
-       LIMIT 1` as unknown as Parameters<typeof db.run>[0],
-      [stageId],
+       WHERE s.id = ${stageId}
+       LIMIT 1`,
     );
     const row = (rows as unknown as { rows?: unknown[] })?.rows?.[0] as Record<string, unknown> | undefined;
-    if (!row) return null;
-    return rowToStageChallenge(row);
+    if (row) return rowToStageChallenge(row);
   } catch (e) {
-    console.error("[algohunt:challenges] getStageChallenge error:", e);
-    return null;
+    console.warn("[algohunt:challenges] getStageChallenge DB query skipped/failed (tables not yet created):", e);
   }
+
+  // In development, if DB tables aren't migrated yet, return a sample stage challenge
+  // so the UI and workspace can be tested locally before M1's schema migration runs.
+  if (process.env.NODE_ENV === "development") {
+    return {
+      stage: {
+        id: stageId || "stage-1",
+        eventId: "evt-test-1",
+        stageNumber: 1,
+        challengeId: "ch-sample-1",
+        points: 100,
+        isFinal: false,
+        enabled: true,
+        createdAt: Date.now() - 3600_000,
+        updatedAt: Date.now() - 3600_000,
+      },
+      challenge: {
+        id: "ch-sample-1",
+        eventId: "evt-test-1",
+        slug: "sum-of-two-integers",
+        title: "Sum of Two Integers",
+        difficulty: "Easy",
+        statement: "Given two integers $A$ and $B$, compute and print their sum $A + B$.",
+        inputFormat: "The first and only line of input contains two space-separated integers $A$ and $B$.",
+        outputFormat: "Print a single integer: the sum of $A$ and $B$.",
+        constraints: "$1 \\le A, B \\le 10^9$",
+        samples: JSON.stringify([
+          { input: "3 5\n", output: "8\n", explanation: "3 + 5 = 8" },
+          { input: "10 20\n", output: "30\n", explanation: "10 + 20 = 30" },
+        ]),
+        contentHtml: JSON.stringify({
+          statement: "<p>Given two integers <code>A</code> and <code>B</code>, compute and print their sum <code>A + B</code>.</p>",
+          inputFormat: "<p>The first and only line of input contains two space-separated integers <code>A</code> and <code>B</code>.</p>",
+          outputFormat: "<p>Print a single integer: the sum of <code>A</code> and <code>B</code>.</p>",
+          constraints: "<p>1 &le; A, B &le; 10<sup>9</sup></p>",
+          sampleExplanations: ["<p>3 + 5 = 8</p>", "<p>10 + 20 = 30</p>"],
+        }),
+        checker: JSON.stringify({ type: "token" }),
+        timeLimit: "2s",
+        memoryLimit: "256MB",
+        languages: null,
+        referenceSolution: null,
+        bruteSolution: null,
+        editorial: null,
+        author: null,
+        verifiedAt: Date.now(),
+        sourceSha256: null,
+        createdAt: Date.now() - 3600_000,
+        updatedAt: Date.now() - 3600_000,
+      },
+    };
+  }
+
+  return null;
 }
 
 function rowToStageChallenge(row: Record<string, unknown>): StageChallenge {
@@ -149,10 +201,9 @@ export async function loadJudgeInput(challenge: AhChallenge): Promise<JudgeInput
   let rawTests: TestCase[] = [];
   try {
     const rows = await db.run(
-      `SELECT input, output FROM ah_test_cases
-       WHERE challenge_id = ?
-       ORDER BY idx ASC` as unknown as Parameters<typeof db.run>[0],
-      [challenge.id],
+      sql`SELECT input, output FROM ah_test_cases
+       WHERE challenge_id = ${challenge.id}
+       ORDER BY idx ASC`,
     );
     const resultRows = (rows as unknown as { rows?: unknown[] })?.rows ?? [];
     rawTests = resultRows.map((r) => {
@@ -165,6 +216,15 @@ export async function loadJudgeInput(challenge: AhChallenge): Promise<JudgeInput
   } catch (e) {
     console.error("[algohunt:challenges] loadJudgeInput error:", e);
     rawTests = [];
+  }
+
+  // Fallback to parsed sample cases if no test cases are found in the DB
+  if (rawTests.length === 0 && challenge.samples) {
+    type RawSample = { input?: string; output?: string };
+    const samples = safeJson<RawSample[]>(challenge.samples, []);
+    rawTests = samples
+      .filter((s) => typeof s.input === "string" && typeof s.output === "string")
+      .map((s) => ({ input: s.input as string, output: s.output as string }));
   }
 
   const checker = normalizeChecker(safeJson(challenge.checker, {}));
@@ -183,7 +243,7 @@ export async function loadJudgeInput(challenge: AhChallenge): Promise<JudgeInput
  */
 export function allowedLanguages(challenge: AhChallenge): LanguageOption[] {
   const challengeLangs: string[] | null = challenge.languages
-    ? safeJson<string[]>(challenge.languages, null)
+    ? safeJson<string[] | null>(challenge.languages, null)
     : null;
 
   return ARENA_LANGUAGES.filter((l) => {
@@ -263,12 +323,16 @@ export function toChallengeContent(challenge: AhChallenge): ChallengeContent {
     contentHtml = normalizeRenderedContent(safeJson(challenge.contentHtml, {}));
   } else {
     contentHtml = {
-      statement: "",
-      inputFormat: "",
-      outputFormat: "",
-      constraints: "",
+      statement: `<p>${challenge.statement || ""}</p>`,
+      inputFormat: challenge.inputFormat ? `<p>${challenge.inputFormat}</p>` : "",
+      outputFormat: challenge.outputFormat ? `<p>${challenge.outputFormat}</p>` : "",
+      constraints: challenge.constraints ? `<p>${challenge.constraints}</p>` : "",
       sampleExplanations: [],
     };
+  }
+
+  if (!contentHtml.statement && challenge.statement) {
+    contentHtml.statement = `<p>${challenge.statement}</p>`;
   }
 
   type RawSample = { input?: string; output?: string; explanation?: string };

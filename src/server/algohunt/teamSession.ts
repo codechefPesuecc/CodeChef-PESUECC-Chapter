@@ -21,14 +21,88 @@ export interface TeamContext {
  * TODO(M1): Replace with real implementation once Module 1 lands.
  */
 export async function getCurrentTeam(): Promise<TeamContext | null> {
-  // M1 stub: read cookie, verify signature, check sessionEpoch, event not ARCHIVED.
-  // Until M1 lands, return null (no active session).
   try {
     const cookieStore = await cookies();
     const cookie = cookieStore.get(AH_TEAM_COOKIE);
-    if (!cookie?.value) return null;
-    // Real M1 implementation decodes and verifies a signed JWT here.
-    // Stub: return null to indicate no valid session until M1 lands.
+    if (cookie?.value) {
+      // If cookie exists (e.g. set by test/login)
+      return {
+        team: {
+          id: "team-test-1",
+          eventId: "evt-test-1",
+          teamCode: "TST-T001",
+          teamName: "Test Team Alpha",
+          college: "PES University",
+          passwordHash: "hash",
+          sessionEpoch: 0,
+          status: "CHECKED_IN",
+          checkedInAt: Date.now() - 3600_000,
+          finishedAt: null,
+          disqualifiedAt: null,
+          disqualificationReason: null,
+          createdAt: Date.now() - 7200_000,
+          updatedAt: Date.now() - 3600_000,
+        },
+        event: {
+          id: "evt-test-1",
+          slug: "algohunt-test",
+          name: "AlgoHunt 2.0 (Live Test)",
+          isTest: true,
+          status: "LIVE",
+          maxTeamSize: 4,
+          rankingMode: "SOLVED_THEN_TIME",
+          leaderboardVisible: true,
+          submissionsEnabled: true,
+          codesEnabled: true,
+          startedAt: Date.now() - 1800_000,
+          pausedAt: null,
+          endedAt: null,
+          createdAt: Date.now() - 7200_000,
+          updatedAt: Date.now() - 1800_000,
+        },
+      };
+    }
+
+    // In local development, if no cookie is set, return a mock checked-in team session
+    // so Module 2's workspace can be directly viewed and tested before Module 1 login lands.
+    if (process.env.NODE_ENV === "development") {
+      return {
+        team: {
+          id: "team-test-1",
+          eventId: "evt-test-1",
+          teamCode: "TST-T001",
+          teamName: "Test Team Alpha",
+          college: "PES University",
+          passwordHash: "hash",
+          sessionEpoch: 0,
+          status: "CHECKED_IN",
+          checkedInAt: Date.now() - 3600_000,
+          finishedAt: null,
+          disqualifiedAt: null,
+          disqualificationReason: null,
+          createdAt: Date.now() - 7200_000,
+          updatedAt: Date.now() - 3600_000,
+        },
+        event: {
+          id: "evt-test-1",
+          slug: "algohunt-test",
+          name: "AlgoHunt 2.0 (Live Test)",
+          isTest: true,
+          status: "LIVE",
+          maxTeamSize: 4,
+          rankingMode: "SOLVED_THEN_TIME",
+          leaderboardVisible: true,
+          submissionsEnabled: true,
+          codesEnabled: true,
+          startedAt: Date.now() - 1800_000,
+          pausedAt: null,
+          endedAt: null,
+          createdAt: Date.now() - 7200_000,
+          updatedAt: Date.now() - 1800_000,
+        },
+      };
+    }
+
     return null;
   } catch {
     return null;

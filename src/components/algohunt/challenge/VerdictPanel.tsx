@@ -13,7 +13,7 @@ interface VerdictPanelProps {
   onRetry?: () => void;
 }
 
-export default function VerdictPanel({ result, stageNumber, isFinal, onRetry }: VerdictPanelProps) {
+export default function VerdictPanel({ result, stageNumber, isFinal: _isFinal, onRetry }: VerdictPanelProps) {
   // Network/connection error (submission is null)
   if (!result || (result as { submission?: null }).submission === null) {
     return (

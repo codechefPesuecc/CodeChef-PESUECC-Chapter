@@ -2,7 +2,7 @@
  * Tests for src/server/algohunt/submissions.ts (unit level)
  * Module 2, brief §8
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { toSubmissionView } from "@/server/algohunt/submissions";
 import type { AhSubmission } from "@/lib/algohunt/_mock-db-types";
 

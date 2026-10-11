@@ -172,7 +172,7 @@ async function submitOnce(team: TeamCreds): Promise<SubmitStat> {
       code = data.code as string | undefined;
     } catch {}
     return { durationMs, status: res.status, verdict, code };
-  } catch (e) {
+  } catch (_e) {
     return { durationMs: Date.now() - start, status: -1, code: "NETWORK_ERROR" };
   }
 }
