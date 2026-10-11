@@ -8,6 +8,7 @@ const LINKS = [
   { href: "/admin/teachers", label: "Teachers" },
   { href: "/admin/users", label: "Users" },
   { href: "/admin/recruitment", label: "Recruitment" },
+  { href: "/admin/algohunt", label: "AlgoHunt" },
 ];
 
 /**
