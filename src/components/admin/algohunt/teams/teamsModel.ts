@@ -1,11 +1,10 @@
 import type { TeamStatus } from "@/lib/algohunt/types";
 import type { AdminTeamRow } from "@/server/algohunt/admin/teams";
 
-export const TEAM_STATUSES: readonly TeamStatus[] = ["REGISTERED", "CODE_PENDING", "CHECKED_IN", "FINISHED", "DISQUALIFIED"];
+export const TEAM_STATUSES: readonly TeamStatus[] = ["REGISTERED", "CHECKED_IN", "FINISHED", "DISQUALIFIED"];
 
 export const TEAM_STATUS_LABEL: Record<string, string> = {
   REGISTERED: "Registered",
-  CODE_PENDING: "Code pending",
   CHECKED_IN: "Checked in",
   FINISHED: "Finished",
   DISQUALIFIED: "Disqualified",
@@ -15,7 +14,6 @@ export const TEAM_STATUS_CLASS: Record<string, string> = {
   CHECKED_IN: "border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
   FINISHED: "border-sky-500/40 bg-sky-500/15 text-sky-700 dark:text-sky-300",
   DISQUALIFIED: "border-red-500/40 bg-red-500/15 text-red-700 dark:text-red-300",
-  CODE_PENDING: "border-amber-500/40 bg-amber-500/15 text-amber-700 dark:text-amber-300",
   REGISTERED: "border-hairline bg-hairline/40 text-charcoal/70",
 };
 

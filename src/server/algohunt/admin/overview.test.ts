@@ -100,6 +100,9 @@ describe("getOverview", () => {
     expect(texts).toContain("Team Alpha unlocked Question 2 with code #001");
     expect(texts).toContain(`${admin.username} unlocked Question 3 for Team Alpha without a code: 'QR pool empty'`);
     expect(texts).toContain("Team 3 got WA on Question 1 (test 3)");
+    // One line per event: the engine's stage.completed twin of a code or override unlock is skipped.
+    expect(texts).not.toContain("Team Alpha completed Question 1 with code #001");
+    expect(texts.some((t) => t.includes("completed Question 2 by admin override"))).toBe(false);
     expect(overview.recentActivity.length).toBeLessThanOrEqual(40);
     const times = overview.recentActivity.map((a) => a.at);
     expect(times).toEqual([...times].sort((a, b) => b - a));

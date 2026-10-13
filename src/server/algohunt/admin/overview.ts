@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gt, inArray, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import type { CodePoolStats, EventStatus } from "@/lib/algohunt/types";
 import { getDb } from "@/server/db";
 import {
@@ -8,6 +8,7 @@ import {
 import { getCodePoolStats } from "../codePool";
 import { computeLeaderboard } from "../leaderboard";
 import { activityKind, describeActivity, describeSubmission, parseAuditMetadata, type ActivityKind } from "./activity";
+import { feedAuditFilter } from "./feedFilter";
 import { getHealth, type AdminHealth } from "./health";
 
 export interface AdminOverview {
@@ -85,8 +86,8 @@ export async function getOverview(event: AhEvent): Promise<AdminOverview> {
     }).from(ahAuditLogs)
       .leftJoin(ahTeams, eq(ahAuditLogs.teamId, ahTeams.id))
       .leftJoin(users, eq(ahAuditLogs.actorId, users.id))
-      // Judged submissions come from ah_submissions below, so their audit twin would only repeat them.
-      .where(and(eq(ahAuditLogs.eventId, event.id), ne(ahAuditLogs.action, "submission.judged")))
+      // Judged submissions come from ah_submissions below, and code / override completions have their own row.
+      .where(and(eq(ahAuditLogs.eventId, event.id), feedAuditFilter))
       .orderBy(desc(ahAuditLogs.createdAt))
       .limit(25),
     db.select({

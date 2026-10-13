@@ -328,11 +328,8 @@ export default function TeamDetailView({
       <section aria-label="Code attempts">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <h2 className="font-display text-lg font-bold text-chocolate">Code attempts</h2>
-          <Link
-            href={`${withEvent("/admin/algohunt/submissions", event.slug)}&team=${encodeURIComponent(team.teamCode)}`}
-            className="text-sm text-bronze underline"
-          >
-            Submissions for this team →
+          <Link href={withEvent("/admin/algohunt/submissions", event.slug)} className="text-sm text-bronze underline">
+            Submissions browser (filter by <span className="font-mono">{team.teamCode}</span>) →
           </Link>
         </div>
         <p className="text-xs text-charcoal/60">The last 50. Use this to settle “we entered the code at 11:02” disputes.</p>

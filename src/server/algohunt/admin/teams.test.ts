@@ -73,7 +73,7 @@ describe("listTeams", () => {
     });
     expect(alpha.waitingSince).not.toBeNull();
     expect(alpha.lastActivityAt).not.toBeNull();
-    expect(beta).toMatchObject({ status: "DISQUALIFIED", waitingForCode: false, lastActivityAt: null });
+    expect(beta).toMatchObject({ status: "DISQUALIFIED", currentQuestion: null, waitingForCode: false, lastActivityAt: null });
     expect(third).toMatchObject({ status: "REGISTERED", currentQuestion: null, questionsSolved: 0, checkedInAt: null });
   });
 
@@ -122,6 +122,7 @@ describe("getTeamTimeline", () => {
     expect(texts).toContain("Team Alpha unlocked Question 2 with code #001");
     expect(texts).toContain("Team Alpha got WA on Question 2 (test 2)");
     expect(texts).toContain("Team Alpha entered a code on Question 1: INVALID");
+    expect(texts).not.toContain("Team Alpha completed Question 1 with code #001");
 
     const json = JSON.stringify(timeline);
     expect(json).not.toContain(SOURCE_MARKER);

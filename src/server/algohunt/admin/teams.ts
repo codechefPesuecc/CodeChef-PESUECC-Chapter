@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, ne, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, or, sql, type SQL } from "drizzle-orm";
 import type { CodeAttemptResult, SubmissionView, TeamStatus } from "@/lib/algohunt/types";
 import { hashPassword } from "@/server/auth/password";
 import { getDb } from "@/server/db";
@@ -11,6 +11,7 @@ import { getTeamProgress, type TeamProgress } from "../access";
 import { auditInsert } from "../audit";
 import { generateTeamPassword } from "../teamSession";
 import { activityKind, describeActivity, describeSubmission, parseAuditMetadata } from "./activity";
+import { feedAuditFilter } from "./feedFilter";
 
 export interface AdminTeamRow {
   id: string;
@@ -76,7 +77,7 @@ export async function listTeams(eventId: string, f: { q?: string; status?: TeamS
       ? null
       : Number(progress.waitingSince);
     const notStarted = team.eventStartedAt === null || team.status === "REGISTERED";
-    const done = team.status === "FINISHED" || completed >= totalStages;
+    const done = team.status === "FINISHED" || team.status === "DISQUALIFIED" || completed >= totalStages;
     const activity = [lastSubmission.get(team.id), lastAttempt.get(team.id)].filter((at): at is number => at !== undefined);
     return {
       id: team.id,
@@ -210,8 +211,8 @@ export async function getTeamTimeline(teamId: string): Promise<TimelineEntry[]> 
       metadata: ahAuditLogs.metadata, actorType: ahAuditLogs.actorType, createdAt: ahAuditLogs.createdAt,
       actorName: users.name, actorUsername: users.username,
     }).from(ahAuditLogs).leftJoin(users, eq(ahAuditLogs.actorId, users.id))
-      // The submission rows below carry the verdict, so the audit twin would only repeat them.
-      .where(and(eq(ahAuditLogs.teamId, teamId), ne(ahAuditLogs.action, "submission.judged")))
+      // Submission rows carry the verdict, and code / override completions have their own row.
+      .where(and(eq(ahAuditLogs.teamId, teamId), feedAuditFilter))
       .orderBy(desc(ahAuditLogs.createdAt))
       .limit(TIMELINE_LIMIT),
     db.select({
