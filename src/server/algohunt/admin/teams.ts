@@ -96,6 +96,21 @@ export async function listTeams(eventId: string, f: { q?: string; status?: TeamS
   });
 }
 
+export interface TeamBrief {
+  id: string;
+  eventId: string;
+  teamCode: string;
+  teamName: string;
+}
+
+/** The few fields a route needs to find the team's event and check the typed confirmation. */
+export async function getTeamBrief(teamId: string): Promise<TeamBrief | null> {
+  const [row] = await getDb().select({
+    id: ahTeams.id, eventId: ahTeams.eventId, teamCode: ahTeams.teamCode, teamName: ahTeams.teamName,
+  }).from(ahTeams).where(eq(ahTeams.id, teamId)).limit(1);
+  return row ?? null;
+}
+
 export interface AdminTeamDetail {
   /** The password hash never leaves the server. */
   team: Omit<AhTeam, "passwordHash">;
