@@ -8,10 +8,20 @@ import { resetAlgoHuntTables, setupTestDb } from "@/server/algohunt/testing/db";
 import { createSiteUser, seedFixture, type Fixture } from "@/server/algohunt/testing/fixtures";
 import { clearCookies, setSiteSessionCookie, setTeamCookie } from "@/server/algohunt/testing/next-headers-mock";
 import { getDb } from "@/server/db";
-import { ahAuditLogs, ahEvents, ahStages } from "@/server/db/schema";
+import { ahAuditLogs, ahEvents, ahStages, ahTeams } from "@/server/db/schema";
 import { PATCH as patchFlags } from "./events/[eventId]/flags/route";
 import { POST as postTransition } from "./events/[eventId]/transition/route";
+import { GET as getOverview } from "./overview/route";
 import { PATCH as patchStage } from "./stages/[stageId]/route";
+import { GET as getTeams } from "./teams/route";
+import { POST as postCheckinAll } from "./teams/checkin-all/route";
+import { GET as getTeamDetail } from "./teams/[teamId]/route";
+import { POST as postTeamCheckin } from "./teams/[teamId]/checkin/route";
+import { POST as postDisqualify } from "./teams/[teamId]/disqualify/route";
+import { POST as postOverride } from "./teams/[teamId]/override/route";
+import { POST as postReinstate } from "./teams/[teamId]/reinstate/route";
+import { POST as postResetPassword } from "./teams/[teamId]/reset-password/route";
+import { GET as getTeamTimeline } from "./teams/[teamId]/timeline/route";
 
 vi.mock("next/headers", () => import("@/server/algohunt/testing/next-headers-mock"));
 
@@ -62,6 +72,60 @@ const ROUTES: RouteCase[] = [
       { params: Promise.resolve({ stageId: f.stages[0].id }) },
     ),
   },
+  {
+    name: "GET overview",
+    call: (f) => getOverview(jsonRequest("GET", `/x?event=${f.event.slug}`)),
+  },
+  {
+    name: "GET teams",
+    call: (f) => getTeams(jsonRequest("GET", `/x?event=${f.event.slug}`)),
+  },
+  {
+    name: "POST teams/checkin-all",
+    call: (f) => postCheckinAll(jsonRequest("POST", `/x?event=${f.event.slug}`, { confirm: f.event.slug })),
+  },
+  {
+    name: "GET teams/[teamId]",
+    call: (f) => getTeamDetail(jsonRequest("GET", "/x"), { params: Promise.resolve({ teamId: f.teams[0].team.id }) }),
+  },
+  {
+    name: "GET teams/[teamId]/timeline",
+    call: (f) => getTeamTimeline(jsonRequest("GET", "/x"), { params: Promise.resolve({ teamId: f.teams[0].team.id }) }),
+  },
+  {
+    name: "POST teams/[teamId]/override",
+    call: (f) => postOverride(
+      jsonRequest("POST", "/x", {
+        action: "COMPLETE_STAGE", stageNumber: 1, reason: "Gate sweep", confirm: f.teams[0].team.teamCode,
+      }),
+      { params: Promise.resolve({ teamId: f.teams[0].team.id }) },
+    ),
+  },
+  {
+    name: "POST teams/[teamId]/disqualify",
+    call: (f) => postDisqualify(
+      jsonRequest("POST", "/x", { reason: "Gate sweep", confirm: f.teams[0].team.teamCode }),
+      { params: Promise.resolve({ teamId: f.teams[0].team.id }) },
+    ),
+  },
+  {
+    name: "POST teams/[teamId]/reinstate",
+    call: (f) => postReinstate(
+      jsonRequest("POST", "/x", { reason: "Gate sweep", confirm: f.teams[0].team.teamCode }),
+      { params: Promise.resolve({ teamId: f.teams[0].team.id }) },
+    ),
+  },
+  {
+    name: "POST teams/[teamId]/reset-password",
+    call: (f) => postResetPassword(
+      jsonRequest("POST", "/x", { confirm: f.teams[0].team.teamCode }),
+      { params: Promise.resolve({ teamId: f.teams[0].team.id }) },
+    ),
+  },
+  {
+    name: "POST teams/[teamId]/checkin",
+    call: (f) => postTeamCheckin(jsonRequest("POST", "/x"), { params: Promise.resolve({ teamId: f.teams[0].team.id }) }),
+  },
 ];
 
 const VISITORS: { who: string; signIn: (f: Fixture) => Promise<unknown> | void }[] = [
@@ -85,6 +149,8 @@ describe("admin gate sweep", () => {
         const [stage] = await getDb().select().from(ahStages).where(eq(ahStages.id, fixture.stages[0].id));
         expect(stage.enabled).toBe(true);
         expect(await getDb().select().from(ahAuditLogs)).toHaveLength(0);
+        const [team] = await getDb().select().from(ahTeams).where(eq(ahTeams.id, fixture.teams[0].team.id));
+        expect(team).toMatchObject({ status: "CHECKED_IN", passwordHash: fixture.teams[0].team.passwordHash });
       });
     }
   }
