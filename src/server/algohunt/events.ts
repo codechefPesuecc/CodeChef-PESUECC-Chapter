@@ -93,3 +93,81 @@ export async function updateEventFlags(p: {
   if (!fresh) throw new Error("Event not found");
   return fresh;
 }
+
+export async function listEvents(): Promise<AhEvent[]> {
+  return getDb().select().from(ahEvents).orderBy(desc(ahEvents.createdAt));
+}
+
+export function getTeamCodePrefix(event: { slug: string; isTest?: boolean }): "AH2" | "TST" | "DRY" {
+  if (event.slug.startsWith("dry")) return "DRY";
+  if (event.slug.startsWith("test") || event.isTest) return "TST";
+  return "AH2";
+}
+
+export async function createEvent(p: {
+  name: string;
+  slug: string;
+  isTest?: boolean;
+  maxTeamSize?: number;
+  rankingMode?: "SOLVED_THEN_TIME";
+  leaderboardVisible?: boolean;
+  submissionsEnabled?: boolean;
+  codesEnabled?: boolean;
+  actorId?: string;
+}): Promise<{ ok: true; event: AhEvent } | { ok: false; code: ErrorCode; message: string }> {
+  const db = getDb();
+  const slug = p.slug.trim().toLowerCase();
+  if (!slug || !/^[a-z0-9-]+$/.test(slug)) {
+    return { ok: false, code: "VALIDATION", message: "Slug must contain only lowercase letters, numbers, and hyphens." };
+  }
+  const name = p.name.trim();
+  if (!name) {
+    return { ok: false, code: "VALIDATION", message: "Event name is required." };
+  }
+
+  const existing = await getEventBySlug(slug);
+  if (existing) {
+    return { ok: false, code: "CONFLICT", message: `Event with slug "${slug}" already exists.` };
+  }
+
+  const now = Date.now();
+  const eventId = crypto.randomUUID();
+  const isTest = Boolean(p.isTest ?? (slug.startsWith("test") || slug.startsWith("dry")));
+
+  const [event] = await db.insert(ahEvents).values({
+    id: eventId,
+    slug,
+    name,
+    isTest,
+    status: "DRAFT",
+    maxTeamSize: p.maxTeamSize ?? 4,
+    rankingMode: p.rankingMode ?? "SOLVED_THEN_TIME",
+    leaderboardVisible: p.leaderboardVisible ?? true,
+    submissionsEnabled: p.submissionsEnabled ?? true,
+    codesEnabled: p.codesEnabled ?? true,
+    startedAt: null,
+    pausedAt: null,
+    endedAt: null,
+    createdAt: now,
+    updatedAt: now,
+  }).returning();
+
+  if (p.actorId) {
+    await db.insert(ahAuditLogs).values({
+      id: crypto.randomUUID(),
+      eventId,
+      teamId: null,
+      actorType: "ADMIN",
+      actorId: p.actorId,
+      action: "event.created",
+      targetType: "event",
+      targetId: eventId,
+      metadata: JSON.stringify({ slug, name, isTest }),
+      ip: null,
+      userAgent: null,
+      createdAt: now,
+    });
+  }
+
+  return { ok: true, event };
+}

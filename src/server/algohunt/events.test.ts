@@ -5,7 +5,16 @@ import { eq } from "drizzle-orm";
 import { EVENT_TRANSITIONS, type EventStatus } from "@/lib/algohunt/types";
 import { getDb } from "@/server/db";
 import { ahAuditLogs, ahEvents } from "@/server/db/schema";
-import { getEventById, getEventBySlug, resolveAdminEvent, transitionEvent, updateEventFlags } from "./events";
+import {
+  createEvent,
+  getEventById,
+  getEventBySlug,
+  getTeamCodePrefix,
+  listEvents,
+  resolveAdminEvent,
+  transitionEvent,
+  updateEventFlags,
+} from "./events";
 import { resetAlgoHuntTables, setupTestDb } from "./testing/db";
 import { seedFixture } from "./testing/fixtures";
 
@@ -80,5 +89,62 @@ describe("event lookup", () => {
     expect((await getEventBySlug(test.event.slug))?.id).toBe(test.event.id);
     expect((await resolveAdminEvent())?.id).toBe(real.event.id);
     expect((await resolveAdminEvent(test.event.slug))?.id).toBe(test.event.id);
+  });
+});
+
+describe("event creation and listing (Module 6)", () => {
+  it("creates a new event and logs an audit record", async () => {
+    const res = await createEvent({
+      name: "Spring Hunt 2026",
+      slug: "spring-hunt-2026",
+      maxTeamSize: 4,
+      actorId: "admin-lead",
+    });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+
+    expect(res.event.name).toBe("Spring Hunt 2026");
+    expect(res.event.slug).toBe("spring-hunt-2026");
+    expect(res.event.status).toBe("DRAFT");
+    expect(res.event.maxTeamSize).toBe(4);
+
+    const audits = await getDb().select().from(ahAuditLogs).where(eq(ahAuditLogs.action, "event.created"));
+    expect(audits).toHaveLength(1);
+    expect(audits[0].actorId).toBe("admin-lead");
+  });
+
+  it("rejects an invalid slug with uppercase or special characters", async () => {
+    const res = await createEvent({
+      name: "Bad Slug Event",
+      slug: "Bad_Slug!",
+    });
+    expect(res.ok).toBe(false);
+    if (res.ok) return;
+    expect(res.code).toBe("VALIDATION");
+  });
+
+  it("rejects a duplicate slug", async () => {
+    await createEvent({ name: "First", slug: "unique-slug" });
+    const duplicate = await createEvent({ name: "Second", slug: "unique-slug" });
+    expect(duplicate.ok).toBe(false);
+    if (duplicate.ok) return;
+    expect(duplicate.code).toBe("CONFLICT");
+  });
+
+  it("lists all events in descending order of creation", async () => {
+    await createEvent({ name: "Event A", slug: "event-a" });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    await createEvent({ name: "Event B", slug: "event-b" });
+    const all = await listEvents();
+    expect(all.length).toBeGreaterThanOrEqual(2);
+    expect(all[0].slug).toBe("event-b");
+    expect(all[1].slug).toBe("event-a");
+  });
+
+  it("determines team code prefixes correctly", () => {
+    expect(getTeamCodePrefix({ slug: "algohunt-2026" })).toBe("AH2");
+    expect(getTeamCodePrefix({ slug: "test-event", isTest: true })).toBe("TST");
+    expect(getTeamCodePrefix({ slug: "random-slug", isTest: true })).toBe("TST");
+    expect(getTeamCodePrefix({ slug: "dry-run-1" })).toBe("DRY");
   });
 });
