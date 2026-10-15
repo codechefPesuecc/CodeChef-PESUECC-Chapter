@@ -59,7 +59,7 @@ export default function CommandCenter({ eventSlug }: { eventSlug: string }) {
 
   // The server clock decides "running for", so a wrong laptop clock doesn't skew it.
   const now = tick + (data.serverNow - (lastUpdated ?? data.serverNow));
-  const { event, counts, codePool, stuck, readiness, topTeams, recentActivity, health } = data;
+  const { event, counts, codePool, stuck, integrityAlerts, readiness, topTeams, recentActivity, health } = data;
   const tone = statusTone(event.status);
   const running = formatRunning(event.startedAt, now);
   const banner = lowPoolMessage(codePool);
@@ -169,6 +169,37 @@ export default function CommandCenter({ eventSlug }: { eventSlug: string }) {
         <p role="alert" className="rounded-xl border border-red-500/40 bg-red-500/15 px-4 py-3 text-sm font-semibold text-red-700 dark:text-red-300">
           ⚠ {banner}
         </p>
+      )}
+
+      {integrityAlerts.length > 0 && (
+        <section
+          role="alert"
+          aria-label="Teams to check"
+          className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-800 dark:text-red-200"
+        >
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <p className="font-semibold">
+              ⚠ Send a volunteer to check {integrityAlerts.length === 1 ? "this team" : "these teams"}: they keep leaving AlgoHunt.
+            </p>
+            <Link href={withEvent("/admin/algohunt/integrity", event.slug)} className="font-mono text-xs uppercase tracking-wider hover:underline">
+              Integrity →
+            </Link>
+          </div>
+          <ul className="mt-2 flex flex-wrap gap-2">
+            {integrityAlerts.map((team) => (
+              <li key={team.teamId}>
+                <Link
+                  href={teamHref(team.teamId)}
+                  className="inline-flex items-center gap-2 rounded-md border border-red-500/40 bg-panel px-2 py-1 hover:underline"
+                >
+                  <span className="font-mono text-xs text-bronze">{team.teamCode}</span>
+                  <span className="font-medium text-chocolate">{team.teamName}</span>
+                  <span className="font-mono text-xs">{team.flags} flags</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       <div className="grid gap-6 lg:grid-cols-3">

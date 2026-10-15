@@ -5,7 +5,8 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { eq, inArray } from "drizzle-orm";
 import { judgeHealth } from "@/lib/judge";
 import { getDb } from "@/server/db";
-import { ahCodeAttempts, ahCodes, ahSubmissions } from "@/server/db/schema";
+import { FREQUENT_AWAY_COUNT } from "@/lib/algohunt/integrity-rules";
+import { ahCodeAttempts, ahCodes, ahIntegrityEvents, ahSubmissions } from "@/server/db/schema";
 import { adminCompleteStage, disqualifyTeam, redeemCode } from "../progression";
 import { resetAlgoHuntTables, setupTestDb } from "../testing/db";
 import { createSiteUser, ctxFor, seedFixture, solveCurrent, type Fixture } from "../testing/fixtures";
@@ -122,6 +123,29 @@ describe("getOverview", () => {
     await getDb().update(ahCodes).set({ status: "DISABLED" }).where(eq(ahCodes.eventId, fixture.event.id));
     const empty = await getOverview(fixture.event);
     expect(empty.codePool).toMatchObject({ active: 0, teamsWaitingForCode: 1, lowPool: true });
+  });
+
+  it("asks for a volunteer check on teams with many integrity flags, most first, never disqualified ones", async () => {
+    const fixture = await seedFixture({ teams: 3 });
+    const flag = async (teamIndex: number, times: number) => {
+      for (let i = 0; i < times; i += 1) {
+        await getDb().insert(ahIntegrityEvents).values({
+          id: crypto.randomUUID(), eventId: fixture.event.id, teamId: fixture.teams[teamIndex].team.id,
+          deviceId: "laptop", reasons: "HIDDEN", leftAt: Date.now() + i, returnedAt: null,
+        });
+      }
+    };
+    await flag(0, FREQUENT_AWAY_COUNT);
+    await flag(1, FREQUENT_AWAY_COUNT - 1);
+    await flag(2, FREQUENT_AWAY_COUNT + 3);
+    expect((await getOverview(fixture.event)).integrityAlerts.map((team) => [team.teamName, team.flags])).toEqual([
+      ["Team 3", FREQUENT_AWAY_COUNT + 3], ["Team Alpha", FREQUENT_AWAY_COUNT],
+    ]);
+
+    await disqualifyTeam({
+      eventId: fixture.event.id, teamId: fixture.teams[2].team.id, adminId: "admin", reason: "Test disqualification",
+    });
+    expect((await getOverview(fixture.event)).integrityAlerts.map((team) => team.teamName)).toEqual(["Team Alpha"]);
   });
 
   it("reports an unreachable judge without details", async () => {

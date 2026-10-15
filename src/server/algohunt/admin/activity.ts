@@ -1,3 +1,4 @@
+import { formatIST } from "@/lib/algohunt/format";
 import type { AuditAction, SubmissionStatus } from "@/lib/algohunt/types";
 
 export type ActivityKind = "submission" | "code" | "progress" | "admin" | "system";
@@ -65,6 +66,12 @@ const DESCRIBERS: { [A in AuditAction]: (c: Ctx) => string } = {
     `${c.meta.isTest ? "Test event" : "Event"}${str(c.meta.slug) ? ` '${str(c.meta.slug)}'` : ""} created by ${c.actor}`,
   "event.transition": (c) => `${transitionPhrase(str(c.meta.from), str(c.meta.to))} by ${c.actor}`,
   "event.flags_changed": (c) => `${c.actor} ${flagsPhrase(c.meta.changes)}${because(c.meta.reason)}`,
+  "event.end_time_changed": (c) => {
+    const to = num(c.meta.to);
+    if (to === null) return `${c.actor} removed the scheduled end${because(c.meta.reason)}`;
+    const verb = num(c.meta.from) === null ? "set the end time to" : "moved the end time to";
+    return `${c.actor} ${verb} ${formatIST(to)} IST${because(c.meta.reason)}`;
+  },
   "stage.toggled": (c) =>
     `${c.actor} ${c.meta.enabled === false ? "disabled" : "enabled"} ${question(c.meta.stageNumber)}${because(c.meta.reason)}`,
   "announcement.created": (c) => {
@@ -94,7 +101,8 @@ const KINDS: { [A in AuditAction]: ActivityKind } = {
   "code.batch_disabled": "admin", "code.note_updated": "admin",
   "override.complete_stage": "admin", "override.revert_stage": "admin",
   "team.disqualified": "admin", "team.reinstated": "admin",
-  "event.created": "admin", "event.transition": "admin", "event.flags_changed": "admin", "stage.toggled": "admin",
+  "event.created": "admin", "event.transition": "admin", "event.flags_changed": "admin",
+  "event.end_time_changed": "admin", "stage.toggled": "admin",
   "announcement.created": "admin", "announcement.deactivated": "admin",
   "volunteer.assigned": "admin", "volunteer.removed": "admin",
   "import.challenge": "admin", "import.stages": "admin", "import.teams": "admin",

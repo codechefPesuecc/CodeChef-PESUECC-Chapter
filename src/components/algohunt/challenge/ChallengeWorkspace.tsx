@@ -11,7 +11,11 @@ import {
 import CodeEditor from "@/components/cp-arena/CodeEditor";
 import MechaPanel from "@/components/cp-arena/MechaPanel";
 import { ARENA_LANGUAGES, STARTER_CODE, type LanguageId } from "@/components/cp-arena/mockData";
+import { playBlockReason } from "@/lib/algohunt/play";
 import type { ChallengeView, SubmitResult } from "@/lib/algohunt/types";
+import { useParticipantState } from "../participant/ParticipantStateProvider";
+import { useEventClock } from "../participant/useEventClock";
+import LanguagePicker from "./LanguagePicker";
 import VerdictPanel from "./VerdictPanel";
 import SubmissionList from "./SubmissionList";
 
@@ -38,6 +42,10 @@ export default function ChallengeWorkspace({
   totalStages,
 }: ChallengeWorkspaceProps) {
   const { stageNumber, isFinal, languages, samples, solved: initialSolved } = view;
+  const { state: participantState } = useParticipantState();
+  const { timeUp } = useEventClock();
+  // Paused, ended, time up or submissions switched off: say so and keep the code editable.
+  const blockReason = playBlockReason(participantState, "submit", timeUp);
 
   // ── Language & code state ─────────────────────────────────────────────
   const defaultLangId = ((languages[0]?.id as LanguageId) ?? "cpp");
@@ -252,8 +260,8 @@ export default function ChallengeWorkspace({
     ? languages
     : ARENA_LANGUAGES.map((l) => ({ id: l.id, label: l.label }));
 
-  const runBtnDisabled = running;
-  const submitBtnDisabled = running || solved;
+  const runBtnDisabled = running || blockReason !== null;
+  const submitBtnDisabled = running || solved || blockReason !== null;
 
   return (
     <div
@@ -370,16 +378,12 @@ export default function ChallengeWorkspace({
           <MechaPanel className="h-full" bodyClassName="flex h-full flex-col">
             {/* Editor toolbar */}
             <div className="flex h-10 shrink-0 items-center gap-2 border-b border-hairline px-3">
-              <select
+              <LanguagePicker
                 value={language}
-                onChange={(e) => changeLanguage(e.target.value as LanguageId)}
-                className="mecha-input h-7 min-w-0 max-w-[160px] text-xs font-mono"
-                aria-label="Select programming language"
-              >
-                {languageOptions.map((l) => (
-                  <option key={l.id} value={l.id}>{l.label}</option>
-                ))}
-              </select>
+                options={languageOptions}
+                onChange={(id) => changeLanguage(id as LanguageId)}
+                disabled={running}
+              />
               <span className="flex-1" />
               <span className="font-mono text-[11px] text-charcoal/40 dark:text-cream/40">
                 Q{stageNumber}/{totalStages}
@@ -431,16 +435,20 @@ export default function ChallengeWorkspace({
                 type="button"
                 onClick={() => submit()}
                 disabled={submitBtnDisabled}
-                className="mecha-btn mecha-btn--primary h-8 min-w-[96px] px-4 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                className="mecha-btn mecha-btn--solid h-8 min-w-[96px] px-4 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
                 title="Submit (Ctrl+Enter)"
                 aria-label={solved ? "Question already solved" : "Submit solution"}
               >
                 {solved ? "Solved ✓" : running && !busyLabel.startsWith("Run") ? "Judging…" : "Submit"}
               </button>
             </div>
-            {solved && (
+            {solved ? (
               <span className="mecha-chip bg-green-500/15 text-xs font-semibold text-green-700 dark:text-green-400">
                 Solved ✓
+              </span>
+            ) : blockReason && (
+              <span role="status" className="ml-3 text-right text-xs font-medium text-red-700 dark:text-red-300">
+                {blockReason}
               </span>
             )}
           </div>

@@ -61,6 +61,7 @@ export default async function AlgoHuntControlPage({
         event={{
           id: event.id, slug: event.slug, name: event.name, status: event.status as EventStatus,
           isTest: event.isTest, startedAt: event.startedAt, pausedAt: event.pausedAt, endedAt: event.endedAt,
+          endsAt: event.endsAt,
           submissionsEnabled: event.submissionsEnabled, codesEnabled: event.codesEnabled,
           leaderboardVisible: event.leaderboardVisible,
         }}

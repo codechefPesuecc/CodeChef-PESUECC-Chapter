@@ -50,7 +50,7 @@ export default async function SubmissionsPage() {
             <p className="text-sm text-charcoal/60 dark:text-cream/60">
               Earlier questions can&apos;t be reopened.
             </p>
-            <Link href="/algohunt/leaderboard" className="mecha-btn mecha-btn--primary inline-block">
+            <Link href="/algohunt/leaderboard" className="mecha-btn mecha-btn--solid inline-block">
               View Leaderboard
             </Link>
           </div>

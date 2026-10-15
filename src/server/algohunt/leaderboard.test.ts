@@ -3,7 +3,7 @@ process.env.DATABASE_URL = ":memory:";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { and, eq } from "drizzle-orm";
 import { getDb } from "@/server/db";
-import { ahEvents, ahStageProgress, ahStages, ahTeams } from "@/server/db/schema";
+import { ahEvents, ahIntegrityEvents, ahStageProgress, ahStages, ahTeams } from "@/server/db/schema";
 import { GET as leaderboardRoute } from "@/app/api/algohunt/leaderboard/route";
 import { computeLeaderboard } from "./leaderboard";
 import { adminCompleteStage, disqualifyTeam, redeemCode } from "./progression";
@@ -138,6 +138,36 @@ describe("computeLeaderboard", () => {
   });
 });
 
+describe("integrity flags on the leaderboard", () => {
+  async function flag(fixture: Fixture, teamIndex: number, times: number) {
+    for (let i = 0; i < times; i += 1) {
+      await getDb().insert(ahIntegrityEvents).values({
+        id: crypto.randomUUID(), eventId: fixture.event.id, teamId: fixture.teams[teamIndex].team.id,
+        deviceId: "laptop", reasons: "FULLSCREEN", leftAt: Date.now() + i, returnedAt: null,
+      });
+    }
+  }
+
+  it("shows every team's flag count without changing the ranking", async () => {
+    const fixture = await seedFixture({ teams: 3 });
+    await solveCurrent(fixture, 1);
+    await flag(fixture, 1, 4);
+    await flag(fixture, 2, 1);
+    const { rows } = await computeLeaderboard(fixture.event.id);
+    expect(rows.map((row) => [row.teamName, row.flags])).toEqual([
+      ["Team Beta", 4], ["Team 3", 1], ["Team Alpha", 0],
+    ]);
+  });
+
+  it("sends the flag counts to teams", async () => {
+    const fixture = await seedFixture();
+    await flag(fixture, 1, 2);
+    setTeamCookie(fixture.teams[0].team.id);
+    const body = await (await leaderboardRoute()).json() as { rows: { teamName: string; flags: number }[] };
+    expect(body.rows.map((row) => [row.teamName, row.flags])).toEqual([["Team Alpha", 0], ["Team Beta", 2]]);
+  });
+});
+
 describe("GET /api/algohunt/leaderboard", () => {
   it("requires a team session", async () => {
     expect((await leaderboardRoute()).status).toBe(401);
@@ -169,7 +199,7 @@ describe("GET /api/algohunt/leaderboard", () => {
     expect(body.rows.map((row: { isYou: boolean }) => row.isYou)).toEqual([false, true]);
     for (const row of body.rows) {
       expect(Object.keys(row).sort()).toEqual([
-        "college", "finished", "finishedAt", "isYou", "lastSolvedAt", "points", "questionsSolved", "rank", "teamName",
+        "college", "finished", "finishedAt", "flags", "isYou", "lastSolvedAt", "points", "questionsSolved", "rank", "teamName",
       ]);
     }
     const json = JSON.stringify(body);

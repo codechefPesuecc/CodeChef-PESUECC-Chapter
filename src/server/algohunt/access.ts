@@ -1,4 +1,5 @@
 import { and, eq } from "drizzle-orm";
+import { isTimeUp } from "@/lib/algohunt/clock";
 import { COPY } from "@/lib/algohunt/copy";
 import { deriveStageState } from "@/lib/algohunt/stage-state";
 import type { ErrorCode, StageState } from "@/lib/algohunt/types";
@@ -83,10 +84,14 @@ export function canAccessStage(progress: TeamProgress, stageNumber: number): boo
 export function assertTeamCanPlay(
   ctx: TeamContext,
   action: "submit" | "run" | "code",
+  now = Date.now(),
 ): null | { code: ErrorCode; message: string } {
   let code: ErrorCode | null = null;
   if (ctx.event.status === "ENDED" || ctx.event.status === "ARCHIVED") code = "EVENT_ENDED";
   else if (["DRAFT", "CHECK_IN", "READY"].includes(ctx.event.status)) code = "EVENT_NOT_LIVE";
+  // Checked when the request arrives, like a pause: a submission already being judged at the
+  // end still counts. The status stays LIVE so admins can extend the end if something broke.
+  else if (isTimeUp(ctx.event.endsAt, now)) return { code: "EVENT_ENDED", message: COPY.timeUp };
   else if (ctx.event.status === "PAUSED") code = "EVENT_PAUSED";
   else if (ctx.team.status === "DISQUALIFIED") code = "TEAM_DISQUALIFIED";
   else if (ctx.team.status === "REGISTERED") code = "TEAM_NOT_CHECKED_IN";

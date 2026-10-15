@@ -45,7 +45,7 @@ export type AuditAction =
   | "code.batch_created" | "code.disabled" | "code.enabled" | "code.batch_disabled" | "code.note_updated"
   | "override.complete_stage" | "override.revert_stage"
   | "team.disqualified" | "team.reinstated"
-  | "event.created" | "event.transition" | "event.flags_changed" | "stage.toggled"
+  | "event.created" | "event.transition" | "event.flags_changed" | "event.end_time_changed" | "stage.toggled"
   | "announcement.created" | "announcement.deactivated"
   | "volunteer.assigned" | "volunteer.removed"
   | "import.challenge" | "import.stages" | "import.teams" | "challenge.verified" | "export.downloaded";
@@ -99,6 +99,8 @@ export interface ParticipantState {
     startedAt: number | null;
     pausedAt: number | null;
     endedAt: number | null;
+    /** Scheduled end (server clock). Play stops at this moment even while the status is LIVE. */
+    endsAt: number | null;
     submissionsEnabled: boolean;
     codesEnabled: boolean;
     leaderboardVisible: boolean;
@@ -116,7 +118,18 @@ export interface ParticipantState {
   totalStages: number;
   nextStep: NextStep;
   announcements: AnnouncementView[];
+  integrity: {
+    /** Times this team's laptops were recorded away from AlgoHunt while playing. */
+    awayCount: number;
+  };
 }
+
+/** How a browser presents itself. Teams solve and enter codes on laptops, so a phone is worth a look. */
+export type DeviceKind = "DESKTOP" | "MOBILE";
+
+/** Why a laptop counted as away from the AlgoHunt page. */
+export const AWAY_REASONS = ["FULLSCREEN", "HIDDEN", "BLUR"] as const;
+export type AwayReason = (typeof AWAY_REASONS)[number];
 
 export interface LanguageOption {
   id: string;
@@ -183,6 +196,8 @@ export interface LeaderboardRow {
   finished: boolean;
   finishedAt: number | null;
   lastSolvedAt: number | null;
+  /** Integrity flags: times the team's laptops left AlgoHunt while playing. Shown to every team. */
+  flags: number;
   isYou: boolean;
 }
 

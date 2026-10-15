@@ -2,6 +2,7 @@ process.env.DATABASE_URL = ":memory:";
 
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
+import { COPY } from "@/lib/algohunt/copy";
 import { getDb } from "@/server/db";
 import { ahEvents, ahTeams } from "@/server/db/schema";
 import { adminCompleteStage } from "./progression";
@@ -79,5 +80,25 @@ describe("assertTeamCanPlay", () => {
       .where(eq(ahEvents.id, fixture.event.id));
     expect(assertTeamCanPlay({ team, event: { ...event, submissionsEnabled: true, codesEnabled: true } }, "run"))
       .toBeNull();
+  });
+
+  it("stops submit, run and code entry from the scheduled end, even while LIVE or PAUSED", async () => {
+    const fixture = await seedFixture();
+    const team = fixture.teams[0].team;
+    const endsAt = Date.now() + 60_000;
+    const event = { ...fixture.event, endsAt };
+    for (const action of ["submit", "run", "code"] as const) {
+      expect(assertTeamCanPlay({ team, event }, action, endsAt - 1)).toBeNull();
+      expect(assertTeamCanPlay({ team, event }, action, endsAt))
+        .toEqual({ code: "EVENT_ENDED", message: COPY.timeUp });
+    }
+    expect(assertTeamCanPlay({ team, event: { ...event, status: "PAUSED" } }, "submit", endsAt)?.message)
+      .toBe(COPY.timeUp);
+    // An extended end lets play continue; no scheduled end never stops play on its own.
+    expect(assertTeamCanPlay({ team, event: { ...event, endsAt: endsAt + 600_000 } }, "submit", endsAt)).toBeNull();
+    expect(assertTeamCanPlay({ team, event: { ...event, endsAt: null } }, "submit", endsAt + 9e9)).toBeNull();
+    // A formally ENDED event keeps its own message.
+    expect(assertTeamCanPlay({ team, event: { ...event, status: "ENDED" } }, "submit", endsAt)?.message)
+      .toBe(COPY.errors.EVENT_ENDED);
   });
 });

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { EVENT_STATUSES, EVENT_TRANSITIONS } from "@/lib/algohunt/types";
-import { FLAG_ROWS, deriveReadiness, readinessIssues, transitionOptions } from "./controlModel";
+import {
+  FLAG_ROWS, deriveReadiness, extendedEnd, parseIstInput, readinessIssues, toIstInput, transitionOptions,
+} from "./controlModel";
 
 const stage = (stageNumber: number, over: Partial<{ isFinal: boolean; verified: boolean }> = {}) => ({
   stageNumber, isFinal: false, verified: true, ...over,
@@ -92,5 +94,22 @@ describe("FLAG_ROWS", () => {
       expect(row.turnOff.consequences.length).toBeGreaterThan(10);
       expect(row.turnOn.consequences.length).toBeGreaterThan(10);
     }
+  });
+});
+
+describe("scheduled end helpers", () => {
+  it("reads and writes the end time as IST, whatever the laptop's zone", () => {
+    const ms = parseIstInput("2026-10-24T14:30");
+    expect(ms).toBe(Date.UTC(2026, 9, 24, 9, 0));
+    expect(toIstInput(ms!)).toBe("2026-10-24T14:30");
+    expect(parseIstInput("2026-10-24")).toBeNull();
+    expect(parseIstInput("")).toBeNull();
+    expect(parseIstInput("2026-13-40T99:99")).toBeNull();
+  });
+
+  it("extends from the end, or from now once the end has passed", () => {
+    const end = Date.UTC(2026, 9, 24, 9, 0);
+    expect(extendedEnd(end, end - 60_000, 10)).toBe(end + 10 * 60_000);
+    expect(extendedEnd(end, end + 120_000, 5)).toBe(end + 120_000 + 5 * 60_000);
   });
 });

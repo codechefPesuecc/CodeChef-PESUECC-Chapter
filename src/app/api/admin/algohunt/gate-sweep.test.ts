@@ -9,6 +9,7 @@ import { createSiteUser, seedFixture, type Fixture } from "@/server/algohunt/tes
 import { clearCookies, setSiteSessionCookie, setTeamCookie } from "@/server/algohunt/testing/next-headers-mock";
 import { getDb } from "@/server/db";
 import { ahAuditLogs, ahEvents, ahStages, ahTeams } from "@/server/db/schema";
+import { PATCH as patchEndTime } from "./events/[eventId]/end-time/route";
 import { PATCH as patchFlags } from "./events/[eventId]/flags/route";
 import { POST as postTransition } from "./events/[eventId]/transition/route";
 import { GET as getOverview } from "./overview/route";
@@ -62,6 +63,13 @@ const ROUTES: RouteCase[] = [
     name: "PATCH events/[eventId]/flags",
     call: (f) => patchFlags(
       jsonRequest("PATCH", "/x", { codesEnabled: false, reason: "Gate sweep", confirm: f.event.slug }),
+      { params: Promise.resolve({ eventId: f.event.id }) },
+    ),
+  },
+  {
+    name: "PATCH events/[eventId]/end-time",
+    call: (f) => patchEndTime(
+      jsonRequest("PATCH", "/x", { endsAt: Date.now() + 60_000, reason: "Gate sweep", confirm: f.event.slug }),
       { params: Promise.resolve({ eventId: f.event.id }) },
     ),
   },
@@ -145,7 +153,7 @@ describe("admin gate sweep", () => {
         expect(await response.json()).toMatchObject({ ok: false, code: "FORBIDDEN" });
 
         const [event] = await getDb().select().from(ahEvents).where(eq(ahEvents.id, fixture.event.id));
-        expect(event).toMatchObject({ status: "LIVE", codesEnabled: true });
+        expect(event).toMatchObject({ status: "LIVE", codesEnabled: true, endsAt: null });
         const [stage] = await getDb().select().from(ahStages).where(eq(ahStages.id, fixture.stages[0].id));
         expect(stage.enabled).toBe(true);
         expect(await getDb().select().from(ahAuditLogs)).toHaveLength(0);

@@ -327,6 +327,9 @@ export const ahEvents = sqliteTable("ah_events", {
   startedAt: integer("started_at"),
   pausedAt: integer("paused_at"),
   endedAt: integer("ended_at"),
+  // Scheduled end. From this moment submit, run and code entry are refused (the status stays
+  // LIVE until an admin ends the event, so the end can still be extended). Null = no auto-stop.
+  endsAt: integer("ends_at"),
   createdAt: integer("created_at").notNull(),
   updatedAt: integer("updated_at").notNull(),
 });
@@ -556,6 +559,40 @@ export const ahAuditLogs = sqliteTable("ah_audit_logs", {
   index("ah_audit_team_created_idx").on(t.teamId, t.createdAt),
 ]);
 
+// One row per browser a team has used. deviceId comes from the ah_device cookie, so clearing
+// cookies or switching browsers shows up as a new device (which is itself worth seeing).
+export const ahTeamDevices = sqliteTable("ah_team_devices", {
+  id: text("id").primaryKey(),
+  eventId: text("event_id").notNull().references(() => ahEvents.id),
+  teamId: text("team_id").notNull().references(() => ahTeams.id),
+  deviceId: text("device_id").notNull(),
+  kind: text("kind").notNull(), // DeviceKind
+  userAgent: text("user_agent"),
+  firstIp: text("first_ip"),
+  lastIp: text("last_ip"),
+  loginCount: integer("login_count").notNull().default(0),
+  firstSeenAt: integer("first_seen_at").notNull(),
+  lastSeenAt: integer("last_seen_at").notNull(),
+}, (t) => [
+  unique("ah_team_devices_team_device_unique").on(t.teamId, t.deviceId),
+  index("ah_team_devices_event_idx").on(t.eventId),
+]);
+
+// A stretch of time a laptop spent away from the AlgoHunt page while playing (left full screen,
+// switched tab or app, or focused another window). Both ends are stamped by the server clock.
+export const ahIntegrityEvents = sqliteTable("ah_integrity_events", {
+  id: text("id").primaryKey(),
+  eventId: text("event_id").notNull().references(() => ahEvents.id),
+  teamId: text("team_id").notNull().references(() => ahTeams.id),
+  deviceId: text("device_id").notNull(),
+  reasons: text("reasons").notNull(), // comma-separated AwayReason values
+  leftAt: integer("left_at").notNull(),
+  returnedAt: integer("returned_at"), // null = still away, or the page closed while away
+}, (t) => [
+  index("ah_integrity_events_event_left_idx").on(t.eventId, t.leftAt),
+  index("ah_integrity_events_team_left_idx").on(t.teamId, t.leftAt),
+]);
+
 export type AhEvent = typeof ahEvents.$inferSelect;
 export type NewAhEvent = typeof ahEvents.$inferInsert;
 export type AhTeam = typeof ahTeams.$inferSelect;
@@ -586,3 +623,7 @@ export type AhDisqualification = typeof ahDisqualifications.$inferSelect;
 export type NewAhDisqualification = typeof ahDisqualifications.$inferInsert;
 export type AhAuditLog = typeof ahAuditLogs.$inferSelect;
 export type NewAhAuditLog = typeof ahAuditLogs.$inferInsert;
+export type AhTeamDevice = typeof ahTeamDevices.$inferSelect;
+export type NewAhTeamDevice = typeof ahTeamDevices.$inferInsert;
+export type AhIntegrityEvent = typeof ahIntegrityEvents.$inferSelect;
+export type NewAhIntegrityEvent = typeof ahIntegrityEvents.$inferInsert;
