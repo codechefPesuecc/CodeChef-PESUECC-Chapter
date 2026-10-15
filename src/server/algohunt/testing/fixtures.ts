@@ -163,6 +163,7 @@ export function makeEvent(overrides?: Partial<AhEvent>): AhEvent {
     startedAt: Date.now() - 60_000,
     pausedAt: null,
     endedAt: null,
+    endsAt: null,
     createdAt: Date.now() - 120_000,
     updatedAt: Date.now() - 60_000,
     ...overrides,

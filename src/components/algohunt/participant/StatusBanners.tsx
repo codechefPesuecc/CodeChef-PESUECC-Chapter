@@ -4,6 +4,7 @@ import { Ban, Flag, Hourglass, PauseCircle, UserCheck, WifiOff, type LucideIcon 
 import { COPY } from "@/lib/algohunt/copy";
 import { formatIST } from "@/lib/algohunt/format";
 import { useParticipantState } from "./ParticipantStateProvider";
+import { useEventClock } from "./useEventClock";
 
 interface Banner {
   id: string;
@@ -21,6 +22,7 @@ const TONES = {
 /** Status banners under the header, highest priority first (brief §7.1). */
 export default function StatusBanners() {
   const { state, online, lastUpdated } = useParticipantState();
+  const { timeUp } = useEventClock();
   const { event, team } = state;
   const banners: Banner[] = [];
   if (!online) {
@@ -29,7 +31,12 @@ export default function StatusBanners() {
       text: `You're offline. Showing status from ${formatIST(lastUpdated ?? state.serverNow)}. Reconnecting…`,
     });
   }
-  if (event.status === "PAUSED") banners.push({ id: "paused", icon: PauseCircle, tone: "red", text: COPY.paused });
+  const running = event.status === "LIVE" || event.status === "PAUSED";
+  if (running && timeUp && team.status !== "FINISHED") {
+    banners.push({ id: "time-up", icon: Hourglass, tone: "red", text: COPY.timeUp });
+  } else if (event.status === "PAUSED") {
+    banners.push({ id: "paused", icon: PauseCircle, tone: "red", text: COPY.paused });
+  }
   if (team.status === "DISQUALIFIED") banners.push({ id: "dq", icon: Ban, tone: "red", text: COPY.disqualified });
   if (event.status === "ENDED" || event.status === "ARCHIVED") {
     banners.push({ id: "ended", icon: Flag, tone: "neutral", text: COPY.ended });

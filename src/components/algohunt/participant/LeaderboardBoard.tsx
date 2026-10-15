@@ -1,6 +1,7 @@
 "use client";
 
-import { Trophy } from "lucide-react";
+import { ShieldAlert, Trophy } from "lucide-react";
+import { FREQUENT_AWAY_COUNT } from "@/lib/algohunt/integrity-rules";
 import { formatIST } from "@/lib/algohunt/format";
 import type { LeaderboardRow, RankingMode } from "@/lib/algohunt/types";
 import { usePoll } from "../usePoll";
@@ -46,6 +47,9 @@ export default function LeaderboardBoard() {
                 <th scope="col" className="hidden px-3 py-2 font-medium sm:table-cell">College</th>
                 <th scope="col" className="px-3 py-2 text-right font-medium">Solved</th>
                 {data.mode === "POINTS_THEN_TIME" && <th scope="col" className="px-3 py-2 text-right font-medium">Points</th>}
+                <th scope="col" className="px-3 py-2 text-right font-medium" title="Times the team left AlgoHunt while playing">
+                  Flags
+                </th>
                 <th scope="col" className="px-3 py-2 font-medium">Status</th>
               </tr>
             </thead>
@@ -69,6 +73,17 @@ export default function LeaderboardBoard() {
                   {data.mode === "POINTS_THEN_TIME" && (
                     <td className="px-3 py-2 text-right font-mono tabular-nums">{row.points}</td>
                   )}
+                  <td className="px-3 py-2 text-right font-mono tabular-nums">
+                    <span
+                      className={`inline-flex items-center gap-1 ${
+                        row.flags >= FREQUENT_AWAY_COUNT ? "text-red-600 dark:text-red-400"
+                          : row.flags > 0 ? "text-amber-700 dark:text-amber-300" : "text-charcoal/50"
+                      }`}
+                    >
+                      {row.flags > 0 && <ShieldAlert aria-hidden className="h-3.5 w-3.5" />}
+                      {row.flags}
+                    </span>
+                  </td>
                   <td className="px-3 py-2 text-xs">
                     {row.finished && row.finishedAt !== null ? `Finished ${formatIST(row.finishedAt)}` : "In progress"}
                   </td>
@@ -81,7 +96,7 @@ export default function LeaderboardBoard() {
 
       {data && (
         <div className="space-y-1 text-xs text-charcoal/60">
-          {data.visible && <p>{RANKED_BY[data.mode]}</p>}
+          {data.visible && <p>{RANKED_BY[data.mode]} Flags never change the ranking; they show how often each team left AlgoHunt while playing.</p>}
           <p>Updated {formatIST(data.updatedAt)}</p>
         </div>
       )}

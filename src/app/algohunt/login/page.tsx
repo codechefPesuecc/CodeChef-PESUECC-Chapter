@@ -20,7 +20,7 @@ export default async function AlgoHuntLoginPage() {
           </div>
           <TeamLoginForm />
           <p className="text-sm leading-relaxed opacity-75">
-            Use the team code and password on your team&apos;s slip. Every teammate can log in on their own phone.
+            Use the team code and password on your team&apos;s slip. Log in on your team&apos;s laptops; phones are only for scanning QR codes.
           </p>
         </div>
       </MechaPanel>

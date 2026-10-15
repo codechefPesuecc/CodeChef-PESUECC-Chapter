@@ -33,8 +33,8 @@ describe("resolveSelectedEvent", () => {
 
 describe("links", () => {
   it("lists all 12 destinations once, all under /admin/algohunt", () => {
-    expect(NAV_LINKS).toHaveLength(12);
-    expect(new Set(NAV_LINKS.map((l) => l.href)).size).toBe(12);
+    expect(NAV_LINKS).toHaveLength(13);
+    expect(new Set(NAV_LINKS.map((l) => l.href)).size).toBe(13);
     expect(NAV_LINKS.every((l) => l.href.startsWith("/admin/algohunt"))).toBe(true);
   });
 

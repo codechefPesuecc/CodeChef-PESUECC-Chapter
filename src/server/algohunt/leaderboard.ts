@@ -1,7 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import type { LeaderboardRow, RankingMode } from "@/lib/algohunt/types";
 import { getDb } from "@/server/db";
-import { ahStageProgress, ahStages, ahTeams } from "@/server/db/schema";
+import { ahIntegrityEvents, ahStageProgress, ahStages, ahTeams } from "@/server/db/schema";
 import { getEventById } from "./events";
 
 type RankedLeaderboardRow = LeaderboardRow & { teamId: string; teamCode: string; disqualified: boolean };
@@ -39,7 +39,7 @@ function compareKeys(mode: RankingMode, a: Aggregate, b: Aggregate): number {
     nullsLast(a.lastSolvedAt, b.lastSolvedAt);
 }
 
-function toRow(row: Aggregate, rank: number, forTeamId: string | undefined): RankedLeaderboardRow {
+function toRow(row: Aggregate, rank: number, forTeamId: string | undefined, flags: number): RankedLeaderboardRow {
   return {
     rank,
     teamName: row.teamName,
@@ -49,6 +49,7 @@ function toRow(row: Aggregate, rank: number, forTeamId: string | undefined): Ran
     finished: row.status === "FINISHED",
     finishedAt: row.finishedAt,
     lastSolvedAt: row.lastSolvedAt,
+    flags,
     isYou: row.teamId === forTeamId,
     teamId: row.teamId,
     teamCode: row.teamCode,
@@ -64,7 +65,7 @@ export async function computeLeaderboard(
   eventId: string,
   opts?: { forTeamId?: string; includeDisqualified?: boolean },
 ): Promise<{ mode: RankingMode; rows: RankedLeaderboardRow[] }> {
-  const [event, aggregates] = await Promise.all([
+  const [event, aggregates, flagRows] = await Promise.all([
     getEventById(eventId),
     getDb().select({
       teamId: ahTeams.id,
@@ -84,7 +85,13 @@ export async function computeLeaderboard(
       .leftJoin(ahStages, eq(ahStages.id, ahStageProgress.stageId))
       .where(eq(ahTeams.eventId, eventId))
       .groupBy(ahTeams.id),
+    // Flags never affect the ranking; they are shown beside it.
+    getDb().select({ teamId: ahIntegrityEvents.teamId, flags: sql<number>`count(*)` })
+      .from(ahIntegrityEvents)
+      .where(eq(ahIntegrityEvents.eventId, eventId))
+      .groupBy(ahIntegrityEvents.teamId),
   ]);
+  const flagsByTeam = new Map(flagRows.map((row) => [row.teamId, Number(row.flags)]));
   const mode: RankingMode = event?.rankingMode === "POINTS_THEN_TIME" ? "POINTS_THEN_TIME" : "SOLVED_THEN_TIME";
   const all: Aggregate[] = aggregates.map((row) => ({
     ...row,
@@ -102,11 +109,11 @@ export async function computeLeaderboard(
   ranked.forEach((row, index) => {
     const previous = ranked[index - 1];
     const rank = previous && compareKeys(mode, previous, row) === 0 ? rows[index - 1].rank : index + 1;
-    rows.push(toRow(row, rank, opts?.forTeamId));
+    rows.push(toRow(row, rank, opts?.forTeamId, flagsByTeam.get(row.teamId) ?? 0));
   });
   if (opts?.includeDisqualified) {
     for (const row of all.filter((r) => r.status === "DISQUALIFIED").sort(byRank)) {
-      rows.push(toRow(row, 0, opts.forTeamId));
+      rows.push(toRow(row, 0, opts.forTeamId, flagsByTeam.get(row.teamId) ?? 0));
     }
   }
   return { mode, rows };

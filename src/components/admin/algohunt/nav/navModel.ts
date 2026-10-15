@@ -23,6 +23,7 @@ export const NAV_LINKS: readonly NavLinkDef[] = [
   { href: `${BASE}/codes`, label: "Codes" },
   { href: `${BASE}/submissions`, label: "Submissions" },
   { href: `${BASE}/audit`, label: "Audit" },
+  { href: `${BASE}/integrity`, label: "Integrity" },
   { href: `${BASE}/announcements`, label: "Announcements" },
   { href: `${BASE}/volunteers`, label: "Volunteers" },
   { href: `${BASE}/events`, label: "Events" },

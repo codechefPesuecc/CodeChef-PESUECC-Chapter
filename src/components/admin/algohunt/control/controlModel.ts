@@ -152,3 +152,27 @@ export const FLAG_ROWS: readonly FlagRow[] = [
     turnOn: { title: "Show the leaderboard?", consequences: "Teams can see the standings again." },
   },
 ];
+
+// ── Scheduled end ───────────────────────────────────────────────────────────
+// The event runs on India time. The admin form reads and writes IST whatever the laptop's zone is.
+
+const IST_OFFSET_MS = 330 * 60_000;
+
+/** "2026-10-24T14:30" from a datetime-local input, read as IST. Null when incomplete or invalid. */
+export function parseIstInput(value: string): number | null {
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return null;
+  const ms = Date.parse(`${value}:00+05:30`);
+  return Number.isFinite(ms) ? ms : null;
+}
+
+/** Epoch ms → "2026-10-24T14:30" in IST, for a datetime-local input. */
+export function toIstInput(ms: number): string {
+  return new Date(ms + IST_OFFSET_MS).toISOString().slice(0, 16);
+}
+
+export const EXTEND_MINUTES = [5, 10, 15] as const;
+
+/** Extends from the scheduled end, or from now if that has already passed. */
+export function extendedEnd(endsAt: number, now: number, minutes: number): number {
+  return Math.max(endsAt, now) + minutes * 60_000;
+}

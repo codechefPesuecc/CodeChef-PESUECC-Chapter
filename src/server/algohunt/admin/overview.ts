@@ -1,4 +1,5 @@
 import { and, asc, desc, eq, gt, inArray, sql } from "drizzle-orm";
+import { FREQUENT_AWAY_COUNT } from "@/lib/algohunt/integrity-rules";
 import type { CodePoolStats, EventStatus } from "@/lib/algohunt/types";
 import { getDb } from "@/server/db";
 import {
@@ -24,6 +25,8 @@ export interface AdminOverview {
   codePool: CodePoolStats & { lowPool: boolean };
   /** CODE_PENDING teams, longest wait first, top 10. teamId is extra so the quick action can call the override route. */
   stuck: { teamId: string; teamCode: string; teamName: string; stageNumber: number; waitingSinceMs: number }[];
+  /** Teams with FREQUENT_AWAY_COUNT+ integrity flags, most first, top 10: someone should go and look. */
+  integrityAlerts: { teamId: string; teamCode: string; teamName: string; flags: number }[];
   readiness: { stages: number; challengesUnverified: number; finalStageOk: boolean; activeCodes: number; checkedInTeams: number };
   topTeams: { rank: number; teamName: string; teamCode: string; questionsSolved: number; finishedAt: number | null }[];
   recentActivity: { at: number; text: string; kind: ActivityKind; teamId?: string }[];
@@ -162,6 +165,12 @@ export async function getOverview(event: AhEvent): Promise<AdminOverview> {
       teamId: row.teamId, teamCode: row.teamCode, teamName: row.teamName, stageNumber: row.stageNumber,
       waitingSinceMs: row.solvedAt === null ? 0 : Math.max(0, now - row.solvedAt),
     })),
+    // The leaderboard already carries each team's flag count, so this costs no extra query.
+    integrityAlerts: leaderboard.rows
+      .filter((row) => !row.disqualified && row.flags >= FREQUENT_AWAY_COUNT)
+      .sort((a, b) => b.flags - a.flags)
+      .slice(0, 10)
+      .map((row) => ({ teamId: row.teamId, teamCode: row.teamCode, teamName: row.teamName, flags: row.flags })),
     readiness: {
       stages: stageRows.length,
       challengesUnverified: stageRows.filter((row) => row.verifiedAt === null).length,

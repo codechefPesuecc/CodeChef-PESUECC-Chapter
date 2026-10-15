@@ -6,30 +6,18 @@ import {
 } from "lucide-react";
 import Link from "@/components/AppLink";
 import MechaPanel from "@/components/cp-arena/MechaPanel";
-import { COPY } from "@/lib/algohunt/copy";
 import { formatDuration, formatIST } from "@/lib/algohunt/format";
-import type { ParticipantState } from "@/lib/algohunt/types";
+import { playBlockReason } from "@/lib/algohunt/play";
 import AnnouncementsCard from "./AnnouncementsCard";
 import CodeEntrySlot from "./CodeEntrySlot";
 import ElapsedTimer from "./ElapsedTimer";
 import { useParticipantState } from "./ParticipantStateProvider";
 import StatusChip from "./StatusChip";
-
-/** Mirrors assertTeamCanPlay(ctx, "code") so the code box explains why it's unavailable. */
-function codeBlockReason(state: ParticipantState): string | null {
-  const { event, team } = state;
-  if (event.status === "ENDED" || event.status === "ARCHIVED") return COPY.errors.EVENT_ENDED;
-  if (["DRAFT", "CHECK_IN", "READY"].includes(event.status)) return COPY.errors.EVENT_NOT_LIVE;
-  if (event.status === "PAUSED") return COPY.errors.EVENT_PAUSED;
-  if (team.status === "DISQUALIFIED") return COPY.errors.TEAM_DISQUALIFIED;
-  if (team.status === "REGISTERED") return COPY.errors.TEAM_NOT_CHECKED_IN;
-  if (team.status === "FINISHED") return COPY.errors.TEAM_FINISHED;
-  if (!event.codesEnabled) return COPY.errors.CODES_DISABLED;
-  return null;
-}
+import { useEventClock } from "./useEventClock";
 
 export default function Dashboard() {
   const { state } = useParticipantState();
+  const { timeUp } = useEventClock();
   const { nextStep, current, team, event } = state;
 
   if (nextStep.kind === "WAIT_FOR_START" || nextStep.kind === "NOT_CHECKED_IN") {
@@ -109,8 +97,8 @@ export default function Dashboard() {
 
   // SOLVE, FIND_CODE or PAUSED: the team has a current question (or is waiting on one).
   const hunting = current?.state === "CODE_PENDING";
-  const blockReason = codeBlockReason(state);
-  const canPlay = event.status === "LIVE" && team.status === "CHECKED_IN" && event.codesEnabled;
+  const blockReason = playBlockReason(state, "code", timeUp);
+  const canPlay = blockReason === null;
   const codeSlot = current && !current.isFinal && (
     <CodeEntrySlot stageNumber={current.number} canPlay={canPlay} disabledReason={blockReason} />
   );

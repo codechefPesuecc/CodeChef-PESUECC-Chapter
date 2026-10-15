@@ -3,6 +3,7 @@ import { and, desc, eq, ne, sql } from "drizzle-orm";
 import { EVENT_TRANSITIONS, type ErrorCode, type EventStatus } from "@/lib/algohunt/types";
 import { getDb } from "@/server/db";
 import { ahAuditLogs, ahEvents, type AhEvent } from "@/server/db/schema";
+import { auditInsert } from "./audit";
 
 export async function getEventById(id: string): Promise<AhEvent | null> {
   const [event] = await getDb().select().from(ahEvents).where(eq(ahEvents.id, id)).limit(1);
@@ -170,4 +171,42 @@ export async function createEvent(p: {
   }
 
   return { ok: true, event };
+}
+
+/**
+ * Set or clear the scheduled end. From that moment assertTeamCanPlay refuses submit, run and code
+ * entry; the status stays LIVE so the end can still be moved. One audit row per real change.
+ */
+export async function setEventEndTime(p: {
+  eventId: string;
+  actorId: string;
+  reason: string;
+  endsAt: number | null;
+  ip?: string;
+  userAgent?: string;
+}): Promise<{ ok: true; event: AhEvent; changed: boolean } | { ok: false; code: ErrorCode; message: string }> {
+  const event = await getEventById(p.eventId);
+  if (!event) return { ok: false, code: "NOT_FOUND", message: "Event not found." };
+  if (event.status === "ENDED" || event.status === "ARCHIVED") {
+    return { ok: false, code: "CONFLICT", message: "The event has already ended." };
+  }
+  if (event.endsAt === p.endsAt) return { ok: true, event, changed: false };
+  const db = getDb();
+  await db.batch([
+    db.update(ahEvents).set({ endsAt: p.endsAt, updatedAt: Date.now() }).where(eq(ahEvents.id, p.eventId)),
+    auditInsert(db, {
+      eventId: p.eventId,
+      actorType: "ADMIN",
+      actorId: p.actorId,
+      action: "event.end_time_changed",
+      targetType: "event",
+      targetId: p.eventId,
+      metadata: { from: event.endsAt, to: p.endsAt, reason: p.reason },
+      ip: p.ip,
+      userAgent: p.userAgent,
+    }),
+  ]);
+  const fresh = await getEventById(p.eventId);
+  if (!fresh) throw new Error("Updated event disappeared");
+  return { ok: true, event: fresh, changed: true };
 }

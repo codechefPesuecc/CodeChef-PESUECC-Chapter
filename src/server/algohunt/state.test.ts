@@ -3,9 +3,10 @@ process.env.DATABASE_URL = ":memory:";
 import crypto from "node:crypto";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
+import { COPY } from "@/lib/algohunt/copy";
 import type { EventStatus } from "@/lib/algohunt/types";
 import { getDb } from "@/server/db";
-import { ahAnnouncements, ahChallenges, ahEvents, ahTeams } from "@/server/db/schema";
+import { ahAnnouncements, ahChallenges, ahEvents, ahIntegrityEvents, ahTeams } from "@/server/db/schema";
 import { GET as stateRoute } from "@/app/api/algohunt/state/route";
 import { disqualifyTeam, redeemCode } from "./progression";
 import { buildParticipantState } from "./state";
@@ -39,6 +40,12 @@ async function ctxOf(fixture: Fixture, teamIndex = 0): Promise<TeamContext> {
     .from(ahTeams).innerJoin(ahEvents, eq(ahTeams.eventId, ahEvents.id))
     .where(eq(ahTeams.id, fixture.teams[teamIndex].team.id));
   return row;
+}
+
+function stateRequest(): Request {
+  return new Request("https://chapter.example/api/algohunt/state", {
+    headers: { "user-agent": "Mozilla/5.0 (X11; Linux x86_64) Chrome/140", "x-forwarded-for": "192.0.2.10" },
+  });
 }
 
 async function setEventStatus(fixture: Fixture, status: EventStatus): Promise<void> {
@@ -142,6 +149,40 @@ describe("buildParticipantState", () => {
     expect(state.current).toBeNull();
   });
 
+  it("shares the scheduled end and says time's up once it passes, while the event is still LIVE", async () => {
+    const fixture = await seed();
+    const endsAt = Date.now() + 3_600_000;
+    await getDb().update(ahEvents).set({ endsAt }).where(eq(ahEvents.id, fixture.event.id));
+    const before = await buildParticipantState(await ctxOf(fixture));
+    expect(before.event.endsAt).toBe(endsAt);
+    expect(before.nextStep.kind).toBe("SOLVE");
+
+    await getDb().update(ahEvents).set({ endsAt: Date.now() - 1 }).where(eq(ahEvents.id, fixture.event.id));
+    const after = await buildParticipantState(await ctxOf(fixture));
+    expect(after.event.status).toBe("LIVE");
+    expect(after.nextStep).toEqual({ kind: "ENDED", message: COPY.timeUp });
+
+    // Finishing before the end keeps the finish screen.
+    await solveCurrent(fixture);
+    await getDb().update(ahTeams).set({ status: "FINISHED", finishedAt: Date.now() })
+      .where(eq(ahTeams.id, fixture.teams[0].team.id));
+    expect((await buildParticipantState(await ctxOf(fixture))).nextStep.kind).toBe("FINISHED");
+  });
+
+  it("counts the team's integrity flags across its devices, and only its own", async () => {
+    const fixture = await seed();
+    expect((await buildParticipantState(await ctxOf(fixture))).integrity).toEqual({ awayCount: 0 });
+    const now = Date.now();
+    for (const [teamIndex, deviceId] of [[0, "laptop-a"], [0, "laptop-b"], [1, "laptop-c"]] as const) {
+      await getDb().insert(ahIntegrityEvents).values({
+        id: crypto.randomUUID(), eventId: fixture.event.id, teamId: fixture.teams[teamIndex].team.id,
+        deviceId, reasons: "FULLSCREEN", leftAt: now, returnedAt: now + 5_000,
+      });
+    }
+    expect((await buildParticipantState(await ctxOf(fixture))).integrity.awayCount).toBe(2);
+    expect((await buildParticipantState(await ctxOf(fixture, 1))).integrity.awayCount).toBe(1);
+  });
+
   it("7. includes only active announcements, at most 5, newest first", async () => {
     const fixture = await seed();
     const other = await seedFixture({ teams: 1 });
@@ -185,7 +226,7 @@ describe("buildParticipantState", () => {
 
 describe("GET /api/algohunt/state", () => {
   it("requires a team session", async () => {
-    const response = await stateRoute();
+    const response = await stateRoute(stateRequest());
     expect(response.status).toBe(401);
     expect(await response.json()).toMatchObject({ ok: false, code: "UNAUTHENTICATED" });
   });
@@ -193,7 +234,7 @@ describe("GET /api/algohunt/state", () => {
   it("returns the participant state with no-store caching", async () => {
     const fixture = await seed();
     setTeamCookie(fixture.teams[0].team.id);
-    const response = await stateRoute();
+    const response = await stateRoute(stateRequest());
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(await response.json()).toMatchObject({ ok: true, team: { code: "AH2-T001" }, current: { number: 1 } });
@@ -202,8 +243,8 @@ describe("GET /api/algohunt/state", () => {
   it("rate limits runaway polling with RATE_LIMITED", async () => {
     const fixture = await seed();
     setTeamCookie(fixture.teams[0].team.id);
-    for (let i = 0; i < 240; i += 1) expect((await stateRoute()).status).toBe(200);
-    const limited = await stateRoute();
+    for (let i = 0; i < 240; i += 1) expect((await stateRoute(stateRequest())).status).toBe(200);
+    const limited = await stateRoute(stateRequest());
     expect(limited.status).toBe(429);
     expect(limited.headers.get("retry-after")).not.toBeNull();
     expect(await limited.json()).toMatchObject({ ok: false, code: "RATE_LIMITED" });

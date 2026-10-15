@@ -49,7 +49,7 @@ export default function VerdictPanel({ result, stageNumber, isFinal: _isFinal, o
         <div className="rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3">
           <p className="font-semibold text-green-700 dark:text-green-400">Question already solved!</p>
           <p className="mt-1 text-sm text-green-600 dark:text-green-300/80">{COPY.accepted}</p>
-          <Link href="/algohunt/code" className="mecha-btn mecha-btn--primary mt-2 inline-block text-sm">
+          <Link href="/algohunt/code" className="mecha-btn mecha-btn--solid mt-2 inline-block text-sm">
             Enter a QR code →
           </Link>
         </div>
@@ -91,7 +91,7 @@ export default function VerdictPanel({ result, stageNumber, isFinal: _isFinal, o
           </span>
         </div>
         <p className="mt-2 text-sm text-green-600 dark:text-green-300/80">{COPY.accepted}</p>
-        <Link href="/algohunt/code" className="mecha-btn mecha-btn--primary mt-3 inline-block">
+        <Link href="/algohunt/code" className="mecha-btn mecha-btn--solid mt-3 inline-block">
           Enter a QR code →
         </Link>
       </div>
@@ -105,7 +105,7 @@ export default function VerdictPanel({ result, stageNumber, isFinal: _isFinal, o
         <div className="text-4xl">🎉</div>
         <p className="mt-2 font-bold text-green-700 dark:text-green-400">AlgoHunt 2.0 Complete!</p>
         <p className="mt-1 text-sm text-green-600 dark:text-green-300/80">{COPY.finished}</p>
-        <Link href="/algohunt/leaderboard" className="mecha-btn mecha-btn--primary mt-3 inline-block">
+        <Link href="/algohunt/leaderboard" className="mecha-btn mecha-btn--solid mt-3 inline-block">
           View Leaderboard
         </Link>
       </div>

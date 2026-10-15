@@ -11,7 +11,7 @@ export interface FaqItem {
 }
 
 export const EVENT_FACTS = {
-  date: "23 Oct 2026",
+  date: "24 Oct 2026",
   time: "10:30 AM – 2:30 PM",
   venue: "Seminar Hall 1, PES University (ECC)",
   eligibility: "Open to all colleges",
@@ -51,6 +51,18 @@ export const RULES: RuleItem[] = [
     body: "Stay out of restricted areas and follow campus safety rules. Don't run in corridors or labs.",
   },
   {
+    title: "Laptops for solving",
+    body: "Solve questions and enter codes on your team's laptops. Phones are only for scanning QR codes. Every device that logs in to your team is recorded, and organizers check logins from phones or unknown devices.",
+  },
+  {
+    title: "Stay in full screen",
+    body: "AlgoHunt runs in full screen on laptops. Leaving full screen, switching tabs or opening other apps adds an integrity flag, recorded with how long you were away. Every team's flag count is shown on the leaderboard, organizers review them, and a team with many flags gets a visit from a volunteer. Use Chrome or Edge.",
+  },
+  {
+    title: "Time limit",
+    body: "Play stops automatically at 2:30 PM. From then on, runs, submissions and code entry are closed for every team, so submit before the clock reaches zero.",
+  },
+  {
     title: "No exploiting the platform",
     body: "Don't try to exploit or bypass the Arena or the hunt platform. If something looks broken, tell a volunteer.",
   },
@@ -88,6 +100,18 @@ export const FAQ: FaqItem[] = [
   {
     q: "Can teammates collaborate?",
     a: "Yes, within your own team.",
+  },
+  {
+    q: "Can we use our phones?",
+    a: "Only to scan QR codes. Log in, solve and enter codes on your laptop. Logins from phones are flagged for the organizers.",
+  },
+  {
+    q: "What happens if we leave full screen or switch tabs?",
+    a: "Your team gets an integrity flag, recorded with how long you were away. Your flag count shows next to the timer and on the leaderboard for every team to see. Click Enter full screen to carry on.",
+  },
+  {
+    q: "What happens at 2:30 PM?",
+    a: "Play stops automatically: runs, submissions and code entry close. A submission that was already being judged still counts if it's accepted.",
   },
   {
     q: "What if the website fails?",

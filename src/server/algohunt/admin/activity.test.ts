@@ -35,6 +35,7 @@ const EVERY_ACTION: Record<AuditAction, Record<string, unknown>> = {
   "event.created": { slug: "ah2-2026", isTest: false },
   "event.transition": { from: "LIVE", to: "PAUSED" },
   "event.flags_changed": { changes: { codesEnabled: false }, reason: "batch leaked" },
+  "event.end_time_changed": { from: null, to: Date.UTC(2026, 9, 24, 9, 0), reason: "hall booked until 2:30" },
   "stage.toggled": { stageNumber: 4, enabled: false, reason: "broken tests" },
   "announcement.created": { priority: "WARNING", preview: "Hall B wifi is down" },
   "announcement.deactivated": {},
@@ -79,6 +80,16 @@ describe("describeActivity", () => {
     expect(describeActivity(row("event.flags_changed", {
       changes: { submissionsEnabled: false, leaderboardVisible: true }, reason: "judge down",
     }))).toBe("Aniket turned off submissions and turned on the team leaderboard: 'judge down'");
+  });
+
+  it("says how the scheduled end changed, in IST", () => {
+    const end = Date.UTC(2026, 9, 24, 9, 0);
+    expect(describeActivity(row("event.end_time_changed", { from: null, to: end, reason: "hall booked" })))
+      .toBe("Aniket set the end time to 2:30:00 PM IST: 'hall booked'");
+    expect(describeActivity(row("event.end_time_changed", { from: end, to: end + 600_000, reason: "judge outage" })))
+      .toBe("Aniket moved the end time to 2:40:00 PM IST: 'judge outage'");
+    expect(describeActivity(row("event.end_time_changed", { from: end, to: null, reason: "ending by hand" })))
+      .toBe("Aniket removed the scheduled end: 'ending by hand'");
   });
 
   it("falls back to action and target type for unknown actions", () => {

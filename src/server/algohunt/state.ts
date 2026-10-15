@@ -1,7 +1,11 @@
+import { isTimeUp } from "@/lib/algohunt/clock";
 import { COPY } from "@/lib/algohunt/copy";
 import type {
   CurrentStageView, EventStatus, NextStep, ParticipantState, StageSummary, TeamStatus,
 } from "@/lib/algohunt/types";
+import { count, eq } from "drizzle-orm";
+import { getDb } from "@/server/db";
+import { ahIntegrityEvents } from "@/server/db/schema";
 import { getTeamProgress, type StageWithProgress } from "./access";
 import { listActiveAnnouncements } from "./announcements";
 import type { TeamContext } from "./teamSession";
@@ -35,12 +39,19 @@ function nextStepFor(
   eventStatus: EventStatus,
   teamStatus: TeamStatus,
   current: CurrentStageView | null,
+  timeUp: boolean,
 ): NextStep {
   if (teamStatus === "DISQUALIFIED") return { kind: "DISQUALIFIED", message: COPY.disqualified };
   if (teamStatus === "FINISHED") return { kind: "FINISHED", message: COPY.finished };
   if (eventStatus === "ENDED" || eventStatus === "ARCHIVED") return { kind: "ENDED", message: COPY.ended };
+  if (NOT_STARTED.includes(eventStatus)) {
+    return teamStatus === "REGISTERED"
+      ? { kind: "NOT_CHECKED_IN", message: COPY.notCheckedIn }
+      : { kind: "WAIT_FOR_START", message: COPY.notStarted };
+  }
+  // Past the scheduled end nothing can change any more, the same as a formal end (assertTeamCanPlay).
+  if (timeUp) return { kind: "ENDED", message: COPY.timeUp };
   if (teamStatus === "REGISTERED") return { kind: "NOT_CHECKED_IN", message: COPY.notCheckedIn };
-  if (NOT_STARTED.includes(eventStatus)) return { kind: "WAIT_FOR_START", message: COPY.notStarted };
   if (eventStatus === "PAUSED") return { kind: "PAUSED", message: COPY.paused };
   if (current?.state === "CODE_PENDING") {
     const n = current.number;
@@ -58,11 +69,15 @@ function nextStepFor(
   };
 }
 
-/** The dashboard's whole view of one team. getTeamProgress (≤ 4 queries) + announcements (1 query). */
+/**
+ * The dashboard's whole view of one team. getTeamProgress (≤ 4 queries) + announcements (1 query)
+ * + the team's integrity flag count (1 indexed count).
+ */
 export async function buildParticipantState(ctx: TeamContext): Promise<ParticipantState> {
-  const [progress, announcements] = await Promise.all([
+  const [progress, announcements, [flags]] = await Promise.all([
     getTeamProgress(ctx),
     listActiveAnnouncements(ctx.event.id, 5),
+    getDb().select({ total: count() }).from(ahIntegrityEvents).where(eq(ahIntegrityEvents.teamId, ctx.team.id)),
   ]);
   const now = Date.now();
   const { event, team } = ctx;
@@ -83,6 +98,7 @@ export async function buildParticipantState(ctx: TeamContext): Promise<Participa
       startedAt: event.startedAt,
       pausedAt: event.pausedAt,
       endedAt: event.endedAt,
+      endsAt: event.endsAt,
       submissionsEnabled: event.submissionsEnabled,
       codesEnabled: event.codesEnabled,
       leaderboardVisible: event.leaderboardVisible,
@@ -98,7 +114,8 @@ export async function buildParticipantState(ctx: TeamContext): Promise<Participa
     stages: progress.stages.map(toStageSummary),
     solvedCount: progress.solvedCount,
     totalStages: progress.totalStages,
-    nextStep: nextStepFor(eventStatus, teamStatus, current),
+    nextStep: nextStepFor(eventStatus, teamStatus, current, isTimeUp(event.endsAt, now)),
     announcements,
+    integrity: { awayCount: flags?.total ?? 0 },
   };
 }

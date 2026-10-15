@@ -12,6 +12,7 @@ import {
   type ControlStage, type FlagKey, type Readiness, type TransitionOption,
 } from "./controlModel";
 import { adminFetch } from "./adminFetch";
+import EndTimeCard from "./EndTimeCard";
 import ReadinessStrip from "./ReadinessStrip";
 
 export interface ControlEvent {
@@ -23,6 +24,7 @@ export interface ControlEvent {
   startedAt: number | null;
   pausedAt: number | null;
   endedAt: number | null;
+  endsAt: number | null;
   submissionsEnabled: boolean;
   codesEnabled: boolean;
   leaderboardVisible: boolean;
@@ -31,7 +33,8 @@ export interface ControlEvent {
 type Pending =
   | { kind: "transition"; option: TransitionOption }
   | { kind: "flag"; key: FlagKey; next: boolean }
-  | { kind: "stage"; stage: ControlStage; next: boolean };
+  | { kind: "stage"; stage: ControlStage; next: boolean }
+  | { kind: "endTime"; next: number | null; title: string; consequences: string };
 
 const SETUP_STATUSES: readonly EventStatus[] = ["DRAFT", "CHECK_IN", "READY"];
 
@@ -66,9 +69,12 @@ export default function ControlPanel({
       const heads = p.option.to === "LIVE" && event.status === "READY" && issues.length > 0
         ? `\n\nHeads up, this event isn't fully ready:\n${issues.map((i) => `• ${i}`).join("\n")}\nYou can still start it.`
         : "";
+      const end = p.option.to === "PAUSED" && event.endsAt !== null
+        ? "\n\nThe scheduled end does not move while paused. Extend it if teams lose time."
+        : "";
       return {
         title: `${p.option.label}?`,
-        consequences: p.option.consequences + heads,
+        consequences: p.option.consequences + heads + end,
         requireReason: false,
         confirmLabel: p.option.label,
         danger: p.option.danger,
@@ -89,6 +95,18 @@ export default function ControlPanel({
         run: (c: { confirm: string; reason?: string }) =>
           adminFetch<{ message?: string }>("PATCH", `/api/admin/algohunt/events/${event.id}/flags`, { [p.key]: p.next, reason: c.reason, confirm: c.confirm }),
         done: `${row.label} turned ${p.next ? "on" : "off"}.`,
+      };
+    }
+    if (p.kind === "endTime") {
+      return {
+        title: p.title,
+        consequences: p.consequences,
+        requireReason: true,
+        confirmLabel: p.next === null ? "Remove" : "Save end time",
+        danger: p.next === null,
+        run: (c: { confirm: string; reason?: string }) =>
+          adminFetch<{ message?: string }>("PATCH", `/api/admin/algohunt/events/${event.id}/end-time`, { endsAt: p.next, reason: c.reason, confirm: c.confirm }),
+        done: p.next === null ? "Scheduled end removed." : `Scheduled end set to ${formatIST(p.next, { withDate: true })} IST.`,
       };
     }
     return {
@@ -150,6 +168,16 @@ export default function ControlPanel({
         )}
         {notice && <p role="status" className="mt-3 text-sm text-emerald-700 dark:text-emerald-300">{notice}</p>}
       </section>
+
+      <EndTimeCard
+        key={event.endsAt ?? "none"}
+        endsAt={event.endsAt}
+        disabled={event.status === "ENDED" || event.status === "ARCHIVED"}
+        onRequest={(next, title, consequences) => {
+          setNotice(null);
+          setPending({ kind: "endTime", next, title, consequences });
+        }}
+      />
 
       {SETUP_STATUSES.includes(event.status) && (
         <section aria-label="Ready to start">

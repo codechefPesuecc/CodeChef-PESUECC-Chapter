@@ -6,6 +6,7 @@ import { ahEvents, ahTeams } from "@/server/db/schema";
 import { verifyPassword } from "@/server/auth/password";
 import { clientIp, enforceRateLimits } from "@/server/rateLimit";
 import { writeAudit } from "@/server/algohunt/audit";
+import { setDeviceCookie, trackDevice } from "@/server/algohunt/devices";
 import { fail, ok, parseBody } from "@/server/algohunt/http";
 import { AH_TEAM_COOKIE, createTeamToken } from "@/server/algohunt/teamSession";
 
@@ -70,6 +71,8 @@ export async function POST(req: Request): Promise<NextResponse> {
       path: "/",
       maxAge: 86400,
     });
+    const newDeviceId = await trackDevice({ ctx: row, req, login: true });
+    if (newDeviceId) setDeviceCookie(response, newDeviceId);
     await writeAudit({
       eventId: row.event.id,
       teamId: row.team.id,

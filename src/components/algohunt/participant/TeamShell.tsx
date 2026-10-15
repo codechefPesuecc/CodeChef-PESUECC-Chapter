@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import Link from "@/components/AppLink";
 import AnnouncementStrip from "./AnnouncementStrip";
+import CountdownClock from "./CountdownClock";
+import IntegrityFlags from "./IntegrityFlags";
+import IntegrityGuard from "./IntegrityGuard";
 import ParticipantNav from "./ParticipantNav";
 import { useParticipantState } from "./ParticipantStateProvider";
 import StatusBanners from "./StatusBanners";
@@ -40,6 +43,8 @@ export default function TeamShell({ children }: { children: ReactNode }) {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <CountdownClock />
+          <IntegrityFlags />
           <StatusChip kind={state.nextStep.kind} />
           <button
             type="button"
@@ -56,6 +61,7 @@ export default function TeamShell({ children }: { children: ReactNode }) {
       <StatusBanners />
       <AnnouncementStrip />
       <div className="flex flex-1 flex-col gap-4">{children}</div>
+      <IntegrityGuard />
     </main>
   );
 }

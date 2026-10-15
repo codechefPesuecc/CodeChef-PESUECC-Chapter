@@ -4,7 +4,7 @@ export const COPY = {
   start: "The hunt has begun. Solve Question 1. When it's accepted, find a QR on campus to unlock the next one.",
   accepted: "Question solved! The next question is locked. Find a QR hidden on campus, scan it, and enter its code to unlock it.",
   codeUnlocked: "Code accepted! Question {n} is now unlocked.",
-  alreadyUnlocked: "Your team already unlocked Question {n} on another phone. Your code wasn't used.",
+  alreadyUnlocked: "Your team already unlocked Question {n} on another device. Your code wasn't used.",
   alreadyUsed: "This code has already been used. Keep searching for another QR!",
   invalidCode: "That code isn't valid. Check it and try again.",
   notSolved: "Solve your current question first. Then you can use a code to unlock the next one.",
@@ -16,6 +16,7 @@ export const COPY = {
   notStarted: "AlgoHunt 2.0 hasn't started yet. Stay close to the Seminar Hall.",
   notCheckedIn: "Your team isn't checked in yet. Visit the check-in desk with your team.",
   ended: "AlgoHunt 2.0 has ended. Submissions are closed.",
+  timeUp: "Time's up! Submissions and code entry are closed. Results will be announced soon.",
   disqualified: "Your team has been disqualified. Contact the organizers.",
   errors: {
     UNAUTHENTICATED: "Please log in with your team code and password.",

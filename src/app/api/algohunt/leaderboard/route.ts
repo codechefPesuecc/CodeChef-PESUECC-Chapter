@@ -28,6 +28,7 @@ export async function GET(): Promise<NextResponse> {
       finished: row.finished,
       finishedAt: row.finishedAt,
       lastSolvedAt: row.lastSolvedAt,
+      flags: row.flags,
       isYou: row.isYou,
     }));
     return ok({ visible: true, mode, rows: publicRows, updatedAt }, NO_STORE);
