@@ -88,7 +88,7 @@ describe("POST /api/algohunt/codes/redeem route", () => {
     // Make 8 requests
     for (let i = 0; i < 8; i++) {
       const res = await postRedeem(
-        { code: "UNKNOWNX" },
+        { code: "NKNWNXYZ" },
         { "x-forwarded-for": `198.51.100.${i + 1}` }, // vary IP so IP limit is not tripped first
       );
       expect([200, 429]).toContain(res.status);
@@ -96,7 +96,7 @@ describe("POST /api/algohunt/codes/redeem route", () => {
 
     // 9th request should be rate limited
     const res9 = await postRedeem(
-      { code: "UNKNOWNX" },
+      { code: "NKNWNXYZ" },
       { "x-forwarded-for": "198.51.100.99" },
     );
     expect(res9.status).toBe(429);

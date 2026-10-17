@@ -13,12 +13,12 @@ export const dynamic = "force-dynamic";
 export default async function AlgoHuntSubmissionsAdminPage({
   searchParams,
 }: {
-  searchParams: Promise<{ event?: string | string[] }>;
+  searchParams: Promise<{ event?: string | string[]; team?: string | string[] }>;
 }) {
   const admin = await getAdminUser();
   if (!admin) redirect("/");
 
-  const { event: slugParam } = await searchParams;
+  const { event: slugParam, team } = await searchParams;
   const event = await resolveAdminEvent(typeof slugParam === "string" ? slugParam : null);
 
   return (
@@ -36,7 +36,7 @@ export default async function AlgoHuntSubmissionsAdminPage({
               Event: {event.name} <span className="font-mono">({event.slug})</span>. Inspect live participant code submissions and Akiro judge verdicts.
             </p>
             <div className="mt-6">
-              <SubmissionsList eventSlug={event.slug} />
+              <SubmissionsList eventSlug={event.slug} initialTeam={typeof team === "string" ? team : ""} />
             </div>
           </>
         ) : (

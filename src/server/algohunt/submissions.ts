@@ -2,9 +2,9 @@
  * AlgoHunt submission server helpers (Module 2).
  * Handles creating, judging, and listing submissions.
  */
-import { sql } from "drizzle-orm";
+import { and, desc, eq, lt, or } from "drizzle-orm";
 import { getDb } from "@/server/db";
-import type { AhSubmission } from "@/server/db/schema";
+import { ahStages, ahSubmissions, type AhSubmission } from "@/server/db/schema";
 import type { SubmissionView, SubmitResult, ErrorCode } from "@/lib/algohunt/types";
 import { judgeTests } from "@/server/judge";
 import { JUDGE_LANGUAGE } from "@/lib/judge";
@@ -16,10 +16,6 @@ import { recordChallengeSolved } from "./progression";
 import { writeAudit } from "./audit";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-
-function generateId(): string {
-  return crypto.randomUUID();
-}
 
 /** Build a SubmissionView from an AhSubmission row. */
 export function toSubmissionView(row: AhSubmission, stageNumber: number): SubmissionView {
@@ -45,131 +41,44 @@ export function toSubmissionView(row: AhSubmission, stageNumber: number): Submis
 
 // ── DB helpers ────────────────────────────────────────────────────────────
 
-async function insertSubmission(row: AhSubmission): Promise<AhSubmission | null> {
-  const db = getDb();
-  try {
-    // Insert with idempotency: ON CONFLICT DO NOTHING on (teamId, clientRequestId)
-    const result = await db.run(
-      sql`INSERT INTO ah_submissions
-        (id, event_id, team_id, stage_id, challenge_id, language, code, status,
-         verdict, passed, total, failed_on, detail, runtime_ms, client_request_id,
-         created_at, finished_at)
-       VALUES (${row.id}, ${row.eventId}, ${row.teamId}, ${row.stageId}, ${row.challengeId}, ${row.language}, ${row.code}, ${row.status}, NULL, NULL, NULL, NULL, NULL, NULL, ${row.clientRequestId}, ${row.createdAt}, NULL)
-       ON CONFLICT (team_id, client_request_id) DO NOTHING
-       RETURNING id`,
-    );
-    const rows = (result as unknown as { rows?: unknown[] })?.rows ?? [];
-    if (rows.length === 0) {
-      // Conflict: row already exists
-      return null;
-    }
-    return row;
-  } catch (e) {
-    console.error("[algohunt:submissions] insertSubmission error:", e);
-    throw e;
-  }
+/** A RUNNING row older than this is treated as abandoned (the request died mid-judge) and may be retried. */
+const STALE_RUNNING_MS = 90_000;
+
+/** Insert unless the team already sent this clientRequestId. Returns false on that conflict. */
+async function insertSubmission(row: AhSubmission): Promise<boolean> {
+  const inserted = await getDb().insert(ahSubmissions).values(row)
+    .onConflictDoNothing({ target: [ahSubmissions.teamId, ahSubmissions.clientRequestId] })
+    .returning({ id: ahSubmissions.id });
+  return inserted.length > 0;
 }
 
-export async function getSubmissionById(id: string): Promise<AhSubmission | null> {
-  const db = getDb();
-  try {
-    const result = await db.run(
-      sql`SELECT id, event_id, team_id, stage_id, challenge_id, language, code, status,
-              verdict, passed, total, failed_on, detail, runtime_ms, client_request_id,
-              created_at, finished_at
-       FROM ah_submissions WHERE id = ${id} LIMIT 1`,
-    );
-    const rows = (result as unknown as { rows?: unknown[] })?.rows ?? [];
-    const row = rows[0] as Record<string, unknown> | undefined;
-    if (!row) return null;
-    return rowToSubmission(row);
-  } catch {
-    return null;
-  }
-}
-
-async function getSubmissionByRequestId(
-  teamId: string,
-  clientRequestId: string,
-): Promise<AhSubmission | null> {
-  const db = getDb();
-  try {
-    const result = await db.run(
-      sql`SELECT id, event_id, team_id, stage_id, challenge_id, language, code, status,
-              verdict, passed, total, failed_on, detail, runtime_ms, client_request_id,
-              created_at, finished_at
-       FROM ah_submissions
-       WHERE team_id = ${teamId} AND client_request_id = ${clientRequestId}
-       LIMIT 1`,
-    );
-    const rows = (result as unknown as { rows?: unknown[] })?.rows ?? [];
-    const row = rows[0] as Record<string, unknown> | undefined;
-    if (!row) return null;
-    return rowToSubmission(row);
-  } catch {
-    return null;
-  }
+async function getSubmissionByRequestId(teamId: string, clientRequestId: string): Promise<AhSubmission | null> {
+  const [row] = await getDb().select().from(ahSubmissions)
+    .where(and(eq(ahSubmissions.teamId, teamId), eq(ahSubmissions.clientRequestId, clientRequestId)))
+    .limit(1);
+  return row ?? null;
 }
 
 async function updateSubmission(
   id: string,
-  fields: {
-    status: string;
-    verdict?: string | null;
-    passed?: number | null;
-    total?: number | null;
-    failedOn?: number | null;
-    detail?: string | null;
-    runtimeMs?: number | null;
-    finishedAt?: number | null;
-  },
+  fields: Partial<Pick<AhSubmission,
+    "status" | "verdict" | "passed" | "total" | "failedOn" | "detail" | "runtimeMs" | "finishedAt">>,
 ): Promise<void> {
-  const db = getDb();
-  await db.run(
-    sql`UPDATE ah_submissions
-     SET status = ${fields.status}, verdict = ${fields.verdict ?? null}, passed = ${fields.passed ?? null}, total = ${fields.total ?? null}, failed_on = ${fields.failedOn ?? null},
-         detail = ${fields.detail ?? null}, runtime_ms = ${fields.runtimeMs ?? null}, finished_at = ${fields.finishedAt ?? null}
-     WHERE id = ${id}`,
-  );
+  await getDb().update(ahSubmissions).set(fields).where(eq(ahSubmissions.id, id));
 }
 
-/** Re-claim a FAILED row for retry: set status back to RUNNING. */
-async function reclaimFailedSubmission(id: string): Promise<boolean> {
-  const db = getDb();
-  try {
-    const result = await db.run(
-      sql`UPDATE ah_submissions
-       SET status = 'RUNNING'
-       WHERE id = ${id} AND status = 'FAILED'
-       RETURNING id`,
-    );
-    const rows = (result as unknown as { rows?: unknown[] })?.rows ?? [];
-    return rows.length > 0;
-  } catch {
-    return false;
-  }
-}
-
-function rowToSubmission(row: Record<string, unknown>): AhSubmission {
-  return {
-    id: String(row.id ?? ""),
-    eventId: String(row.event_id ?? ""),
-    teamId: String(row.team_id ?? ""),
-    stageId: String(row.stage_id ?? ""),
-    challengeId: String(row.challenge_id ?? ""),
-    language: String(row.language ?? ""),
-    code: String(row.code ?? ""),
-    status: String(row.status ?? "QUEUED"),
-    verdict: row.verdict ? String(row.verdict) : null,
-    passed: row.passed != null ? Number(row.passed) : null,
-    total: row.total != null ? Number(row.total) : null,
-    failedOn: row.failed_on != null ? Number(row.failed_on) : null,
-    detail: row.detail ? String(row.detail) : null,
-    runtimeMs: row.runtime_ms != null ? Number(row.runtime_ms) : null,
-    clientRequestId: row.client_request_id ? String(row.client_request_id) : null,
-    createdAt: Number(row.created_at ?? 0),
-    finishedAt: row.finished_at != null ? Number(row.finished_at) : null,
-  };
+/** Take a FAILED (or abandoned RUNNING) row back for a retry. Only one retry can win it. */
+async function reclaimSubmission(id: string, now: number): Promise<boolean> {
+  const rows = await getDb().update(ahSubmissions).set({ status: "RUNNING" })
+    .where(and(
+      eq(ahSubmissions.id, id),
+      or(
+        eq(ahSubmissions.status, "FAILED"),
+        and(eq(ahSubmissions.status, "RUNNING"), lt(ahSubmissions.createdAt, now - STALE_RUNNING_MS)),
+      ),
+    ))
+    .returning({ id: ahSubmissions.id });
+  return rows.length > 0;
 }
 
 // ── Core functions ─────────────────────────────────────────────────────────
@@ -195,7 +104,7 @@ export async function createAndJudgeSubmission(p: {
   clientRequestId: string;
   ip: string;
 }): Promise<{ ok: true; result: SubmitResult } | { ok: false; code: ErrorCode; message?: string }> {
-  const { ctx, language, code, clientRequestId, ip: _ip } = p;
+  const { ctx, clientRequestId } = p;
   const { team, event } = ctx;
 
   // Step 1: assertTeamCanPlay
@@ -216,6 +125,37 @@ export async function createAndJudgeSubmission(p: {
   if (!cur.stage.enabled) {
     return { ok: false, code: "STAGE_DISABLED" };
   }
+
+  const now = Date.now();
+  const existing = await getSubmissionByRequestId(team.id, clientRequestId);
+
+  if (existing?.status === "DONE") {
+    // A retry of a request that was already judged: replay its result. If it was the AC but the
+    // solve never got recorded (the request died in between), record it now; that is idempotent.
+    let finished = progress.finished;
+    let solved = cur.progress?.challengeSolved === true;
+    if (existing.verdict === "AC" && existing.stageId === cur.stage.id && !solved) {
+      const eng = await recordChallengeSolved({ ctx, stageId: cur.stage.id, submissionId: existing.id });
+      finished = eng.finished;
+      solved = true;
+    }
+    const sameStage = existing.stageId === cur.stage.id;
+    const challengeSolved = sameStage ? existing.verdict === "AC" || solved : true;
+    return {
+      ok: true,
+      result: {
+        submission: toSubmissionView(existing, cur.stage.stageNumber),
+        stage: {
+          number: cur.stage.stageNumber,
+          challengeSolved,
+          needsCode: challengeSolved && !cur.stage.isFinal && !finished,
+          finished,
+        },
+        message: buildMessage(existing.verdict, existing.failedOn, finished),
+      },
+    };
+  }
+
   if (cur.progress?.challengeSolved) {
     return {
       ok: false,
@@ -229,146 +169,115 @@ export async function createAndJudgeSubmission(p: {
   if (!sc) {
     return { ok: false, code: "INTERNAL", message: "Challenge data not found." };
   }
+
+  let subRow: AhSubmission;
+  if (existing) {
+    // A retry of a request whose judging failed or was abandoned: judge the code it carried.
+    if (existing.stageId !== cur.stage.id) {
+      return { ok: false, code: "CONFLICT", message: "That submission was for an earlier question." };
+    }
+    if (!await reclaimSubmission(existing.id, now)) {
+      return { ok: false, code: "CONFLICT", message: "This submission is still being judged." };
+    }
+    subRow = { ...existing, status: "RUNNING" };
+  } else {
+    // Step 4: Idempotent insert
+    subRow = {
+      id: crypto.randomUUID(),
+      eventId: event.id,
+      teamId: team.id,
+      stageId: cur.stage.id,
+      challengeId: sc.challenge.id,
+      language: p.language,
+      code: p.code,
+      status: "RUNNING",
+      verdict: null,
+      passed: null,
+      total: null,
+      failedOn: null,
+      detail: null,
+      runtimeMs: null,
+      clientRequestId,
+      createdAt: now,
+      finishedAt: null,
+    };
+    if (!await insertSubmission(subRow)) {
+      // Lost a race with a parallel copy of the same request.
+      return { ok: false, code: "CONFLICT", message: "This submission is still being judged." };
+    }
+  }
+
   const allowed = allowedLanguages(sc.challenge);
-  const isAllowed = allowed.some((l) => l.id === language);
-  if (!isAllowed || !JUDGE_LANGUAGE[language.toLowerCase()]) {
+  const isAllowed = allowed.some((l) => l.id === subRow.language);
+  if (!isAllowed || !JUDGE_LANGUAGE[subRow.language.toLowerCase()]) {
+    await updateSubmission(subRow.id, { status: "FAILED", verdict: "ERR", detail: "unsupported language", finishedAt: Date.now() });
     return { ok: false, code: "UNSUPPORTED_LANGUAGE" };
   }
 
-  // Step 4: Idempotent insert
-  const subId = generateId();
-  const now = Date.now();
-  const newRow: AhSubmission = {
-    id: subId,
-    eventId: event.id,
-    teamId: team.id,
-    stageId: cur.stage.id,
-    challengeId: sc.challenge.id,
-    language,
-    code,
-    status: "RUNNING",
-    verdict: null,
-    passed: null,
-    total: null,
-    failedOn: null,
-    detail: null,
-    runtimeMs: null,
-    clientRequestId,
-    createdAt: now,
-    finishedAt: null,
-  };
-
-  const inserted = await insertSubmission(newRow);
-  let subRow: AhSubmission;
-
-  if (!inserted) {
-    // A row with this clientRequestId already exists
-    const existing = await getSubmissionByRequestId(team.id, clientRequestId);
-    if (!existing) {
-      return { ok: false, code: "INTERNAL" };
-    }
-
-    if (existing.status === "DONE") {
-      // Already judged → return the cached result
-      const freshProgress = await getTeamProgress(ctx);
-      const freshCur = freshProgress.current;
-      const stageNum = cur.stage.stageNumber;
-      const challengeSolved = existing.verdict === "AC" || (freshCur !== null && freshCur.progress?.challengeSolved === true);
-      const view = toSubmissionView(existing, stageNum);
-      const msg = buildMessage(existing.verdict, existing.failedOn, progress.finished);
-      return {
-        ok: true,
-        result: {
-          submission: view,
-          stage: {
-            number: stageNum,
-            challengeSolved,
-            needsCode: challengeSolved && !cur.stage.isFinal,
-            finished: progress.finished,
-          },
-          message: msg,
-        },
-      };
-    }
-
-    if (existing.status === "RUNNING") {
-      return { ok: false, code: "CONFLICT", message: "This submission is still being judged." };
-    }
-
-    if (existing.status === "FAILED") {
-      // Re-claim for retry
-      const reclaimed = await reclaimFailedSubmission(existing.id);
-      if (!reclaimed) {
-        return { ok: false, code: "CONFLICT", message: "This submission is still being judged." };
-      }
-      subRow = { ...existing, status: "RUNNING" };
-    } else {
-      return { ok: false, code: "CONFLICT" };
-    }
-  } else {
-    subRow = newRow;
+  try {
+    return await judgeAndRecord({ ctx, cur, sc, subRow, started: now, finishedBefore: progress.finished });
+  } catch (error) {
+    // Never leave the row RUNNING: a retry with the same clientRequestId can then judge it again.
+    await updateSubmission(subRow.id, { status: "FAILED", verdict: "ERR", detail: "internal error", finishedAt: Date.now() })
+      .catch(() => undefined);
+    throw error;
   }
+}
+
+async function judgeAndRecord(p: {
+  ctx: TeamContext;
+  cur: NonNullable<Awaited<ReturnType<typeof getTeamProgress>>["current"]>;
+  sc: NonNullable<Awaited<ReturnType<typeof getStageChallenge>>>;
+  subRow: AhSubmission;
+  started: number;
+  finishedBefore: boolean;
+}): Promise<{ ok: true; result: SubmitResult } | { ok: false; code: ErrorCode; message?: string }> {
+  const { ctx, cur, sc, subRow } = p;
+  const { team, event } = ctx;
 
   // Step 5: Judge via Akiro
   const judgeInput = await loadJudgeInput(sc.challenge);
+  if (judgeInput.tests.length === 0) {
+    await updateSubmission(subRow.id, { status: "FAILED", verdict: "NO_TESTS", finishedAt: Date.now() });
+    await writeAudit({
+      eventId: event.id, teamId: team.id, actorType: "SYSTEM", actorId: null, action: "submission.judged",
+      metadata: { verdict: "NO_TESTS", challengeId: sc.challenge.id },
+    });
+    return { ok: false, code: "INTERNAL" };
+  }
   const res = await judgeTests({
     tests: judgeInput.tests,
     checker: judgeInput.checker,
-    language,
-    code,
+    language: subRow.language,
+    code: subRow.code,
     timeLimitMs: judgeInput.timeLimitMs,
     memLimitBytes: judgeInput.memLimitBytes,
   });
 
-  let effectiveRes = res;
-  if (res.verdict === "ERR" && process.env.NODE_ENV === "development") {
-    console.warn("[algohunt:submissions] Judge offline in dev mode; simulating submission verdict.");
-    const looksCorrect = code.includes("+") || code.toLowerCase().includes("sum");
-    const total = Math.max(1, judgeInput.tests.length);
-    effectiveRes = looksCorrect
-      ? { verdict: "AC", passed: total, total }
-      : { verdict: "WA", passed: 0, total, failedOn: 1 };
-  }
-
   const finishedAt = Date.now();
-  const runtimeMs = judgeInput.tests.length > 0 ? (finishedAt - now) : null;
+  const runtimeMs = finishedAt - p.started;
 
   // Step 6: Update the submission row by verdict
-  if (effectiveRes.verdict === "ERR") {
+  if (res.verdict === "ERR" || res.verdict === "NO_TESTS") {
     await updateSubmission(subRow.id, {
       status: "FAILED",
-      verdict: "ERR",
-      detail: effectiveRes.message ?? null, // internal, never returned to team
+      verdict: res.verdict,
+      detail: res.message ?? null, // internal, never returned to team
       finishedAt,
     });
     return { ok: false, code: "JUDGE_UNAVAILABLE" };
   }
 
-  if (effectiveRes.verdict === "NO_TESTS") {
-    await updateSubmission(subRow.id, {
-      status: "FAILED",
-      verdict: "NO_TESTS",
-      finishedAt,
-    });
-    await writeAudit({
-      eventId: event.id,
-      teamId: team.id,
-      actorType: "SYSTEM",
-      actorId: null,
-      action: "submission.judged",
-      metadata: { verdict: "NO_TESTS", challengeId: sc.challenge.id },
-    });
-    return { ok: false, code: "INTERNAL" };
-  }
-
-  // Normal verdict (AC/WA/TLE/MLE/RE/CE)
-  const detail = effectiveRes.detail ? effectiveRes.detail.slice(0, 4000) : null;
+  // Compiler output is always safe to show. A program's stderr only when it failed on a sample,
+  // since a hidden test's stderr could carry that test's input.
+  const showDetail = res.verdict === "CE" || (res.failedOn !== undefined && res.failedOn <= judgeInput.sampleCount);
+  const detail = showDetail && res.detail ? res.detail.slice(0, 4000) : null;
   await updateSubmission(subRow.id, {
     status: "DONE",
-    verdict: effectiveRes.verdict,
-    passed: effectiveRes.passed,
-    total: effectiveRes.total,
-    failedOn: effectiveRes.failedOn ?? null,
+    verdict: res.verdict,
+    passed: res.passed,
+    total: res.total,
+    failedOn: res.failedOn ?? null,
     detail,
     runtimeMs,
     finishedAt,
@@ -380,52 +289,39 @@ export async function createAndJudgeSubmission(p: {
     actorType: "TEAM",
     actorId: team.id,
     action: "submission.judged",
-    metadata: { verdict: effectiveRes.verdict, challengeId: sc.challenge.id },
+    metadata: { verdict: res.verdict, challengeId: sc.challenge.id },
   });
 
   // Step 7: recordChallengeSolved if AC
-  let eng: { alreadySolved: boolean; finished: boolean } | undefined;
-  if (effectiveRes.verdict === "AC") {
-    eng = await recordChallengeSolved({
-      ctx,
-      stageId: cur.stage.id,
-      submissionId: subRow.id,
-    });
+  let finished = p.finishedBefore;
+  if (res.verdict === "AC") {
+    finished = (await recordChallengeSolved({ ctx, stageId: cur.stage.id, submissionId: subRow.id })).finished;
   }
 
   // Step 8: Build SubmitResult
-  const stageNum = cur.stage.stageNumber;
-  const challengeSolved = effectiveRes.verdict === "AC";
-  const finished = eng?.finished ?? false;
-  const needsCode = challengeSolved && !cur.stage.isFinal;
-
-  // Reload the submission with updated fields
+  const challengeSolved = res.verdict === "AC";
   const finalRow: AhSubmission = {
     ...subRow,
     status: "DONE",
-    verdict: effectiveRes.verdict,
-    passed: effectiveRes.passed,
-    total: effectiveRes.total,
-    failedOn: effectiveRes.failedOn ?? null,
+    verdict: res.verdict,
+    passed: res.passed,
+    total: res.total,
+    failedOn: res.failedOn ?? null,
     detail,
     runtimeMs,
     finishedAt,
   };
-
-  const view = toSubmissionView(finalRow, stageNum);
-  const message = buildMessage(effectiveRes.verdict, effectiveRes.failedOn, finished);
-
   return {
     ok: true,
     result: {
-      submission: view,
+      submission: toSubmissionView(finalRow, cur.stage.stageNumber),
       stage: {
-        number: stageNum,
+        number: cur.stage.stageNumber,
         challengeSolved,
-        needsCode,
+        needsCode: challengeSolved && !cur.stage.isFinal,
         finished,
       },
-      message,
+      message: buildMessage(res.verdict, res.failedOn, finished),
     },
   };
 }
@@ -463,33 +359,11 @@ export async function listTeamSubmissions(p: {
   stageId: string;
   limit?: number;
 }): Promise<(SubmissionView & { code: string })[]> {
-  const db = getDb();
-  const limit = Math.min(p.limit ?? 50, 50);
-
-  try {
-    // We need stageNumber to build SubmissionView — fetch it with a join
-    const result = await db.run(
-      sql`SELECT s.id, s.event_id, s.team_id, s.stage_id, s.challenge_id,
-              s.language, s.code, s.status, s.verdict, s.passed, s.total,
-              s.failed_on, s.detail, s.runtime_ms, s.client_request_id,
-              s.created_at, s.finished_at,
-              st.stage_number
-       FROM ah_submissions s
-       JOIN ah_stages st ON st.id = s.stage_id
-       WHERE s.team_id = ${p.teamId} AND s.stage_id = ${p.stageId}
-       ORDER BY s.created_at DESC
-       LIMIT ${limit}`,
-    );
-    const rows = (result as unknown as { rows?: unknown[] })?.rows ?? [];
-    return rows.map((r) => {
-      const row = r as Record<string, unknown>;
-      const sub = rowToSubmission(row);
-      const stageNumber = Number(row.stage_number ?? 0);
-      const view = toSubmissionView(sub, stageNumber);
-      return { ...view, code: sub.code };
-    });
-  } catch (e) {
-    console.error("[algohunt:submissions] listTeamSubmissions error:", e);
-    return [];
-  }
+  const rows = await getDb().select({ submission: ahSubmissions, stageNumber: ahStages.stageNumber })
+    .from(ahSubmissions)
+    .innerJoin(ahStages, eq(ahSubmissions.stageId, ahStages.id))
+    .where(and(eq(ahSubmissions.teamId, p.teamId), eq(ahSubmissions.stageId, p.stageId)))
+    .orderBy(desc(ahSubmissions.createdAt))
+    .limit(Math.min(p.limit ?? 50, 50));
+  return rows.map((row) => ({ ...toSubmissionView(row.submission, row.stageNumber), code: row.submission.code }));
 }

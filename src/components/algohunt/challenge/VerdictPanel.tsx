@@ -13,7 +13,7 @@ interface VerdictPanelProps {
   onRetry?: () => void;
 }
 
-export default function VerdictPanel({ result, stageNumber, isFinal: _isFinal, onRetry }: VerdictPanelProps) {
+export default function VerdictPanel({ result, stageNumber, isFinal, onRetry }: VerdictPanelProps) {
   // Network/connection error (submission is null)
   if (!result || (result as { submission?: null }).submission === null) {
     return (
@@ -51,6 +51,18 @@ export default function VerdictPanel({ result, stageNumber, isFinal: _isFinal, o
           <p className="mt-1 text-sm text-green-600 dark:text-green-300/80">{COPY.accepted}</p>
           <Link href="/algohunt/code" className="mecha-btn mecha-btn--solid mt-2 inline-block text-sm">
             Enter a QR code →
+          </Link>
+        </div>
+      );
+    }
+    if (asError.code === "TEAM_FINISHED") {
+      // A retry after the final question was already accepted: the team has finished.
+      return (
+        <div className="rounded-lg border border-green-500/40 bg-green-500/10 p-4 text-center">
+          <p className="font-bold text-green-700 dark:text-green-400">AlgoHunt 2.0 Complete!</p>
+          <p className="mt-1 text-sm text-green-600 dark:text-green-300/80">{COPY.finished}</p>
+          <Link href="/algohunt/leaderboard" className="mecha-btn mecha-btn--solid mt-3 inline-block">
+            View Leaderboard
           </Link>
         </div>
       );
@@ -131,6 +143,7 @@ export default function VerdictPanel({ result, stageNumber, isFinal: _isFinal, o
             {submission.passed}/{submission.total} tests passed
           </p>
         )}
+        {isFinal && <p className="mt-2 text-xs opacity-80">Final question: once it&apos;s accepted you&apos;re done, no code needed.</p>}
       </div>
     );
   }

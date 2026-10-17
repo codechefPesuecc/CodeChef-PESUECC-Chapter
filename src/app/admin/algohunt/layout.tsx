@@ -33,7 +33,7 @@ export default async function AlgoHuntAdminLayout({ children }: { children: Reac
   return (
     <>
       {admin && (
-        <div className="mx-auto max-w-4xl px-6">
+        <div className="mx-auto max-w-4xl px-6 print:hidden">
           <Suspense fallback={<div className="mb-6 h-16 border-b border-hairline" aria-hidden="true" />}>
             <AlgoHuntAdminNav events={events} />
           </Suspense>

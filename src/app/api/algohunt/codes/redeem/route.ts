@@ -28,7 +28,8 @@ export async function POST(req: Request): Promise<NextResponse> {
     const ip = clientIp(req);
     const limited = await enforceRateLimits([
       [`ah:code:team:${auth.team.id}`, 8, 60_000],
-      [`ah:code:ip:${ip}`, 30, 60_000],
+      // Every laptop in the hall may share one public IP: the IP cap is a backstop, the team cap is the limit.
+      [`ah:code:ip:${ip}`, 600, 60_000],
     ]);
     if (limited) {
       const retryAfterSeconds = Number(limited.headers.get("Retry-After") ?? "1");

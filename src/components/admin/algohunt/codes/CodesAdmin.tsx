@@ -124,7 +124,6 @@ export default function CodesAdmin({ eventSlug }: { eventSlug: string }) {
 
   // Disable Batch Dialog State
   const [batchToDisable, setBatchToDisable] = useState<BatchItem | null>(null);
-  const [disablingBatch, setDisablingBatch] = useState(false);
 
   // Code Enable/Disable Dialog State
   const [codeAvailabilityModal, setCodeAvailabilityModal] = useState<{
@@ -308,7 +307,6 @@ export default function CodesAdmin({ eventSlug }: { eventSlug: string }) {
   // Disable Batch Handler
   async function handleConfirmDisableBatch(payload: { confirm: string; reason?: string }) {
     if (!batchToDisable) return;
-    setDisablingBatch(true);
     try {
       const res = await fetch(
         `/api/admin/algohunt/codes/batches/${encodeURIComponent(batchToDisable.id)}/disable`,
@@ -330,8 +328,6 @@ export default function CodesAdmin({ eventSlug }: { eventSlug: string }) {
       }
     } catch {
       alert("Network error.");
-    } finally {
-      setDisablingBatch(false);
     }
   }
 

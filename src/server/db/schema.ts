@@ -342,6 +342,9 @@ export const ahTeams = sqliteTable("ah_teams", {
   college: text("college"),
   passwordHash: text("password_hash").notNull(), // SECRET
   sessionEpoch: integer("session_epoch").notNull().default(0),
+  // The one browser (ah_device id) currently logged in. Every login bumps sessionEpoch, so a
+  // second laptop logging in signs the first one out. Null = nobody logged in.
+  activeDeviceId: text("active_device_id"),
   status: text("status").notNull().default("REGISTERED"),
   checkedInAt: integer("checked_in_at"),
   finishedAt: integer("finished_at"),

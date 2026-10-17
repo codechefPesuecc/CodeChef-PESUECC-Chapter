@@ -10,6 +10,7 @@ import {
   generateTeamPassword,
   parseRosterFile,
   importTeamsChunk,
+  validateRoster,
   getEventTeamsForCredentials,
   MAX_TEAMS_PER_IMPORT_CHUNK,
   type ParsedTeamRow,
@@ -181,3 +182,46 @@ describe("chunked team import (Cloudflare Workers bounds)", () => {
     expect(forCreds[0].members).toHaveLength(2);
   });
 });
+
+describe("validateRoster", () => {
+  const ctx = { maxTeamSize: 4, existingNames: new Set(["taken team"]), existingEmails: new Set(["old@x.edu"]), existingPhones: new Set(["9845000000"]) };
+
+  it("catches duplicate names, oversize teams, shared emails and phones, and bad emails", () => {
+    const { errors, warnings } = validateRoster([
+      { teamName: "Alpha", members: [{ name: "A", email: "a@x.edu", phone: "98450 11111", isCaptain: true }] },
+      { teamName: "alpha", members: [{ name: "B" }] },
+      { teamName: "Taken Team", members: [{ name: "C" }] },
+      { teamName: "Big", members: Array.from({ length: 5 }, (_, i) => ({ name: `M${i}` })) },
+      { teamName: "Shared", members: [{ name: "D", email: "A@X.EDU" }, { name: "E", phone: "+91 98450-11111" }] },
+      { teamName: "Typo", members: [{ name: "F", email: "not-an-email" }] },
+      { teamName: "Returning", members: [{ name: "G", email: "old@x.edu", phone: "9845000000" }] },
+    ], ctx);
+    expect(errors).toEqual(expect.arrayContaining([
+      "Row 2 (alpha): same team name as row 1.",
+      "Row 3 (Taken Team): a team with this name is already in the event.",
+      "Row 4 (Big): 5 members, the limit is 4.",
+      "Row 5 (Shared): a@x.edu is also on row 1.",
+      "Row 5 (Shared): phone +91 98450-11111 is also on row 1.",
+      "Row 6 (Typo): 'not-an-email' is not an email address.",
+      "Row 7 (Returning): old@x.edu is already on a team in this event.",
+    ]));
+    expect(warnings.some((w) => /no captain marked/.test(w))).toBe(true);
+  });
+});
+
+describe("team codes", () => {
+  it("are unique across events (login finds a team by its code alone) and can be checked in on import", async () => {
+    const first = await seedFixture({ codes: 0, teams: 0 });
+    const second = await seedFixture({ codes: 0, teams: 0 });
+    const a = await importTeamsChunk({ eventId: first.event.id, teams: [{ teamName: "One", members: [{ name: "x" }] }] });
+    const b = await importTeamsChunk({
+      eventId: second.event.id, teams: [{ teamName: "One", members: [{ name: "x" }] }], markCheckedIn: true,
+    });
+    if (!a.ok || !b.ok) throw new Error("import failed");
+    expect(a.imported[0].teamCode).not.toBe(b.imported[0].teamCode);
+    const [row] = await getDb().select().from(ahTeams).where(eq(ahTeams.id, b.imported[0].id));
+    expect(row.status).toBe("CHECKED_IN");
+    expect(row.checkedInAt).not.toBeNull();
+  });
+});
+

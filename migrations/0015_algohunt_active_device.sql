@@ -1,0 +1,1 @@
+ALTER TABLE `ah_teams` ADD `active_device_id` text;

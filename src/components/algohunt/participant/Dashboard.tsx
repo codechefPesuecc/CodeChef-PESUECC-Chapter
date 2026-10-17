@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "motion/react";
 import {
   ArrowRight, Ban, Check, CircleCheck, CircleDot, Flag, Hourglass, Lock, PartyPopper, UserCheck,
@@ -8,6 +9,7 @@ import Link from "@/components/AppLink";
 import MechaPanel from "@/components/cp-arena/MechaPanel";
 import { formatDuration, formatIST } from "@/lib/algohunt/format";
 import { playBlockReason } from "@/lib/algohunt/play";
+import type { RedeemResult } from "@/lib/algohunt/types";
 import AnnouncementsCard from "./AnnouncementsCard";
 import CodeEntrySlot from "./CodeEntrySlot";
 import ElapsedTimer from "./ElapsedTimer";
@@ -16,7 +18,9 @@ import StatusChip from "./StatusChip";
 import { useEventClock } from "./useEventClock";
 
 export default function Dashboard() {
-  const { state } = useParticipantState();
+  const { state, refresh } = useParticipantState();
+  // An unlock refreshes the state, which swaps the code box out; keep its confirmation on screen.
+  const [unlocked, setUnlocked] = useState<RedeemResult | null>(null);
   const { timeUp } = useEventClock();
   const { nextStep, current, team, event } = state;
 
@@ -88,6 +92,9 @@ export default function Dashboard() {
             <p className="text-sm text-charcoal/70">
               Questions solved: {state.solvedCount} of {state.totalStages}
             </p>
+            <Link href="/algohunt/leaderboard" className="mecha-btn mecha-btn--solid">
+              View leaderboard
+            </Link>
           </div>
         </MechaPanel>
         <AnnouncementsCard announcements={state.announcements} />
@@ -100,7 +107,16 @@ export default function Dashboard() {
   const blockReason = playBlockReason(state, "code", timeUp);
   const canPlay = blockReason === null;
   const codeSlot = current && !current.isFinal && (
-    <CodeEntrySlot stageNumber={current.number} canPlay={canPlay} disabledReason={blockReason} />
+    <CodeEntrySlot
+      teamCode={team.code}
+      current={current}
+      canPlay={canPlay}
+      disabledReason={blockReason}
+      onResult={(r) => {
+        if (r.result === "UNLOCKED" || r.result === "ALREADY_UNLOCKED") setUnlocked(r);
+        refresh();
+      }}
+    />
   );
 
   return (
@@ -145,6 +161,19 @@ export default function Dashboard() {
             </>
           )}
         </motion.section>
+      )}
+
+      {unlocked && current && unlocked.unlockedStageNumber === current.number && !hunting && (
+        <div role="status" className="space-y-3 rounded-lg border border-emerald-300 bg-emerald-50 p-4 text-emerald-900 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-100">
+          <p className="flex items-start gap-2 text-sm font-medium">
+            <CircleCheck aria-hidden className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+            {unlocked.message}
+          </p>
+          <Link href="/algohunt/challenge" className="mecha-btn mecha-btn--solid w-full">
+            Go to Question {current.number}
+            <ArrowRight aria-hidden className="h-4 w-4" />
+          </Link>
+        </div>
       )}
 
       <section aria-label="Next step" className={`rounded-md border-l-4 p-4 ${hunting ? "border-amber-500 bg-amber-500/10" : "border-bronze bg-bronze/10"}`}>

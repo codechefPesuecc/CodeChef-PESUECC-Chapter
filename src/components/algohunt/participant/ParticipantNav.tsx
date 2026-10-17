@@ -10,7 +10,7 @@ const ITEMS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/algohunt/code", label: "Enter code", icon: KeyRound },
   { href: "/algohunt/progress", label: "Progress", icon: ListChecks },
   { href: "/algohunt/leaderboard", label: "Leaderboard", icon: Trophy },
-  { href: "/algohunt/rules", label: "Rules", icon: BookOpen },
+  { href: "/algohunt/how-to-play", label: "Rules", icon: BookOpen },
 ];
 
 /** Contract §13 nav: a top tab row on desktop, a fixed bottom tab bar on phones. */

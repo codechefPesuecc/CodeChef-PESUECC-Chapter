@@ -32,7 +32,7 @@ export const RULES: RuleItem[] = [
   },
   {
     title: "Codes are single-use",
-    body: "The first team to enter a code wins it. A used code won't work for anyone else, so keep searching if yours has already been taken.",
+    body: "The first team to enter a code wins it, and a used code won't work for anyone else. You may collect codes early and keep them for later questions: a code is used up only when your team enters it after solving its current question. Codes are scarce, so keep searching if yours is taken.",
   },
   {
     title: "No going back",
@@ -51,8 +51,8 @@ export const RULES: RuleItem[] = [
     body: "Stay out of restricted areas and follow campus safety rules. Don't run in corridors or labs.",
   },
   {
-    title: "Laptops for solving",
-    body: "Solve questions and enter codes on your team's laptops. Phones are only for scanning QR codes. Every device that logs in to your team is recorded, and organizers check logins from phones or unknown devices.",
+    title: "One laptop per team",
+    body: "Your team plays on one laptop: solve questions and enter codes there. Only one device can be logged in to your team at a time. Logging in on another device signs the first one out, and the organizers are alerted. Phones are only for scanning QR codes.",
   },
   {
     title: "Stay in full screen",
@@ -103,7 +103,11 @@ export const FAQ: FaqItem[] = [
   },
   {
     q: "Can we use our phones?",
-    a: "Only to scan QR codes. Log in, solve and enter codes on your laptop. Logins from phones are flagged for the organizers.",
+    a: "Only to scan QR codes. Log in, solve and enter codes on your team's laptop. Logging in on a phone signs your laptop out and alerts the organizers.",
+  },
+  {
+    q: "Can we use two laptops?",
+    a: "No. Only one device can be logged in to your team at a time; logging in on a second one signs the first one out. Teammates can help solve on that one laptop.",
   },
   {
     q: "What happens if we leave full screen or switch tabs?",
@@ -119,6 +123,6 @@ export const FAQ: FaqItem[] = [
   },
   {
     q: "When and where is AlgoHunt 2.0?",
-    a: `${EVENT_FACTS.date}, ${EVENT_FACTS.time}, ${EVENT_FACTS.venue}. ${EVENT_FACTS.eligibility}. Contacts: ${EVENT_FACTS.contacts.map((c) => `${c.name} (${c.phone})`).join(" and ")}.`,
+    a: `${EVENT_FACTS.date}, ${EVENT_FACTS.time}, ${EVENT_FACTS.venue}. ${EVENT_FACTS.eligibility}, in teams of 2 to 4. Contacts: ${EVENT_FACTS.contacts.map((c) => `${c.name} (${c.phone})`).join(" and ")}.`,
   },
 ];

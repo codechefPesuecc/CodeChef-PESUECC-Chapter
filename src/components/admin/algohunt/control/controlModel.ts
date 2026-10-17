@@ -15,6 +15,8 @@ export interface Readiness {
   finalStageOk: boolean;
   activeCodes: number;
   checkedInTeams: number;
+  /** Teams still REGISTERED: they get no question until checked in. */
+  registeredTeams: number;
 }
 
 /** The numbers behind the "ready to start" strip. */
@@ -22,6 +24,7 @@ export function deriveReadiness(
   stages: { stageNumber: number; isFinal: boolean; verified: boolean }[],
   activeCodes: number,
   checkedInTeams: number,
+  registeredTeams = 0,
 ): Readiness {
   const finals = stages.filter((s) => s.isFinal);
   const highest = stages.reduce((max, s) => Math.max(max, s.stageNumber), 0);
@@ -31,6 +34,7 @@ export function deriveReadiness(
     finalStageOk: finals.length === 1 && finals[0].stageNumber === highest,
     activeCodes,
     checkedInTeams,
+    registeredTeams,
   };
 }
 
@@ -49,6 +53,9 @@ export function readinessIssues(r: Readiness): string[] {
   }
   if (r.activeCodes === 0) issues.push("There are 0 active codes.");
   if (r.checkedInTeams === 0) issues.push("No team is checked in.");
+  if (r.registeredTeams > 0) {
+    issues.push(`${r.registeredTeams} ${r.registeredTeams === 1 ? "team isn't" : "teams aren't"} checked in: they get no question until they are. Use Check in all on the Teams page if they're here.`);
+  }
   return issues;
 }
 

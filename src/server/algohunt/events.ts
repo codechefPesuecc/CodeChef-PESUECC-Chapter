@@ -1,8 +1,8 @@
 import crypto from "node:crypto";
-import { and, desc, eq, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ne, sql } from "drizzle-orm";
 import { EVENT_TRANSITIONS, type ErrorCode, type EventStatus } from "@/lib/algohunt/types";
 import { getDb } from "@/server/db";
-import { ahAuditLogs, ahEvents, type AhEvent } from "@/server/db/schema";
+import { ahAuditLogs, ahEvents, ahStages, type AhEvent } from "@/server/db/schema";
 import { auditInsert } from "./audit";
 
 export async function getEventById(id: string): Promise<AhEvent | null> {
@@ -40,6 +40,10 @@ export async function transitionEvent(p: {
   if (!EVENT_TRANSITIONS[from]?.includes(p.to)) {
     return { ok: false, code: "CONFLICT", message: `Can't move from ${from} to ${p.to}.` };
   }
+  if (from === "READY" && p.to === "LIVE") {
+    const problem = await stageOrderProblem(p.eventId);
+    if (problem) return { ok: false, code: "CONFLICT", message: `Can't start yet: ${problem}` };
+  }
   const now = Date.now();
   const patch: Partial<AhEvent> = { status: p.to, updatedAt: now };
   if (p.to === "LIVE") {
@@ -71,6 +75,22 @@ export async function transitionEvent(p: {
   const fresh = await getEventById(p.eventId);
   if (!fresh) throw new Error("Updated event disappeared");
   return { ok: true, event: fresh };
+}
+
+/**
+ * Why the question order can't be played, or null. Starting with a broken order would strand every
+ * team: without exactly one final question at the end, nobody can ever finish.
+ */
+export async function stageOrderProblem(eventId: string): Promise<string | null> {
+  const stages = await getDb().select({ n: ahStages.stageNumber, isFinal: ahStages.isFinal })
+    .from(ahStages).where(eq(ahStages.eventId, eventId)).orderBy(asc(ahStages.stageNumber));
+  if (stages.length === 0) return "there are no questions. Import them and save the question order.";
+  if (stages.some((stage, i) => stage.n !== i + 1)) return "the questions must be numbered 1 to N with no gaps.";
+  const finals = stages.filter((stage) => stage.isFinal);
+  if (finals.length !== 1 || finals[0].n !== stages.length) {
+    return `the last question (Question ${stages.length}) must be the only final one. Save the question order again.`;
+  }
+  return null;
 }
 
 export async function updateEventFlags(p: {

@@ -93,11 +93,6 @@ export default async function AlgoHuntCodePage() {
 
   return (
     <div className="space-y-4">
-      {event.status === "PAUSED" && (
-        <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs sm:text-sm text-amber-900">
-          {COPY.paused}
-        </div>
-      )}
       <TeamCodeEntryWrapper
         teamCode={team.teamCode}
         stageNumber={cur.stage.stageNumber}

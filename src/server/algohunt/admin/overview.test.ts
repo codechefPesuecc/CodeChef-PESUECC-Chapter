@@ -86,7 +86,7 @@ describe("getOverview", () => {
     })]);
     expect(overview.stuck[0].waitingSinceMs).toBeGreaterThanOrEqual(0);
     expect(overview.readiness).toEqual({
-      stages: 3, challengesUnverified: 3, finalStageOk: true, activeCodes: 7, checkedInTeams: 3,
+      stages: 3, challengesUnverified: 3, finalStageOk: true, activeCodes: 7, checkedInTeams: 3, registeredTeams: 0,
     });
     expect(overview.topTeams[0]).toMatchObject({ rank: 1, teamCode: "AH2-T001", questionsSolved: 3 });
     expect(overview.topTeams.map((t) => t.teamCode)).not.toContain("AH2-T002");

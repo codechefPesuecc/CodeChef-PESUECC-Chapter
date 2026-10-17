@@ -21,7 +21,7 @@ export default async function PrintBatchPage({
 
   return (
     <main className="flex-1">
-      <section className="mx-auto max-w-5xl px-4 pb-24 pt-2">
+      <section className="mx-auto max-w-5xl px-4 pb-24 pt-2 print:p-0">
         <PrintSheet batchId={batchId} />
       </section>
     </main>

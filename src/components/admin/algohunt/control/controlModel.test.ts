@@ -49,7 +49,7 @@ describe("transitionOptions", () => {
 describe("deriveReadiness", () => {
   it("counts questions, unverified ones, and a correct final question", () => {
     const r = deriveReadiness([stage(1), stage(2), stage(3, { isFinal: true })], 50, 38);
-    expect(r).toEqual({ stages: 3, challengesUnverified: 0, finalStageOk: true, activeCodes: 50, checkedInTeams: 38 });
+    expect(r).toEqual({ stages: 3, challengesUnverified: 0, finalStageOk: true, activeCodes: 50, checkedInTeams: 38, registeredTeams: 0 });
   });
 
   it("flags unverified questions", () => {
@@ -67,7 +67,7 @@ describe("deriveReadiness", () => {
 });
 
 describe("readinessIssues", () => {
-  const ready = { stages: 6, challengesUnverified: 0, finalStageOk: true, activeCodes: 50, checkedInTeams: 38 };
+  const ready = { stages: 6, challengesUnverified: 0, finalStageOk: true, activeCodes: 50, checkedInTeams: 38, registeredTeams: 0 };
 
   it("is empty when everything is ready", () => {
     expect(readinessIssues(ready)).toEqual([]);
@@ -79,10 +79,11 @@ describe("readinessIssues", () => {
     expect(readinessIssues({ ...ready, challengesUnverified: 1 })[0]).toContain("1 question is not verified");
     expect(readinessIssues({ ...ready, finalStageOk: false })[0]).toContain("final question");
     expect(readinessIssues({ ...ready, checkedInTeams: 0 })).toEqual(["No team is checked in."]);
+    expect(readinessIssues({ ...ready, registeredTeams: 2 })[0]).toContain("2 teams aren't checked in");
   });
 
   it("reports an empty event once, without piling on question errors", () => {
-    const issues = readinessIssues({ stages: 0, challengesUnverified: 0, finalStageOk: false, activeCodes: 0, checkedInTeams: 0 });
+    const issues = readinessIssues({ stages: 0, challengesUnverified: 0, finalStageOk: false, activeCodes: 0, checkedInTeams: 0, registeredTeams: 0 });
     expect(issues).toEqual(["No questions are set up yet.", "There are 0 active codes.", "No team is checked in."]);
   });
 });

@@ -1,21 +1,28 @@
 import crypto from "node:crypto";
-import { eq, inArray } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import {
+  ahAnnouncements,
+  ahAuditLogs,
   ahChallenges,
   ahCodeAttempts,
   ahCodeBatches,
   ahCodes,
+  ahDisqualifications,
   ahEvents,
+  ahIntegrityEvents,
   ahStageProgress,
   ahStages,
   ahSubmissions,
+  ahTeamDevices,
   ahTeamMembers,
   ahTeams,
   ahTestCases,
+  ahVolunteers,
   type AhEvent,
   type AhStage,
 } from "@/server/db/schema";
+import { renderMarkdown } from "@/lib/markdown";
 import { TEST_QUESTIONS } from "@/lib/algohunt/test-content";
 import type { EventStatus } from "@/lib/algohunt/types";
 import { createCodeBatch } from "./codePool";
@@ -61,7 +68,6 @@ export const TEST_TEAMS_FIXTURE: ParsedTeamRow[] = [
   {
     teamName: "Code Alchemists",
     college: "PES University (EC Campus)",
-    teamCode: "TST-001",
     members: [
       { name: "Alice", email: "alice@example.com", isCaptain: true },
       { name: "Bob", email: "bob@example.com" },
@@ -71,7 +77,6 @@ export const TEST_TEAMS_FIXTURE: ParsedTeamRow[] = [
   {
     teamName: "Byte Bandits",
     college: "PES University (RR Campus)",
-    teamCode: "TST-002",
     members: [
       { name: "Dave", email: "dave@example.com", isCaptain: true },
       { name: "Eve", email: "eve@example.com" },
@@ -80,7 +85,6 @@ export const TEST_TEAMS_FIXTURE: ParsedTeamRow[] = [
   {
     teamName: "Algo Aces",
     college: "BMS College of Engineering",
-    teamCode: "TST-003",
     members: [
       { name: "Frank", email: "frank@example.com", isCaptain: true },
       { name: "Grace", email: "grace@example.com" },
@@ -91,7 +95,6 @@ export const TEST_TEAMS_FIXTURE: ParsedTeamRow[] = [
   {
     teamName: "Null Pointers",
     college: "RV College of Engineering",
-    teamCode: "TST-004",
     members: [
       { name: "Judy", email: "judy@example.com", isCaptain: true },
     ],
@@ -99,7 +102,6 @@ export const TEST_TEAMS_FIXTURE: ParsedTeamRow[] = [
   {
     teamName: "Syntax Strikers",
     college: "MSRIT",
-    teamCode: "TST-005",
     members: [
       { name: "Mallory", email: "mallory@example.com", isCaptain: true },
       { name: "Oscar", email: "oscar@example.com" },
@@ -107,6 +109,34 @@ export const TEST_TEAMS_FIXTURE: ParsedTeamRow[] = [
     ],
   },
 ];
+
+export class SeedRefusedError extends Error {}
+
+/** Delete a test event and everything in it, children first, in one batch (all or nothing). */
+async function wipeTestEvent(eventId: string): Promise<void> {
+  const db = getDb();
+  const teamIds = sql`(SELECT id FROM ah_teams WHERE event_id = ${eventId})`;
+  const challengeIds = sql`(SELECT id FROM ah_challenges WHERE event_id = ${eventId})`;
+  await db.batch([
+    db.delete(ahTeamMembers).where(sql`${ahTeamMembers.teamId} IN ${teamIds}`),
+    db.delete(ahTeamDevices).where(eq(ahTeamDevices.eventId, eventId)),
+    db.delete(ahIntegrityEvents).where(eq(ahIntegrityEvents.eventId, eventId)),
+    db.delete(ahDisqualifications).where(eq(ahDisqualifications.eventId, eventId)),
+    db.delete(ahStageProgress).where(eq(ahStageProgress.eventId, eventId)),
+    db.delete(ahSubmissions).where(eq(ahSubmissions.eventId, eventId)),
+    db.delete(ahCodeAttempts).where(eq(ahCodeAttempts.eventId, eventId)),
+    db.delete(ahCodes).where(eq(ahCodes.eventId, eventId)),
+    db.delete(ahCodeBatches).where(eq(ahCodeBatches.eventId, eventId)),
+    db.delete(ahAnnouncements).where(eq(ahAnnouncements.eventId, eventId)),
+    db.delete(ahVolunteers).where(eq(ahVolunteers.eventId, eventId)),
+    db.delete(ahAuditLogs).where(eq(ahAuditLogs.eventId, eventId)),
+    db.delete(ahTeams).where(eq(ahTeams.eventId, eventId)),
+    db.delete(ahStages).where(eq(ahStages.eventId, eventId)),
+    db.delete(ahTestCases).where(sql`${ahTestCases.challengeId} IN ${challengeIds}`),
+    db.delete(ahChallenges).where(eq(ahChallenges.eventId, eventId)),
+    db.delete(ahEvents).where(eq(ahEvents.id, eventId)),
+  ]);
+}
 
 export async function seedTestEvent(options: SeedTestEventOptions = {}): Promise<SeedTestEventResult> {
   const db = getDb();
@@ -123,35 +153,14 @@ export async function seedTestEvent(options: SeedTestEventOptions = {}): Promise
     .limit(1);
 
   if (existingEvent) {
-    if (reset) {
-      const eventId = existingEvent.id;
-      // Clean up previous test event artifacts
-      const teams = await db.select({ id: ahTeams.id }).from(ahTeams).where(eq(ahTeams.eventId, eventId));
-      const teamIds = teams.map((t) => t.id);
-
-      if (teamIds.length > 0) {
-        await db.delete(ahTeamMembers).where(inArray(ahTeamMembers.teamId, teamIds));
-        await db.delete(ahStageProgress).where(eq(ahStageProgress.eventId, eventId));
-        await db.delete(ahSubmissions).where(eq(ahSubmissions.eventId, eventId));
-        await db.delete(ahCodeAttempts).where(eq(ahCodeAttempts.eventId, eventId));
-        await db.delete(ahTeams).where(eq(ahTeams.eventId, eventId));
-      }
-
-      await db.delete(ahCodes).where(eq(ahCodes.eventId, eventId));
-      await db.delete(ahCodeBatches).where(eq(ahCodeBatches.eventId, eventId));
-      await db.delete(ahStages).where(eq(ahStages.eventId, eventId));
-
-      const challenges = await db.select({ id: ahChallenges.id }).from(ahChallenges).where(eq(ahChallenges.eventId, eventId));
-      const challengeIds = challenges.map((c) => c.id);
-      if (challengeIds.length > 0) {
-        await db.delete(ahTestCases).where(inArray(ahTestCases.challengeId, challengeIds));
-        await db.delete(ahChallenges).where(eq(ahChallenges.eventId, eventId));
-      }
-
-      await db.delete(ahEvents).where(eq(ahEvents.id, eventId));
-    } else {
-      throw new Error(`Event with slug "${slug}" already exists. Set reset=true to overwrite.`);
+    // Never touch a real event: only test events can be wiped and re-seeded.
+    if (!existingEvent.isTest) {
+      throw new SeedRefusedError(`"${slug}" is a real event. Only test events can be seeded.`);
     }
+    if (!reset) {
+      throw new SeedRefusedError(`Event with slug "${slug}" already exists. Set reset=true to overwrite.`);
+    }
+    await wipeTestEvent(existingEvent.id);
   }
 
   const now = Date.now();
@@ -199,6 +208,13 @@ export async function seedTestEvent(options: SeedTestEventOptions = {}): Promise
       title: q.title,
       difficulty: q.difficulty,
       statement: q.statement,
+      contentHtml: JSON.stringify({
+        statement: await renderMarkdown(q.statement),
+        inputFormat: await renderMarkdown(q.inputFormat ?? ""),
+        outputFormat: await renderMarkdown(q.outputFormat ?? ""),
+        constraints: await renderMarkdown(q.constraints ?? ""),
+        sampleExplanations: await Promise.all(q.samples.map((sample) => renderMarkdown(sample.explanation ?? ""))),
+      }),
       inputFormat: q.inputFormat ?? null,
       outputFormat: q.outputFormat ?? null,
       constraints: q.constraints ?? null,
@@ -262,7 +278,7 @@ export async function seedTestEvent(options: SeedTestEventOptions = {}): Promise
   const importResult = await importTeamsChunk({
     eventId,
     teams: TEST_TEAMS_FIXTURE,
-    startingIndex: 1,
+    markCheckedIn: true,
     actorId: "seed-test-script",
   });
 
