@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import * as XLSX from "xlsx";
-import { eq, sql } from "drizzle-orm";
+import { eq, inArray, like, sql } from "drizzle-orm";
+import type { BatchItem } from "drizzle-orm/batch";
 import { getDb } from "@/server/db";
 import { hashPassword } from "@/server/auth/password";
 import { ahAuditLogs, ahTeamMembers, ahTeams, type AhTeamMember } from "@/server/db/schema";
@@ -170,16 +171,117 @@ export function parseRosterFile(buffer: Buffer | ArrayBuffer): ParsedTeamRow[] {
   return parsedTeams;
 }
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function normalizeName(name: string): string {
+  return name.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function normalizePhone(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  return digits.length > 10 ? digits.slice(-10) : digits;
+}
+
 /**
- * Imports a chunk of teams (<= 10 teams per call) for a given event.
- * Hashes passwords with PBKDF2 (100,000 iterations).
- * Returns the created teams with plain-text passwords for credentials distribution.
+ * Roster checks before anything is stored (M6 brief §5.4). Errors block the import; warnings
+ * don't. Row numbers are 1-based positions in `teams`. Pure.
+ */
+export function validateRoster(
+  teams: readonly ParsedTeamRow[],
+  ctx: {
+    maxTeamSize: number;
+    existingNames: ReadonlySet<string>;
+    existingEmails: ReadonlySet<string>;
+    existingPhones: ReadonlySet<string>;
+  },
+): { errors: string[]; warnings: string[] } {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  const names = new Map<string, number>();
+  const emails = new Map<string, number>();
+  const phones = new Map<string, number>();
+
+  teams.forEach((team, i) => {
+    const row = i + 1;
+    const label = `Row ${row}${team.teamName.trim() ? ` (${team.teamName.trim()})` : ""}`;
+    const name = normalizeName(team.teamName);
+    if (!name) errors.push(`Row ${row}: the team name is empty.`);
+    else if (ctx.existingNames.has(name)) errors.push(`${label}: a team with this name is already in the event.`);
+    else if (names.has(name)) errors.push(`${label}: same team name as row ${names.get(name)}.`);
+    else names.set(name, row);
+
+    if (team.members.length === 0) errors.push(`${label}: no members.`);
+    if (team.members.length > ctx.maxTeamSize) {
+      errors.push(`${label}: ${team.members.length} members, the limit is ${ctx.maxTeamSize}.`);
+    }
+    if (team.members.length > 0 && !team.members.some((m) => m.isCaptain)) {
+      warnings.push(`${label}: no captain marked, so the first member becomes captain.`);
+    }
+
+    for (const member of team.members) {
+      if (!member.name.trim()) errors.push(`${label}: a member has no name.`);
+      const email = member.email?.trim().toLowerCase();
+      if (email) {
+        if (!EMAIL_PATTERN.test(email)) errors.push(`${label}: '${member.email}' is not an email address.`);
+        else if (ctx.existingEmails.has(email)) errors.push(`${label}: ${email} is already on a team in this event.`);
+        else if (emails.has(email) && emails.get(email) !== row) errors.push(`${label}: ${email} is also on row ${emails.get(email)}.`);
+        else emails.set(email, row);
+      }
+      const phone = member.phone ? normalizePhone(member.phone) : "";
+      if (phone) {
+        if (ctx.existingPhones.has(phone)) errors.push(`${label}: phone ${member.phone} is already on a team in this event.`);
+        else if (phones.has(phone) && phones.get(phone) !== row) errors.push(`${label}: phone ${member.phone} is also on row ${phones.get(phone)}.`);
+        else phones.set(phone, row);
+      } else if (member.name.trim()) {
+        warnings.push(`${label}: ${member.name.trim()} has no phone number.`);
+      }
+    }
+  });
+  return { errors, warnings };
+}
+
+/** Names, emails and phones already in the event, normalised the way validateRoster compares them. */
+export async function getRosterContext(eventId: string) {
+  const db = getDb();
+  const [teams, members] = await Promise.all([
+    db.select({ name: ahTeams.teamName }).from(ahTeams).where(eq(ahTeams.eventId, eventId)),
+    db.select({ email: ahTeamMembers.email, phone: ahTeamMembers.phone }).from(ahTeamMembers)
+      .innerJoin(ahTeams, eq(ahTeamMembers.teamId, ahTeams.id))
+      .where(eq(ahTeams.eventId, eventId)),
+  ]);
+  return {
+    existingNames: new Set(teams.map((t) => normalizeName(t.name))),
+    existingEmails: new Set(members.flatMap((m) => (m.email ? [m.email.trim().toLowerCase()] : []))),
+    existingPhones: new Set(members.flatMap((m) => (m.phone ? [normalizePhone(m.phone)] : [])).filter(Boolean)),
+  };
+}
+
+/**
+ * The next free number for a team code prefix, across ALL events: login looks a team up by its
+ * code alone, so two events must never share one.
+ */
+async function nextTeamNumber(prefix: string): Promise<number> {
+  const rows = await getDb().select({ code: ahTeams.teamCode }).from(ahTeams)
+    .where(like(ahTeams.teamCode, `${prefix}-%`));
+  let max = 0;
+  for (const { code } of rows) {
+    const n = Number(code.slice(prefix.length + 1).replace(/^T/, ""));
+    if (Number.isInteger(n) && n > max) max = n;
+  }
+  return max + 1;
+}
+
+/**
+ * Imports a chunk of teams (<= 10 per call, because PBKDF2 hashing is CPU-heavy on Workers).
+ * Every team, member and the audit row go in one batch, so a chunk is all or nothing. Plaintext
+ * passwords are returned once and never stored.
  */
 export async function importTeamsChunk(params: {
   eventId: string;
   teams: ParsedTeamRow[];
   startingIndex?: number;
   actorId?: string;
+  markCheckedIn?: boolean;
 }): Promise<
   | { ok: true; imported: ImportedTeamRecord[]; nextIndex: number }
   | { ok: false; code: ErrorCode; message: string }
@@ -190,6 +292,9 @@ export async function importTeamsChunk(params: {
   const event = await getEventById(eventId);
   if (!event) {
     return { ok: false, code: "NOT_FOUND", message: "Event not found." };
+  }
+  if (event.status === "ENDED" || event.status === "ARCHIVED") {
+    return { ok: false, code: "CONFLICT", message: "The event has ended, so no more teams can be added." };
   }
 
   if (teams.length === 0) {
@@ -204,102 +309,87 @@ export async function importTeamsChunk(params: {
     };
   }
 
-  const prefix = getTeamCodePrefix(event);
-  let currentIndex = params.startingIndex ?? 1;
+  const check = validateRoster(teams, { maxTeamSize: event.maxTeamSize, ...await getRosterContext(eventId) });
+  if (check.errors.length > 0) return { ok: false, code: "VALIDATION", message: check.errors[0] };
 
-  // Determine existing team count if startingIndex wasn't provided
-  if (params.startingIndex === undefined) {
-    const existingTeams = await db
-      .select({ id: ahTeams.id })
-      .from(ahTeams)
-      .where(eq(ahTeams.eventId, eventId));
-    currentIndex = existingTeams.length + 1;
+  const prefix = getTeamCodePrefix(event);
+  let currentIndex = params.startingIndex ?? await nextTeamNumber(prefix);
+  const customCodes = teams.flatMap((t) => (t.teamCode?.trim() ? [t.teamCode.trim().toUpperCase()] : []));
+  if (customCodes.length > 0) {
+    const taken = await db.select({ code: ahTeams.teamCode }).from(ahTeams).where(inArray(ahTeams.teamCode, customCodes));
+    if (taken.length > 0) return { ok: false, code: "CONFLICT", message: `Team code ${taken[0].code} is already in use.` };
   }
 
   const now = Date.now();
   const importedResults: ImportedTeamRecord[] = [];
+  const statements: BatchItem<"sqlite">[] = [];
 
   for (const teamInput of teams) {
     const teamId = crypto.randomUUID();
     const plainPassword = generateTeamPassword();
     const passwordHash = await hashPassword(plainPassword);
 
-    // Format team code (e.g. AH2-001, TST-001) or use specified
+    // AH2-001 on the real event, TST-001 / DRY-001 on test events (or the code given in the file).
     const teamCode =
-      teamInput.teamCode?.trim() ||
+      teamInput.teamCode?.trim().toUpperCase() ||
       `${prefix}-${String(currentIndex).padStart(3, "0")}`;
     currentIndex++;
 
-    // Insert team
-    await db.insert(ahTeams).values({
+    statements.push(db.insert(ahTeams).values({
       id: teamId,
       eventId,
       teamCode,
-      teamName: teamInput.teamName,
-      college: teamInput.college ?? null,
+      teamName: teamInput.teamName.trim().replace(/\s+/g, " "),
+      college: teamInput.college?.trim() || null,
       passwordHash,
       sessionEpoch: 0,
-      status: "REGISTERED",
+      status: params.markCheckedIn ? "CHECKED_IN" : "REGISTERED",
+      checkedInAt: params.markCheckedIn ? now : null,
       createdAt: now,
       updatedAt: now,
-    });
+    }));
 
-    // Insert team members
-    const memberRecords: ImportedTeamRecord["members"] = [];
-    for (let i = 0; i < teamInput.members.length; i++) {
-      const m = teamInput.members[i];
-      const memberId = crypto.randomUUID();
-      const isCaptain = m.isCaptain ?? i === 0;
-
-      await db.insert(ahTeamMembers).values({
-        id: memberId,
-        teamId,
-        name: m.name,
-        email: m.email ?? null,
-        phone: m.phone ?? null,
-        isCaptain,
-        createdAt: now,
-      });
-
-      memberRecords.push({
-        id: memberId,
-        name: m.name,
-        email: m.email ?? null,
-        phone: m.phone ?? null,
-        isCaptain,
-      });
-    }
+    const hasCaptain = teamInput.members.some((m) => m.isCaptain);
+    const memberRecords: ImportedTeamRecord["members"] = teamInput.members.map((m, i) => ({
+      id: crypto.randomUUID(),
+      name: m.name.trim(),
+      email: m.email?.trim() || null,
+      phone: m.phone?.trim() || null,
+      isCaptain: hasCaptain ? Boolean(m.isCaptain) : i === 0,
+    }));
+    statements.push(db.insert(ahTeamMembers).values(memberRecords.map((m) => ({ ...m, teamId, createdAt: now }))));
 
     importedResults.push({
       id: teamId,
       teamCode,
-      teamName: teamInput.teamName,
-      college: teamInput.college ?? null,
+      teamName: teamInput.teamName.trim().replace(/\s+/g, " "),
+      college: teamInput.college?.trim() || null,
       plainPassword,
       members: memberRecords,
     });
   }
 
-  if (actorId) {
-    await db.insert(ahAuditLogs).values({
-      id: crypto.randomUUID(),
-      eventId,
-      teamId: null,
-      actorType: "ADMIN",
-      actorId,
-      action: "import.teams",
-      targetType: "event",
-      targetId: eventId,
-      metadata: JSON.stringify({
-        count: importedResults.length,
-        teamCodes: importedResults.map((t) => t.teamCode),
-      }),
-      ip: null,
-      userAgent: null,
-      createdAt: now,
-    });
-  }
+  statements.push(db.insert(ahAuditLogs).values({
+    id: crypto.randomUUID(),
+    eventId,
+    teamId: null,
+    actorType: "ADMIN",
+    actorId: actorId ?? null,
+    action: "import.teams",
+    targetType: "event",
+    targetId: eventId,
+    metadata: JSON.stringify({
+      count: importedResults.length,
+      checkedIn: Boolean(params.markCheckedIn),
+      teamCodes: importedResults.map((t) => t.teamCode),
+    }),
+    ip: null,
+    userAgent: null,
+    createdAt: now,
+  }));
 
+  const [first, ...rest] = statements;
+  await db.batch([first, ...rest]);
   return { ok: true, imported: importedResults, nextIndex: currentIndex };
 }
 

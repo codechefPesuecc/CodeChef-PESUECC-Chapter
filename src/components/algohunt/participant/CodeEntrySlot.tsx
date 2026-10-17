@@ -2,31 +2,50 @@
 
 import { KeyRound, QrCode } from "lucide-react";
 import Link from "@/components/AppLink";
+import CodeEntry from "@/components/algohunt/code/CodeEntry";
+import type { CurrentStageView, RedeemResult } from "@/lib/algohunt/types";
 
 /**
- * TODO(CodeEntry): replace this placeholder card with M3's CodeEntry from
- * src/components/algohunt/code/CodeEntry.tsx once it is on the algohunt branch:
- *   <CodeEntry teamCode stageNumber={current.number} isFinal state={current.state}
- *     canPlay disabledReason onResult={() => refresh()} />
- * expanded and autofocused in CODE_PENDING, collapsed otherwise, hidden on the final question.
+ * The dashboard's code box. While a code is pending it is M3's CodeEntry itself, focused, so a
+ * team back from the hunt can type straight away; otherwise a link to the Enter code page.
  */
 export default function CodeEntrySlot({
-  stageNumber,
+  teamCode,
+  current,
   canPlay,
   disabledReason,
+  onResult,
 }: {
-  stageNumber: number;
+  teamCode: string;
+  current: CurrentStageView;
   canPlay: boolean;
   disabledReason: string | null;
+  onResult: (r: RedeemResult) => void;
 }) {
+  if (current.state === "CODE_PENDING") {
+    return (
+      <CodeEntry
+        key={current.number}
+        teamCode={teamCode}
+        stageNumber={current.number}
+        isFinal={current.isFinal}
+        state={current.state}
+        canPlay={canPlay}
+        disabledReason={disabledReason ?? undefined}
+        autoFocus
+        onResult={onResult}
+      />
+    );
+  }
   return (
     <div className="lc-panel space-y-3 p-4">
       <p className="flex items-center gap-2 text-sm font-semibold">
         <QrCode aria-hidden className="h-4 w-4 text-bronze" />
-        Enter the code from a QR to unlock Question {stageNumber + 1}
+        Enter the code from a QR to unlock Question {current.number + 1}
       </p>
+      <p className="text-xs text-charcoal/70">Solve Question {current.number} first. Codes you already found keep until then.</p>
       {canPlay ? (
-        <Link href="/algohunt/code" className="mecha-btn mecha-btn--solid w-full">
+        <Link href="/algohunt/code" className="mecha-btn w-full">
           <KeyRound aria-hidden className="h-4 w-4" />
           Enter code
         </Link>

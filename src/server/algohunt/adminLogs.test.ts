@@ -201,3 +201,28 @@ describe("AlgoHunt Admin Logs & Submissions (Module 3)", () => {
     expect(codeLogs.rows.map((r) => r.id)).toEqual(["audit-3", "audit-1"]);
   });
 });
+
+describe("listAudit paging", () => {
+  it("never skips rows that share a millisecond across a page boundary (bulk check-in)", async () => {
+    const fixture = await seedFixture({ codes: 0 });
+    const at = Date.now();
+    const rows = [
+      ...Array.from({ length: 3 }, (_, i) => ({ id: `late-${i}`, createdAt: at + 10 + i })),
+      ...Array.from({ length: 60 }, (_, i) => ({ id: `bulk-${i}`, createdAt: at })),
+      ...Array.from({ length: 4 }, (_, i) => ({ id: `early-${i}`, createdAt: at - 10 - i })),
+    ];
+    await getDb().insert(ahAuditLogs).values(rows.map((r) => ({
+      ...r, eventId: fixture.event.id, actorType: "ADMIN", actorId: "admin", action: "team.checked_in", metadata: "{}",
+    })));
+    const seen: string[] = [];
+    let before: number | undefined;
+    for (let page = 0; page < 10; page += 1) {
+      const res = await listAudit({ eventId: fixture.event.id, limit: 50, before });
+      seen.push(...res.rows.map((r) => r.id));
+      if (res.nextCursor === null) break;
+      before = res.nextCursor;
+    }
+    expect(new Set(seen).size).toBe(rows.length);
+    expect(seen).toHaveLength(rows.length);
+  });
+});

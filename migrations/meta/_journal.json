@@ -106,6 +106,13 @@
       "when": 1791882282099,
       "tag": "0014_algohunt_integrity_end_time",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "6",
+      "when": 1792267965873,
+      "tag": "0015_algohunt_active_device",
+      "breakpoints": true
     }
   ]
 }

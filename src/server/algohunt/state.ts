@@ -57,7 +57,7 @@ function nextStepFor(
     const n = current.number;
     return {
       kind: "FIND_CODE",
-      message: `Question ${n} solved ✓. Find a QR hidden on campus and enter its code to unlock Question ${n + 1}.`,
+      message: `Question ${n} solved ✓. Use your clue book to find a QR on campus, then enter its code to unlock Question ${n + 1}.`,
     };
   }
   if (!current) return { kind: "SOLVE", message: COPY.errors.STAGE_DISABLED };

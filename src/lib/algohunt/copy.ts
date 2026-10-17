@@ -2,11 +2,12 @@ import type { ErrorCode } from "./types";
 
 export const COPY = {
   start: "The hunt has begun. Solve Question 1. When it's accepted, find a QR on campus to unlock the next one.",
-  accepted: "Question solved! The next question is locked. Find a QR hidden on campus, scan it, and enter its code to unlock it.",
+  accepted: "Question solved! The next question is locked. Follow your clue book to a QR hidden on campus, scan it, and enter its code to unlock it.",
   codeUnlocked: "Code accepted! Question {n} is now unlocked.",
-  alreadyUnlocked: "Your team already unlocked Question {n} on another device. Your code wasn't used.",
+  alreadyUnlocked: "Question {n} is already unlocked for your team. If you typed a second code, it wasn't used: keep it for a later question.",
   alreadyUsed: "This code has already been used. Keep searching for another QR!",
   invalidCode: "That code isn't valid. Check it and try again.",
+  malformedCode: "Codes are 8 letters and digits, and never contain 0, O, 1, I, L or U. Check what you typed.",
   notSolved: "Solve your current question first. Then you can use a code to unlock the next one.",
   cooldown: "Too many invalid codes. Please wait {s}s before trying again.",
   finished: "You've completed AlgoHunt 2.0! Your finish has been recorded. Please report to the organizers for final verification.",

@@ -39,7 +39,8 @@ export type AnnouncementPriority = "INFO" | "WARNING" | "CRITICAL";
 export type ActorType = "ADMIN" | "VOLUNTEER" | "TEAM" | "SYSTEM";
 
 export type AuditAction =
-  | "team.login" | "team.login_failed" | "team.logout" | "team.checked_in" | "team.password_reset"
+  | "team.login" | "team.login_failed" | "team.logout" | "team.session_takeover" | "team.checked_in"
+  | "team.password_reset"
   | "submission.judged" | "stage.solved" | "stage.completed" | "team.finished"
   | "code.redeemed" | "code.attempt_suspicious"
   | "code.batch_created" | "code.disabled" | "code.enabled" | "code.batch_disabled" | "code.note_updated"

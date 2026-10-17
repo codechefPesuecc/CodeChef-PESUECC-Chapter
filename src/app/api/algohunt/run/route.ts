@@ -6,7 +6,7 @@
 import { z } from "zod";
 import { requireTeam } from "@/server/algohunt/teamSession";
 import { getTeamProgress, assertTeamCanPlay } from "@/server/algohunt/access";
-import { getStageChallenge, allowedLanguages, loadJudgeInput } from "@/server/algohunt/challenges";
+import { getStageChallenge, allowedLanguages, judgeLimits } from "@/server/algohunt/challenges";
 import { ok, fail, parseBody } from "@/server/algohunt/http";
 import { enforceRateLimits, clientIp } from "@/server/rateLimit";
 import { MAX_CODE_CHARS, MAX_STDIN_CHARS } from "@/server/limits";
@@ -33,9 +33,12 @@ export async function POST(req: Request): Promise<NextResponse> {
   // Rate limit (contract §15)
   const rateLimited = await enforceRateLimits([
     [`ah:run:team:${team.id}`, 20, 60_000],
-    [`ah:run:ip:${ip}`, 60, 60_000],
+    // Every laptop in the hall may share one public IP: the IP cap is a backstop, the team cap is the limit.
+    [`ah:run:ip:${ip}`, 1200, 60_000],
   ]);
-  if (rateLimited) return rateLimited;
+  if (rateLimited) {
+    return fail("RATE_LIMITED", undefined, { retryAfterSeconds: Number(rateLimited.headers.get("Retry-After") ?? "1") });
+  }
 
   // Parse body
   const parsed = await parseBody(req, runSchema);
@@ -68,16 +71,16 @@ export async function POST(req: Request): Promise<NextResponse> {
     return fail("UNSUPPORTED_LANGUAGE");
   }
 
-  // Load limits from the current challenge (not defaults)
-  const judgeInput = await loadJudgeInput(sc.challenge);
+  // The current question's limits (never its tests).
+  const limits = judgeLimits(sc.challenge);
 
   try {
     const result = await judgeExecute({
       language: judgeLang,
       code,
       stdin,
-      timeLimitMs: judgeInput.timeLimitMs,
-      memoryLimitBytes: judgeInput.memLimitBytes,
+      timeLimitMs: limits.timeLimitMs,
+      memoryLimitBytes: limits.memLimitBytes,
     });
 
     const firstTc = result.test_case_results?.[0];
@@ -98,20 +101,6 @@ export async function POST(req: Request): Promise<NextResponse> {
       memoryBytes: firstTc?.memory_bytes ?? result.peak_memory_bytes,
     });
   } catch (e) {
-    if (process.env.NODE_ENV === "development") {
-      console.warn("[algohunt:run] Judge offline in dev mode; simulating run output.");
-      const nums = stdin.trim().split(/\s+/).map(Number).filter((n) => !isNaN(n));
-      const simulatedOutput = nums.length >= 2 ? `${nums[0] + nums[1]}\n` : (stdin ? `${stdin.trim()}\n` : "");
-      return ok({
-        stdout: simulatedOutput,
-        stderr: "",
-        compileFailed: false,
-        compileStderr: "",
-        timedOut: false,
-        executionTimeMs: 14,
-        memoryBytes: 1048576,
-      });
-    }
     console.error("[algohunt:run]", e);
     return fail("JUDGE_UNAVAILABLE");
   }

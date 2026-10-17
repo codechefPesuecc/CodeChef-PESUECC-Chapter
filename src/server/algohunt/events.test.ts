@@ -4,7 +4,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { EVENT_TRANSITIONS, type EventStatus } from "@/lib/algohunt/types";
 import { getDb } from "@/server/db";
-import { ahAuditLogs, ahEvents } from "@/server/db/schema";
+import { ahAuditLogs, ahEvents, ahStages } from "@/server/db/schema";
 import {
   createEvent,
   getEventById,
@@ -12,6 +12,7 @@ import {
   getTeamCodePrefix,
   listEvents,
   resolveAdminEvent,
+  stageOrderProblem,
   transitionEvent,
   updateEventFlags,
 } from "./events";
@@ -32,6 +33,20 @@ describe("event state machine", () => {
     const audits = await getDb().select().from(ahAuditLogs).where(eq(ahAuditLogs.action, "event.transition"));
     expect(audits).toHaveLength(1);
     expect(JSON.parse(audits[0].metadata)).toEqual({ from, to });
+  });
+
+  it("refuses START when the question order can't be finished, and names the problem", async () => {
+    const none = await seedFixture({ eventStatus: "READY", stages: 0, codes: 0, teams: 0 });
+    const noQuestions = await transitionEvent({ eventId: none.event.id, to: "LIVE", actorId: "admin-1" });
+    expect(noQuestions).toMatchObject({ ok: false, code: "CONFLICT" });
+    if (!noQuestions.ok) expect(noQuestions.message).toMatch(/no questions/);
+
+    const fixture = await seedFixture({ eventStatus: "READY", stages: 3, codes: 0, teams: 0 });
+    await getDb().update(ahStages).set({ isFinal: false }).where(eq(ahStages.eventId, fixture.event.id));
+    const noFinal = await transitionEvent({ eventId: fixture.event.id, to: "LIVE", actorId: "admin-1" });
+    expect(noFinal).toMatchObject({ ok: false, code: "CONFLICT" });
+    if (!noFinal.ok) expect(noFinal.message).toMatch(/only final one/);
+    expect(await stageOrderProblem(fixture.event.id)).not.toBeNull();
   });
 
   it("rejects a disallowed transition", async () => {

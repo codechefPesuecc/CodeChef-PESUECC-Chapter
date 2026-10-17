@@ -13,6 +13,7 @@ export default function ReadinessStrip({ readiness }: { readiness: Readiness }) 
       <p className="font-mono text-xs text-chocolate">
         Questions {readiness.stages} · Unverified {readiness.challengesUnverified} · Final{" "}
         {readiness.finalStageOk ? "✓" : "✗"} · Active codes {readiness.activeCodes} · Checked in {readiness.checkedInTeams}
+        {readiness.registeredTeams > 0 ? ` · Not checked in ${readiness.registeredTeams}` : ""}
       </p>
       {bad && (
         <ul className="mt-2 list-disc space-y-0.5 pl-5 text-xs text-red-700 dark:text-red-300">

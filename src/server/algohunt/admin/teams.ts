@@ -181,7 +181,7 @@ export async function getTeamDetail(teamId: string): Promise<AdminTeamDetail | n
 function publicTeamFields(team: AhTeam): Omit<AhTeam, "passwordHash"> {
   return {
     id: team.id, eventId: team.eventId, teamCode: team.teamCode, teamName: team.teamName, college: team.college,
-    sessionEpoch: team.sessionEpoch, status: team.status, checkedInAt: team.checkedInAt, finishedAt: team.finishedAt,
+    sessionEpoch: team.sessionEpoch, activeDeviceId: team.activeDeviceId, status: team.status, checkedInAt: team.checkedInAt, finishedAt: team.finishedAt,
     disqualifiedAt: team.disqualifiedAt, disqualificationReason: team.disqualificationReason,
     createdAt: team.createdAt, updatedAt: team.updatedAt,
   };
@@ -269,7 +269,7 @@ export async function resetTeamPassword(p: { teamId: string; adminId: string; ip
   const now = Date.now();
   const [updated] = await db.batch([
     db.update(ahTeams).set({
-      passwordHash, sessionEpoch: sql`${ahTeams.sessionEpoch} + 1`, updatedAt: now,
+      passwordHash, sessionEpoch: sql`${ahTeams.sessionEpoch} + 1`, activeDeviceId: null, updatedAt: now,
     }).where(eq(ahTeams.id, p.teamId)).returning({ id: ahTeams.id }),
     auditInsert(db, {
       eventId: team.eventId, teamId: p.teamId, actorType: "ADMIN", actorId: p.adminId,

@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import Link from "@/components/AppLink";
 import MechaPanel from "@/components/cp-arena/MechaPanel";
-import { formatCodeForDisplay, normalizeCode } from "@/lib/algohunt/codes";
+import { formatCodeForDisplay, isWellFormedCode, normalizeCode } from "@/lib/algohunt/codes";
 import { COPY } from "@/lib/algohunt/copy";
 import type { RedeemResult, StageState } from "@/lib/algohunt/types";
 
@@ -25,6 +25,8 @@ export interface CodeEntryProps {
   state: StageState; // from ParticipantState.current.state
   canPlay: boolean; // false when paused/ended/not checked in
   disabledReason?: string;
+  /** Focus the input on mount (the dashboard does this while a code is pending). */
+  autoFocus?: boolean;
   onResult?: (r: RedeemResult) => void;
 }
 
@@ -44,6 +46,7 @@ export default function CodeEntry({
   state,
   canPlay,
   disabledReason,
+  autoFocus,
   onResult,
 }: CodeEntryProps) {
   const storageKey = `ah:code:${teamCode}:${stageNumber}`;
@@ -67,6 +70,8 @@ export default function CodeEntry({
       setCooldownSeconds((prev) => {
         if (prev === null || prev <= 1) {
           clearInterval(interval);
+          // The wait is over: drop the stale "wait Ns" message.
+          setResult((r) => (r?.kind === "COOLDOWN" ? null : r));
           return null;
         }
         return prev - 1;
@@ -102,6 +107,8 @@ export default function CodeEntry({
   const isCooldown = cooldownSeconds !== null && cooldownSeconds > 0;
   const normalized = normalizeCode(rawCode);
   const preview = normalized ? formatCodeForDisplay(normalized) : "";
+  // A code that can't exist is a typo: don't send it (it would only waste a try).
+  const wellFormed = isWellFormedCode(normalized);
 
   // Final question check
   if (isFinal) {
@@ -133,7 +140,7 @@ export default function CodeEntry({
     isCooldown ||
     !canPlay ||
     !isSolved ||
-    normalized.length === 0;
+    !wellFormed;
 
   async function handleUnlock(e?: React.FormEvent) {
     if (e) e.preventDefault();
@@ -211,7 +218,7 @@ export default function CodeEntry({
     } catch {
       setResult({
         kind: "NETWORK_ERROR",
-        message: "Connection problem. Your code is saved; tap Unlock to retry.",
+        message: "Connection problem. Your code is saved; press Unlock to retry.",
       });
     } finally {
       setSubmitting(false);
@@ -272,12 +279,17 @@ export default function CodeEntry({
                 spellCheck={false}
                 maxLength={16}
                 disabled={isCooldown}
+                autoFocus={autoFocus}
                 value={rawCode}
                 onChange={(e) => handleInputChange(e.target.value)}
                 placeholder="7FQ2-M8K3"
                 className="w-full rounded-md border border-chocolate/20 bg-cream/30 px-4 py-3 font-mono text-xl sm:text-2xl font-bold tracking-[0.25em] uppercase text-charcoal placeholder:text-charcoal/25 focus:border-bronze focus:bg-white focus:outline-none focus:ring-1 focus:ring-bronze disabled:bg-neutral-100 disabled:text-neutral-400 transition"
               />
             </div>
+
+            {normalized.length > 0 && !wellFormed && (
+              <p className="text-xs text-amber-800 dark:text-amber-200">{COPY.malformedCode}</p>
+            )}
 
             {/* Live formatting preview */}
             {preview && preview !== rawCode && (

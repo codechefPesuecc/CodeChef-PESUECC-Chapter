@@ -15,6 +15,7 @@ const EVERY_ACTION: Record<AuditAction, Record<string, unknown>> = {
   "team.login": {},
   "team.login_failed": { teamCode: FIXTURE_CODE },
   "team.logout": {},
+  "team.session_takeover": { fromKind: "DESKTOP", toKind: "MOBILE" },
   "team.checked_in": { bulk: true },
   "team.password_reset": {},
   "submission.judged": { verdict: "WA", challengeId: "ch-1" },

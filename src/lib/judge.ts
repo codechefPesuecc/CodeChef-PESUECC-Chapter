@@ -125,6 +125,17 @@ export async function judgeHealth(): Promise<JudgeHealth> {
   return (await res.json()) as JudgeHealth;
 }
 
+/**
+ * Akiro hangs when identical sources are judged at the same moment: 6 parallel copies of one program
+ * left some unanswered past 45 s, while 16 distinct programs at once all finished in under a second
+ * (measured 2026-10-18). Identical sources are normal here (teams running the starter code at the
+ * start, the same AI answer), so each job gets a trailing comment that makes its source unique.
+ */
+export function withJobMarker(judgeLang: string, code: string, jobId: string): string {
+  const comment = judgeLang === "python" || judgeLang === "pypy" ? "#" : judgeLang === "sql" ? "--" : "//";
+  return `${code}\n${comment} ${jobId}\n`;
+}
+
 export async function judgeExecute(params: {
   language: string;
   code: string;
@@ -144,10 +155,11 @@ export async function judgeExecute(params: {
 
   await acquireSlot();
   try {
+    const jobId = `sub-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     const payload = {
-      job_id: `sub-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      job_id: jobId,
       language: judgeLang,
-      source_code: params.code,
+      source_code: withJobMarker(judgeLang, params.code, jobId),
       time_limit_ms: params.timeLimitMs ?? 2000,
       memory_limit_bytes: params.memoryLimitBytes ?? 268435456,
       test_cases: testCases,
@@ -157,17 +169,30 @@ export async function judgeExecute(params: {
     let attempt = 0;
     let res: Response | null = null;
     let lastErrorText = "";
+    let timedOut = false;
 
     while (attempt <= MAX_RETRIES) {
-      res = await fetch(`${JUDGE_URL}/api/v1/submit`, {
-        method: "POST",
-        headers: getHeaders(),
-        cache: "no-store",
-        // Cap each attempt so a hung/slow judge can't pin the Worker subrequest
-        // indefinitely (a runaway would stall requests and burn the CPU budget).
-        signal: AbortSignal.timeout(30_000),
-        body: JSON.stringify(payload),
-      });
+      try {
+        res = await fetch(`${JUDGE_URL}/api/v1/submit`, {
+          method: "POST",
+          headers: getHeaders(),
+          cache: "no-store",
+          // Cap each attempt so a hung/slow judge can't pin the Worker subrequest
+          // indefinitely (a runaway would stall requests and burn the CPU budget).
+          signal: AbortSignal.timeout(30_000),
+          body: JSON.stringify(payload),
+        });
+      } catch (error) {
+        // Akiro occasionally leaves a job unanswered (seen on the local build); the next job goes
+        // through. Retry a timeout once, as a new job, before giving up.
+        if (error instanceof Error && error.name === "TimeoutError" && !timedOut) {
+          timedOut = true;
+          payload.job_id = `${jobId}-r`;
+          payload.source_code = withJobMarker(judgeLang, params.code, payload.job_id);
+          continue;
+        }
+        throw error;
+      }
 
       if (res.ok) {
         break;

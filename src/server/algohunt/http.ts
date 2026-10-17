@@ -95,3 +95,38 @@ export async function parseBody<S extends z.ZodTypeAny>(
   }
   return { ok: true, data: parsed.data };
 }
+
+/**
+ * Parse a JSON body too big for parseBody's 256 KB cap (question imports and test chunks), in the
+ * same order: same-origin, JSON content type, then the size cap, then the strict schema. The raw
+ * text comes back too, so a dry run can hash exactly what was sent.
+ */
+export async function parseLargeBody<S extends z.ZodTypeAny>(
+  req: Request,
+  schema: S,
+  maxBytes: number,
+): Promise<{ ok: true; data: z.infer<S>; text: string } | { ok: false; response: NextResponse }> {
+  const originError = checkOrigin(req);
+  if (originError) return { ok: false, response: originError };
+  if (!req.headers.get("content-type")?.toLowerCase().includes("application/json")) {
+    return { ok: false, response: fail("VALIDATION", "Expected a JSON request body.") };
+  }
+  const tooLarge = () => fail("PAYLOAD_TOO_LARGE", `The upload is over ${Math.round(maxBytes / 1024 / 1024)} MB.`);
+  const declared = Number(req.headers.get("content-length") ?? "0");
+  if (declared > maxBytes) return { ok: false, response: tooLarge() };
+  const text = await req.text();
+  if (text.length > maxBytes) return { ok: false, response: tooLarge() };
+  let body: unknown;
+  try {
+    body = JSON.parse(text);
+  } catch {
+    return { ok: false, response: fail("VALIDATION", "Invalid JSON body.") };
+  }
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) {
+    const first = parsed.error.issues[0];
+    const path = first.path.join(".");
+    return { ok: false, response: fail("VALIDATION", `${path ? `${path}: ` : ""}${first.message}`) };
+  }
+  return { ok: true, data: parsed.data, text };
+}

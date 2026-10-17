@@ -201,26 +201,6 @@ export async function redeemCodeForTeam(p: {
   }
   const n = cur.stage.stageNumber;
 
-  // 6. cur.stage.isFinal check
-  if (cur.stage.isFinal) {
-    await db.insert(ahCodeAttempts).values({
-      id: crypto.randomUUID(),
-      eventId: p.ctx.event.id,
-      teamId: p.ctx.team.id,
-      stageId: cur.stage.id,
-      submittedCode: code,
-      result: "NOT_SOLVED",
-      codeId: null,
-      ip: p.ip,
-      createdAt: now,
-    });
-    return {
-      ok: false,
-      code: "CHALLENGE_NOT_SOLVED",
-      message: "The final question needs no code. Solve it to finish AlgoHunt 2.0!",
-    };
-  }
-
   // 5. Just moved on check
   const prevStage = n > 1 ? progress.stages.find((s) => s.stage.stageNumber === n - 1) : null;
   const prevRedeemedAt = prevStage?.progress?.codeRedeemedAt;
@@ -244,6 +224,26 @@ export async function redeemCodeForTeam(p: {
         unlockedStageNumber: n,
         invalidAttemptsLeft: null,
       },
+    };
+  }
+
+  // 6. cur.stage.isFinal check
+  if (cur.stage.isFinal) {
+    await db.insert(ahCodeAttempts).values({
+      id: crypto.randomUUID(),
+      eventId: p.ctx.event.id,
+      teamId: p.ctx.team.id,
+      stageId: cur.stage.id,
+      submittedCode: code,
+      result: "NOT_SOLVED",
+      codeId: null,
+      ip: p.ip,
+      createdAt: now,
+    });
+    return {
+      ok: false,
+      code: "CHALLENGE_NOT_SOLVED",
+      message: "The final question needs no code. Solve it to finish AlgoHunt 2.0!",
     };
   }
 
@@ -308,15 +308,17 @@ export async function redeemCodeForTeam(p: {
     };
   }
 
-  // 8. !isWellFormedCode check
+  // 8. !isWellFormedCode check. A malformed code can never match, so it is a typo, not a guess:
+  // it costs no cooldown strike.
   if (!isWellFormedCode(code)) {
-    return await handleInvalidAttempt(cur.stage.id);
+    return { ok: false, code: "VALIDATION", message: COPY.malformedCode };
   }
 
   // 9. Atomic redeem call
   const r = await redeemCode({ ctx: p.ctx, stageId: cur.stage.id, code, ip: p.ip });
 
   if (r.outcome === "UNLOCKED") {
+    // The unlock is already committed; a failed log write must not tell the team it wasn't.
     await db.insert(ahCodeAttempts).values({
       id: crypto.randomUUID(),
       eventId: p.ctx.event.id,
@@ -327,7 +329,7 @@ export async function redeemCodeForTeam(p: {
       codeId: r.codeId,
       ip: p.ip,
       createdAt: now,
-    });
+    }).catch((error: unknown) => console.error("[algohunt:codes] attempt log", error));
     return {
       ok: true,
       result: {
@@ -522,9 +524,11 @@ export async function listCodes(p: {
         )!,
       );
     } else {
+      // A code may be pasted as printed ("7FQ2-M8K3"); codes are stored without the dash.
+      const asCode = normalizeCode(q);
       conditions.push(
         or(
-          like(ahCodes.code, `%${q.toUpperCase()}%`),
+          like(ahCodes.code, `%${asCode || q.toUpperCase()}%`),
           like(ahTeams.teamCode, `%${q}%`),
           like(ahTeams.teamName, `%${q}%`),
         )!,
@@ -824,7 +828,7 @@ export async function listCodeAttempts(p: {
     conditions.push(inArray(ahCodeAttempts.teamId, targetTeamIds));
   }
   if (p.teamCode) {
-    conditions.push(eq(ahTeams.teamCode, p.teamCode));
+    conditions.push(eq(ahTeams.teamCode, p.teamCode.trim().toUpperCase()));
   }
   if (p.result) {
     conditions.push(eq(ahCodeAttempts.result, p.result));

@@ -44,8 +44,8 @@ describe("question-schema limits", () => {
     expect(QUESTION_LIMITS.maxTests).toBe(60);
     expect(QUESTION_LIMITS.minTests).toBeLessThan(QUESTION_LIMITS.maxTests);
     expect(QUESTION_LIMITS.maxSamples).toBe(5);
-    expect(QUESTION_LIMITS.maxInputChars).toBe(1_500_000);
-    expect(QUESTION_LIMITS.maxOutputChars).toBe(400_000);
+    expect(QUESTION_LIMITS.maxInputChars).toBe(500_000);
+    expect(QUESTION_LIMITS.maxOutputChars).toBe(60_000);
     expect(QUESTION_LIMITS.maxTotalChars).toBe(12_000_000);
     expect(QUESTION_LIMITS.minTimeMs).toBe(500);
     expect(QUESTION_LIMITS.maxTimeMs).toBe(5000);

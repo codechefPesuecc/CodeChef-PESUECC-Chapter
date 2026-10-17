@@ -2,13 +2,13 @@ import { NextResponse } from "next/server";
 import { and, eq, ne } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/server/db";
-import { ahEvents, ahTeams } from "@/server/db/schema";
+import { ahEvents, ahTeamDevices, ahTeams } from "@/server/db/schema";
 import { verifyPassword } from "@/server/auth/password";
 import { clientIp, enforceRateLimits } from "@/server/rateLimit";
 import { writeAudit } from "@/server/algohunt/audit";
-import { setDeviceCookie, trackDevice } from "@/server/algohunt/devices";
+import { deviceKind, recordDevice, resolveDeviceId, setDeviceCookie } from "@/server/algohunt/devices";
 import { fail, ok, parseBody } from "@/server/algohunt/http";
-import { AH_TEAM_COOKIE, createTeamToken } from "@/server/algohunt/teamSession";
+import { AH_TEAM_COOKIE, createTeamToken, startTeamSession } from "@/server/algohunt/teamSession";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +25,8 @@ export async function POST(req: Request): Promise<NextResponse> {
     const teamCode = parsed.data.teamCode.trim().toUpperCase().replace(/\s+/g, " ");
     const ip = clientIp(req);
     const limited = await enforceRateLimits([
-      [`ah:login:ip:${ip}`, 30, 600_000],
+      // The whole hall may log in from one public IP at 10:30, so the IP cap is a backstop only.
+      [`ah:login:ip:${ip}`, 600, 600_000],
       [`ah:login:team:${teamCode}`, 10, 600_000],
     ]);
     if (limited) {
@@ -60,19 +61,27 @@ export async function POST(req: Request): Promise<NextResponse> {
       return fail("UNAUTHENTICATED", "Wrong team code or password.");
     }
 
+    // One laptop per team: this login signs out every other browser holding the team's cookie.
+    const device = await resolveDeviceId();
+    const session = await startTeamSession({ team: row.team, deviceId: device.id });
     const response = ok({
       team: { code: row.team.teamCode, name: row.team.teamName },
       event: { name: row.event.name, status: row.event.status },
     });
-    response.cookies.set(AH_TEAM_COOKIE, createTeamToken(row.team.id, row.team.sessionEpoch), {
+    response.cookies.set(AH_TEAM_COOKIE, createTeamToken(row.team.id, session.epoch), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
       maxAge: 86400,
     });
-    const newDeviceId = await trackDevice({ ctx: row, req, login: true });
-    if (newDeviceId) setDeviceCookie(response, newDeviceId);
+    if (device.isNew) setDeviceCookie(response, device.id);
+    try {
+      await recordDevice({ ctx: row, deviceId: device.id, req, login: true });
+    } catch (error) {
+      console.error("[algohunt:devices]", error); // device tracking must never break a login
+    }
+    const userAgent = req.headers.get("user-agent") ?? undefined;
     await writeAudit({
       eventId: row.event.id,
       teamId: row.team.id,
@@ -80,11 +89,35 @@ export async function POST(req: Request): Promise<NextResponse> {
       actorId: row.team.id,
       action: "team.login",
       ip,
-      userAgent: req.headers.get("user-agent") ?? undefined,
+      userAgent,
     });
+    if (session.replacedDeviceId) {
+      await auditTakeover({ teamId: row.team.id, eventId: row.event.id, fromDeviceId: session.replacedDeviceId, req, ip });
+    }
     return response;
   } catch (error) {
     console.error("[algohunt:login]", error);
     return fail("INTERNAL");
+  }
+}
+
+/** The command center's "logged in on another laptop" alert. Best effort, like every login audit. */
+async function auditTakeover(p: { teamId: string; eventId: string; fromDeviceId: string; req: Request; ip: string }) {
+  try {
+    const [previous] = await getDb().select({ kind: ahTeamDevices.kind }).from(ahTeamDevices)
+      .where(and(eq(ahTeamDevices.teamId, p.teamId), eq(ahTeamDevices.deviceId, p.fromDeviceId)))
+      .limit(1);
+    await writeAudit({
+      eventId: p.eventId,
+      teamId: p.teamId,
+      actorType: "TEAM",
+      actorId: p.teamId,
+      action: "team.session_takeover",
+      metadata: { fromKind: previous?.kind ?? null, toKind: deviceKind(p.req.headers) },
+      ip: p.ip,
+      userAgent: p.req.headers.get("user-agent") ?? undefined,
+    });
+  } catch (error) {
+    console.error("[algohunt:login] takeover audit", error);
   }
 }

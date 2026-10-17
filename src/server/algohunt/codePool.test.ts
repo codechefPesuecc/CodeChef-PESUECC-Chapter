@@ -209,7 +209,7 @@ describe("AlgoHunt Code Pool & Redemption Engine (Module 3)", () => {
   });
 
   // Test 5
-  it("5. Unknown, disabled and malformed (7-char) codes -> INVALID with invalidAttemptsLeft 4, 3, 2, 1, 0. The next attempt -> COOLDOWN (429, retryAfterSeconds > 0). Advance 10 min -> allowed again. COOLDOWN rows don't extend the window", async () => {
+  it("5. Unknown and disabled codes -> INVALID with invalidAttemptsLeft 4, 3, 2, 1, 0; a malformed code is a typo (VALIDATION, no strike). The next attempt -> COOLDOWN (429, retryAfterSeconds > 0). Advance 10 min -> allowed again. COOLDOWN rows don't extend the window", async () => {
     const fixture = await seedFixture({ codes: 5 });
     const ctx = ctxFor(fixture);
     await solveCurrent(fixture);
@@ -220,10 +220,18 @@ describe("AlgoHunt Code Pool & Redemption Engine (Module 3)", () => {
       .set({ status: "DISABLED" })
       .where(eq(ahCodes.id, fixture.codes[0].id));
 
+    // Malformed (7 chars, or a letter that never appears in a code) -> VALIDATION, and no strike.
+    for (const typo of ["7FQ2M8K", "7FQ2M8KO"]) {
+      const res = await redeemCodeForTeam({ ctx, rawCode: typo, ip: "127.0.0.1" });
+      expect(res.ok).toBe(false);
+      if (res.ok) return;
+      expect(res.code).toBe("VALIDATION");
+    }
+
     const invalidInputs = [
       fixture.codes[0].code, // disabled code -> INVALID (left = 4)
       "XXXXXXXX", // unknown code -> INVALID (left = 3)
-      "7FQ2M8K", // malformed 7-char -> INVALID (left = 2)
+      "QQQQQQQQ", // unknown code -> INVALID (left = 2)
       "YYYYYYYY", // unknown code -> INVALID (left = 1)
       "ZZZZZZZZ", // unknown code -> INVALID (left = 0)
     ];
@@ -249,7 +257,7 @@ describe("AlgoHunt Code Pool & Redemption Engine (Module 3)", () => {
     vi.setSystemTime(Date.now() + 600_001);
 
     // Should be allowed again now (not COOLDOWN)
-    const allowedAgain = await redeemCodeForTeam({ ctx, rawCode: "UNKNOWN1", ip: "127.0.0.1" });
+    const allowedAgain = await redeemCodeForTeam({ ctx, rawCode: "NKNWN234", ip: "127.0.0.1" });
     expect(allowedAgain.ok).toBe(true);
     if (!allowedAgain.ok) return;
     expect(allowedAgain.result.result).toBe("INVALID");
@@ -284,7 +292,13 @@ describe("AlgoHunt Code Pool & Redemption Engine (Module 3)", () => {
     await solveCurrent(fixture);
     await redeemCodeForTeam({ ctx, rawCode: fixture.codes[0].code, ip: "127.0.0.1" });
 
-    // Now on final question (Stage 2)
+    // Right after the unlock, a second code is treated as a retry: ALREADY_UNLOCKED, nothing used.
+    const retry = await redeemCodeForTeam({ ctx, rawCode: fixture.codes[1].code, ip: "127.0.0.1" });
+    expect(retry).toMatchObject({ ok: true, result: { result: "ALREADY_UNLOCKED", unlockedStageNumber: 2 } });
+
+    // A minute later, on the final question (Stage 2): no code needed.
+    vi.useFakeTimers();
+    vi.setSystemTime(Date.now() + 61_000);
     const resFinal = await redeemCodeForTeam({ ctx, rawCode: fixture.codes[1].code, ip: "127.0.0.1" });
     expect(resFinal).toMatchObject({
       ok: false,

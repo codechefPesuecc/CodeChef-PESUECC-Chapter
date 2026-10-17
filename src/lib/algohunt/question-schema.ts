@@ -21,8 +21,10 @@ export const QUESTION_LIMITS = {
   minTests: 5,
   maxTests: 60,
   maxSamples: 5,
-  maxInputChars: 1_500_000,
-  maxOutputChars: 400_000,
+  // Akiro's own caps: it rejects a test input over 512 KiB, and a program printing more than its
+  // 64 KiB pipe buffer hangs until the time limit, so every expected output must stay below that.
+  maxInputChars: 500_000,
+  maxOutputChars: 60_000,
   maxTotalChars: 12_000_000,
   minTimeMs: 500,
   maxTimeMs: 5_000,
@@ -67,6 +69,11 @@ const Sample = z
   .strict();
 
 // Build the plain object schema first (so .omit() still works), then refine it.
+/** Size in UTF-8 bytes, which is what the judge counts. */
+function utf8Length(text: string): number {
+  return new TextEncoder().encode(text).length;
+}
+
 export const QuestionBaseSchema = ChallengeSchema
   .omit({ date: true }) // AlgoHunt has no Problem-of-the-Day date
   .extend({
@@ -102,18 +109,18 @@ export const QuestionSchema = QuestionBaseSchema.superRefine((q, ctx) => {
   let totalChars = 0;
   for (let i = 0; i < q.tests.length; i++) {
     const t = q.tests[i];
-    if (t.input.length > L.maxInputChars) {
+    if (utf8Length(t.input) > L.maxInputChars) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["tests", i, "input"],
-        message: `Test ${i + 1} input is ${t.input.length} chars, max is ${L.maxInputChars}.`,
+        message: `Test ${i + 1} input is ${utf8Length(t.input)} bytes, max is ${L.maxInputChars} (the judge's limit).`,
       });
     }
-    if (t.output.length > L.maxOutputChars) {
+    if (utf8Length(t.output) > L.maxOutputChars) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["tests", i, "output"],
-        message: `Test ${i + 1} output is ${t.output.length} chars, max is ${L.maxOutputChars}.`,
+        message: `Test ${i + 1} output is ${utf8Length(t.output)} bytes, max is ${L.maxOutputChars}: the judge can't pass a program printing more.`,
       });
     }
     totalChars += t.input.length + t.output.length;

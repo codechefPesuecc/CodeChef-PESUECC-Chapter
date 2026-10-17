@@ -64,7 +64,7 @@ import * as teamSession from "@/server/algohunt/teamSession";
 import * as submissions from "@/server/algohunt/submissions";
 import * as rateLimit from "@/server/rateLimit";
 import type { TeamContext } from "@/server/algohunt/teamSession";
-import { makeCtx, makeStage, makeChallenge, makeStageWithProgress, makeTeamProgress } from "@/server/algohunt/testing/fixtures";
+import { makeCtx, makeStage, makeStageWithProgress, makeTeamProgress } from "@/server/algohunt/testing/fixtures";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -385,7 +385,8 @@ describe("POST /api/algohunt/submissions", () => {
     const res = await POST(makeRequest(validBody));
     expect(res.status).toBe(429);
     const json = await res.json();
-    expect(json.rateLimited).toBe(true);
+    expect(json.code).toBe("RATE_LIMITED");
+    expect(typeof json.retryAfterSeconds).toBe("number");
   });
 });
 

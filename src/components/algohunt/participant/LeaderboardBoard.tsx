@@ -15,7 +15,7 @@ interface LeaderboardResponse {
 }
 
 const RANKED_BY: Record<RankingMode, string> = {
-  SOLVED_THEN_TIME: "Ranked by: finish time, then questions solved, then who solved them first.",
+  SOLVED_THEN_TIME: "Ranked by questions solved (most first), then time: finished teams by finish time, the rest by who reached their last solve first.",
   POINTS_THEN_TIME: "Ranked by: points, then who solved them first.",
 };
 

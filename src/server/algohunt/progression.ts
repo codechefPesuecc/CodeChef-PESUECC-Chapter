@@ -241,7 +241,7 @@ export async function adminCompleteStage(p: {
     conditionalAudit(db, {
       eventId: p.eventId, teamId: p.teamId, actorType: "ADMIN", actorId: p.adminId,
       action: "override.complete_stage", targetType: "stage", targetId: p.stageId,
-      metadata: sql`json_object('stageNumber', ${stageNumber}, 'reason', ${p.reason})`,
+      metadata: sql`json_object('stageNumber', ${stageNumber}, 'isFinal', json(${stage.stage.isFinal ? "true" : "false"}), 'reason', ${p.reason})`,
       ip: p.ip, now,
       condition: sql`EXISTS (SELECT 1 FROM ah_stage_progress WHERE team_id = ${p.teamId}
         AND stage_id = ${p.stageId} AND completion_request_id = ${reqId})`,
@@ -303,11 +303,16 @@ export async function adminRevertStage(p: {
       eq(ahStageProgress.teamId, p.teamId), eq(ahStageProgress.stageId, p.stageId),
       eq(ahStageProgress.completed, true),
     )).returning({ id: ahStageProgress.id }),
-    db.update(ahTeams).set({ status: "CHECKED_IN", finishedAt: null, updatedAt: now })
+    // Un-finish the team. A disqualified team keeps its status but loses finishedAt too, so a
+    // later reinstate doesn't bring back a finish the revert took away.
+    db.update(ahTeams).set({
+      status: sql`CASE WHEN ${ahTeams.status} = 'FINISHED' THEN 'CHECKED_IN' ELSE ${ahTeams.status} END`,
+      finishedAt: null, updatedAt: now,
+    })
       .where(and(
-        eq(ahTeams.id, p.teamId), eq(ahTeams.status, "FINISHED"),
-        sql`EXISTS (SELECT 1 FROM ah_stage_progress WHERE team_id = ${p.teamId}
-          AND completion_request_id = ${reqId} AND completed = 0)`,
+        eq(ahTeams.id, p.teamId), sql`${ahTeams.finishedAt} IS NOT NULL`,
+        sql`EXISTS (SELECT 1 FROM ah_stage_progress p JOIN ah_stages s ON s.id = p.stage_id
+          WHERE p.team_id = ${p.teamId} AND p.completion_request_id = ${reqId} AND p.completed = 0 AND s.is_final = 1)`,
       )),
     conditionalAudit(db, {
       eventId: p.eventId, teamId: p.teamId, actorType: "ADMIN", actorId: p.adminId,

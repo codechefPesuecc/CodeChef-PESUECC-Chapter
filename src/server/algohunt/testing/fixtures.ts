@@ -180,6 +180,7 @@ export function makeTeam(overrides?: Partial<AhTeam>): AhTeam {
     college: "PES University",
     passwordHash: "hash",
     sessionEpoch: 0,
+    activeDeviceId: null,
     status: "CHECKED_IN",
     checkedInAt: Date.now() - 60_000,
     finishedAt: null,

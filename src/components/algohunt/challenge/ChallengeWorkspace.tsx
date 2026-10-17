@@ -42,7 +42,7 @@ export default function ChallengeWorkspace({
   totalStages,
 }: ChallengeWorkspaceProps) {
   const { stageNumber, isFinal, languages, samples, solved: initialSolved } = view;
-  const { state: participantState } = useParticipantState();
+  const { state: participantState, refresh: refreshState } = useParticipantState();
   const { timeUp } = useEventClock();
   // Paused, ended, time up or submissions switched off: say so and keep the code editable.
   const blockReason = playBlockReason(participantState, "submit", timeUp);
@@ -218,7 +218,8 @@ export default function ChallengeWorkspace({
         body: JSON.stringify({ language, code, clientRequestId: id }),
       });
       const data = await res.json();
-      setPendingId(null);
+      // The judge was down: keep the id, so Retry re-judges this same submission.
+      if (data.code !== "JUDGE_UNAVAILABLE") setPendingId(null);
 
       if (!data.ok) {
         if (data.code === "ALREADY_SOLVED") {
@@ -233,6 +234,7 @@ export default function ChallengeWorkspace({
 
       if (data.stage?.challengeSolved) {
         setSolved(true);
+        refreshState(); // the header, nav dot and dashboard move to "find a code" straight away
       }
       if (data.stage?.finished) {
         // Trigger a full page refresh so the layout/banner updates
@@ -250,7 +252,7 @@ export default function ChallengeWorkspace({
       setRunning(false);
       setBusyLabel("");
     }
-  }, [running, solved, pendingId, language, code, stageNumber]);
+  }, [running, solved, pendingId, language, code, stageNumber, refreshState]);
 
   // ── Verdict or connection error ────────────────────────────────────────
   const connectionError = verdict && (verdict as unknown as SubmitResult).submission === null;
@@ -332,7 +334,9 @@ export default function ChallengeWorkspace({
                         result={verdict as unknown as SubmitResult}
                         stageNumber={stageNumber}
                         isFinal={isFinal}
-                        onRetry={connectionError ? () => submit(pendingId ?? undefined) : undefined}
+                        onRetry={connectionError || (verdict as { code?: string } | null)?.code === "JUDGE_UNAVAILABLE"
+                          ? () => submit(pendingId ?? undefined)
+                          : undefined}
                       />
                     </div>
                   )}

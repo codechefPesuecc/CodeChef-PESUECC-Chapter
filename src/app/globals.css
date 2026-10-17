@@ -261,6 +261,21 @@ button:focus-visible,
   }
 }
 
+/* Printed sheets (QR codes, credential slips) on plain paper: no backdrop or grid, and no
+   screen-height minimums that spill a blank extra page. */
+@media print {
+  body {
+    background: #fff none !important;
+    min-height: 0 !important;
+  }
+  body::before {
+    display: none !important;
+  }
+  .min-h-screen {
+    min-height: 0 !important;
+  }
+}
+
 .arena-prose table {
   width: 100%;
   border-collapse: collapse;
