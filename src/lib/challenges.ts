@@ -246,18 +246,32 @@ export async function getReleasedSummaries(): Promise<ChallengeSummary[]> {
   }));
 }
 
-/** The Problem of the Day — the most recent released challenge. */
-export async function getDailyChallenge(): Promise<Challenge | null> {
+/** All Problems of the Day for today (IST) — supports multiple daily challenges. */
+export async function getDailyChallenges(): Promise<Challenge[]> {
   const db = getDb();
-  // Exactly the problem scheduled for today (IST). Yesterday's auto-expires — it
-  // no longer matches, so it drops to the practice archive with no cron. `date` is
-  // unique, so at most one row matches.
   const rows = await db
     .select()
     .from(challengesTable)
     .where(eq(challengesTable.date, todayStr()))
+    .orderBy(desc(challengesTable.createdAt));
+  return rows.map(rowToChallenge);
+}
+
+/** The primary Problem of the Day — the first released challenge scheduled for today (for backwards compatibility). */
+export async function getDailyChallenge(): Promise<Challenge | null> {
+  const challenges = await getDailyChallenges();
+  return challenges[0] ?? null;
+}
+
+/** Check if a challenge is currently live today (ranked). */
+export async function isLiveChallenge(slug: string): Promise<boolean> {
+  const db = getDb();
+  const rows = await db
+    .select({ slug: challengesTable.slug })
+    .from(challengesTable)
+    .where(and(eq(challengesTable.slug, slug), eq(challengesTable.date, todayStr())))
     .limit(1);
-  return rows[0] ? rowToChallenge(rows[0]) : null;
+  return rows.length > 0;
 }
 
 /** A single released challenge by slug (unreleased slugs resolve to null, so
@@ -316,16 +330,12 @@ export async function getAdminChallengeList(): Promise<AdminChallengeItem[]> {
   }));
 }
 
-/** Is a given IST date already taken by a scheduled/live problem? Optionally
- * ignore one slug (so re-scheduling the same problem to its own date is allowed). */
-export async function isDateTaken(date: string, ignoreSlug?: string): Promise<boolean> {
-  const db = getDb();
-  const rows = await db
-    .select({ slug: challengesTable.slug })
-    .from(challengesTable)
-    .where(eq(challengesTable.date, date))
-    .limit(1);
-  return rows.some((r) => r.slug !== ignoreSlug);
+/** Is a given IST date already taken by a scheduled/live problem?
+ * Now that multiple POTDs are supported, this always returns false (dates can be shared). */
+export async function isDateTaken(_date?: string, _ignoreSlug?: string): Promise<boolean> {
+  void _date;
+  void _ignoreSlug;
+  return false;
 }
 
 /** Titles for a set of slugs in one query — for rendering submission history

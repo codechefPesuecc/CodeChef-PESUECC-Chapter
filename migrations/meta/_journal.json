@@ -113,6 +113,13 @@
       "when": 1792267965873,
       "tag": "0015_algohunt_active_device",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1792307280143,
+      "tag": "0016_multi_potd_date_index",
+      "breakpoints": true
     }
   ]
 }
