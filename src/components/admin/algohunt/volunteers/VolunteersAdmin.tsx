@@ -87,6 +87,13 @@ export default function VolunteersAdmin({ eventSlug }: { eventSlug: string }) {
 
   return (
     <div className="space-y-6">
+      <p className="rounded-xl border border-hairline bg-panel px-4 py-3 text-sm">
+        Check-in desk for this event (send it to volunteers; they log in with their own site account):{" "}
+        <a href={`/algohunt/volunteer?event=${encodeURIComponent(eventSlug)}`} className="break-all font-mono text-bronze underline">
+          /algohunt/volunteer?event={eventSlug}
+        </a>
+      </p>
+
       {/* Add Volunteer Form */}
       <form onSubmit={handleAddVolunteer} className="lc-panel p-5 space-y-4">
         <h2 className="font-display text-lg font-bold text-chocolate flex items-center gap-2">

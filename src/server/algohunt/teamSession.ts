@@ -1,8 +1,9 @@
 import crypto from "node:crypto";
 import { cookies } from "next/headers";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import { ahEvents, ahTeams, type AhEvent, type AhTeam } from "@/server/db/schema";
+import { AH_DEVICE_COOKIE } from "./devices";
 import { fail } from "./http";
 
 export const AH_TEAM_COOKIE = "ah_team";
@@ -72,6 +73,41 @@ export async function getCurrentTeam(): Promise<TeamContext | null> {
 
 export async function requireTeam(): Promise<TeamContext | ReturnType<typeof fail>> {
   return (await getCurrentTeam()) ?? fail("UNAUTHENTICATED");
+}
+
+/**
+ * Log a team in on one browser. Bumping sessionEpoch invalidates every other cookie the team holds,
+ * so only the newest login stays signed in: one laptop per team. Returns the device this login
+ * took over from, when it was a different browser.
+ */
+export async function startTeamSession(p: { team: AhTeam; deviceId: string; now?: number }): Promise<{
+  epoch: number;
+  replacedDeviceId: string | null;
+}> {
+  const [row] = await getDb().update(ahTeams)
+    .set({ sessionEpoch: sql`${ahTeams.sessionEpoch} + 1`, activeDeviceId: p.deviceId, updatedAt: p.now ?? Date.now() })
+    .where(eq(ahTeams.id, p.team.id))
+    .returning({ epoch: ahTeams.sessionEpoch });
+  if (!row) throw new Error("Team not found");
+  const previous = p.team.activeDeviceId;
+  return { epoch: row.epoch, replacedDeviceId: previous && previous !== p.deviceId ? previous : null };
+}
+
+/** Logging out frees the team's seat, so the next login (on any laptop) is not a takeover. */
+export async function endTeamSession(p: { teamId: string; deviceId: string }): Promise<void> {
+  await getDb().update(ahTeams).set({ activeDeviceId: null })
+    .where(and(eq(ahTeams.id, p.teamId), eq(ahTeams.activeDeviceId, p.deviceId)));
+}
+
+/** True when this browser was signed out because the team has since logged in on another device. */
+export async function signedOutByAnotherDevice(): Promise<boolean> {
+  const store = await cookies();
+  const claims = readTeamToken(store.get(AH_TEAM_COOKIE)?.value ?? "");
+  if (!claims) return false;
+  const [team] = await getDb().select({ epoch: ahTeams.sessionEpoch, activeDeviceId: ahTeams.activeDeviceId })
+    .from(ahTeams).where(eq(ahTeams.id, claims.teamId)).limit(1);
+  if (!team || team.epoch === claims.epoch || team.activeDeviceId === null) return false;
+  return team.activeDeviceId !== store.get(AH_DEVICE_COOKIE)?.value;
 }
 
 export function generateTeamPassword(): string {

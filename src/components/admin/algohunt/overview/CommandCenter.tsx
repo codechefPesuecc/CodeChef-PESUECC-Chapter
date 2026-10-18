@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "@/components/AppLink";
 import ConfirmAction from "@/components/admin/algohunt/ConfirmAction";
 import { adminFetch } from "@/components/admin/algohunt/control/adminFetch";
-import { transitionOptions } from "@/components/admin/algohunt/control/controlModel";
+import { transitionOptions, type TransitionOption } from "@/components/admin/algohunt/control/controlModel";
 import ReadinessStrip from "@/components/admin/algohunt/control/ReadinessStrip";
 import { STATUS_TONE_CLASS, statusTone, withEvent } from "@/components/admin/algohunt/nav/navModel";
 import { usePoll } from "@/components/algohunt/usePoll";
@@ -36,11 +37,18 @@ function Row({ label, value, tone = "ok" }: { label: string; value: React.ReactN
   );
 }
 
+function deviceLabel(kind: string | null): string {
+  return kind === "MOBILE" ? "phone" : kind === "DESKTOP" ? "laptop" : "device";
+}
+
 export default function CommandCenter({ eventSlug }: { eventSlug: string }) {
   const url = `/api/admin/algohunt/overview?event=${encodeURIComponent(eventSlug)}`;
   const { data, error, online, lastUpdated, refresh } = usePoll<AdminOverview>(url, { intervalMs: 5000, jitterMs: 500 });
   const [unlocking, setUnlocking] = useState<Stuck | null>(null);
-  const [pausing, setPausing] = useState(false);
+  const router = useRouter();
+  // The option is captured when the dialog opens, so a pause by another admin meanwhile can't turn
+  // this same dialog into RESUME.
+  const [pausing, setPausing] = useState<TransitionOption | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [tick, setTick] = useState(() => Date.now());
 
@@ -59,10 +67,14 @@ export default function CommandCenter({ eventSlug }: { eventSlug: string }) {
 
   // The server clock decides "running for", so a wrong laptop clock doesn't skew it.
   const now = tick + (data.serverNow - (lastUpdated ?? data.serverNow));
-  const { event, counts, codePool, stuck, integrityAlerts, readiness, topTeams, recentActivity, health } = data;
+  const {
+    event, counts, codePool, stuck, integrityAlerts, takeoverAlerts, readiness, topTeams, recentActivity, health,
+  } = data;
   const tone = statusTone(event.status);
   const running = formatRunning(event.startedAt, now);
-  const banner = lowPoolMessage(codePool);
+  // The pool only matters while teams can play.
+  const banner = event.status === "LIVE" || event.status === "PAUSED" ? lowPoolMessage(codePool) : null;
+  const timeUp = (event.status === "LIVE" || event.status === "PAUSED") && event.endsAt !== null && now >= event.endsAt;
   const pauseOption = transitionOptions(event.status).find(
     (o) => (event.status === "LIVE" && o.to === "PAUSED") || (event.status === "PAUSED" && o.to === "LIVE"),
   );
@@ -90,7 +102,8 @@ export default function CommandCenter({ eventSlug }: { eventSlug: string }) {
             {event.startedAt !== null && (
               <span className="text-sm text-charcoal/70">
                 started {formatIST(event.startedAt)}
-                {running && event.status === "LIVE" ? ` · running ${running}` : ""}
+                {running && event.status === "LIVE" && !timeUp ? ` · running ${running}` : ""}
+                {event.endsAt !== null && ` · ends ${formatIST(event.endsAt)}`}
               </span>
             )}
           </p>
@@ -99,7 +112,7 @@ export default function CommandCenter({ eventSlug }: { eventSlug: string }) {
           {pauseOption && (
             <button
               type="button"
-              onClick={() => { setNotice(null); setPausing(true); }}
+              onClick={() => { setNotice(null); setPausing(pauseOption); }}
               className={`mecha-btn mecha-btn--sm ${pauseOption.danger ? "bg-red-600 text-white hover:bg-red-700" : "mecha-btn--solid"}`}
             >
               {pauseOption.label}
@@ -117,6 +130,13 @@ export default function CommandCenter({ eventSlug }: { eventSlug: string }) {
         </p>
       )}
       {notice && <p role="status" className="text-sm text-emerald-700 dark:text-emerald-300">{notice}</p>}
+
+      {timeUp && (
+        <p role="alert" className="rounded-xl border border-red-500/50 bg-red-500/15 px-4 py-3 text-sm font-semibold text-red-700 dark:text-red-300">
+          ⏱ TIME UP: runs, submissions and code entry are closed for every team. Press End event on the{" "}
+          <Link href={withEvent("/admin/algohunt/control", event.slug)} className="underline">Control page</Link> to finish.
+        </p>
+      )}
 
       {SETUP_STATUSES.includes(event.status) && <ReadinessStrip readiness={readiness} />}
 
@@ -195,6 +215,37 @@ export default function CommandCenter({ eventSlug }: { eventSlug: string }) {
                   <span className="font-mono text-xs text-bronze">{team.teamCode}</span>
                   <span className="font-medium text-chocolate">{team.teamName}</span>
                   <span className="font-mono text-xs">{team.flags} flags</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {takeoverAlerts.length > 0 && (
+        <section
+          role="alert"
+          aria-label="Teams that switched devices"
+          className="rounded-xl border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-100"
+        >
+          <p className="font-semibold">
+            ⚠ Logged in on another device in the last 30 minutes. One laptop per team: the earlier one was signed out.
+          </p>
+          <ul className="mt-2 flex flex-wrap gap-2">
+            {takeoverAlerts.map((alert) => (
+              <li key={`${alert.teamId}-${alert.at}`}>
+                <Link
+                  href={teamHref(alert.teamId)}
+                  className={`inline-flex items-center gap-2 rounded-md border bg-panel px-2 py-1 hover:underline ${
+                    alert.toKind === "MOBILE" ? "border-red-500/60" : "border-amber-500/50"
+                  }`}
+                >
+                  <span className="font-mono text-xs text-bronze">{alert.teamCode}</span>
+                  <span className="font-medium text-chocolate">{alert.teamName}</span>
+                  <span className="font-mono text-xs">
+                    {formatIST(alert.at)} · {deviceLabel(alert.fromKind)} → {deviceLabel(alert.toKind)}
+                    {alert.toKind === "MOBILE" ? " ⚠ phone" : ""}
+                  </span>
                 </Link>
               </li>
             ))}
@@ -303,20 +354,23 @@ export default function CommandCenter({ eventSlug }: { eventSlug: string }) {
         }}
         onClose={() => setUnlocking(null)}
       />
-      {pauseOption && (
+      {pausing && (
         <ConfirmAction
-          open={pausing}
-          title={`${pauseOption.label}?`}
-          consequences={pauseOption.consequences}
+          open
+          title={`${pausing.label}?`}
+          consequences={pausing.consequences + (pausing.to === "PAUSED" && event.endsAt !== null
+            ? "\n\nThe scheduled end does not move while paused. Extend it on the Control page if teams lose time."
+            : "")}
           confirmPhrase={event.slug}
-          confirmLabel={pauseOption.label}
-          danger={pauseOption.danger}
+          confirmLabel={pausing.label}
+          danger={pausing.danger}
           onConfirm={async ({ confirm }) => {
-            await adminFetch("POST", `/api/admin/algohunt/events/${event.id}/transition`, { to: pauseOption.to, confirm });
-            setNotice(`Event moved to ${pauseOption.to}.`);
+            await adminFetch("POST", `/api/admin/algohunt/events/${event.id}/transition`, { to: pausing.to, confirm });
+            setNotice(`Event moved to ${pausing.to}.`);
             refresh();
+            router.refresh(); // the nav's status chip is server-rendered
           }}
-          onClose={() => setPausing(false)}
+          onClose={() => setPausing(null)}
         />
       )}
     </div>

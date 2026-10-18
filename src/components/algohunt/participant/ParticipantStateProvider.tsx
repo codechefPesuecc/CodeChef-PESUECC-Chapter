@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { COPY } from "@/lib/algohunt/copy";
 import type { ParticipantState } from "@/lib/algohunt/types";
@@ -37,8 +37,21 @@ export default function ParticipantStateProvider({
     router.refresh();
   }, [sessionLost, router]);
 
+  // Pages are server-rendered from the state at load time. When the event starts, pauses, resumes
+  // or ends, or the team moves on, re-render them so nobody needs to reload.
+  const state = poll.data ?? initial;
+  const phase = [
+    state.event.status, state.team.status, state.current?.number ?? "-", state.current?.state ?? "-",
+  ].join("|");
+  const lastPhase = useRef(phase);
+  useEffect(() => {
+    if (lastPhase.current === phase) return;
+    lastPhase.current = phase;
+    router.refresh();
+  }, [phase, router]);
+
   const value: ParticipantStateValue = {
-    state: poll.data ?? initial,
+    state,
     online: poll.online,
     lastUpdated: poll.lastUpdated ?? initial.serverNow,
     refresh: poll.refresh,

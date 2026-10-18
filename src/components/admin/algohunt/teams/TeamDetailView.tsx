@@ -328,7 +328,7 @@ export default function TeamDetailView({
       <section aria-label="Code attempts">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <h2 className="font-display text-lg font-bold text-chocolate">Code attempts</h2>
-          <Link href={withEvent("/admin/algohunt/submissions", event.slug)} className="text-sm text-bronze underline">
+          <Link href={`${withEvent("/admin/algohunt/submissions", event.slug)}&team=${encodeURIComponent(team.teamCode)}`} className="text-sm text-bronze underline">
             Submissions browser (filter by <span className="font-mono">{team.teamCode}</span>) →
           </Link>
         </div>

@@ -65,7 +65,7 @@ export default function RootLayout({
           <ScrollProgress />
           <Navbar />
           <HudFrame />
-          <div className="flex flex-1 flex-col pt-24">{children}</div>
+          <div className="flex flex-1 flex-col pt-24 print:pt-0">{children}</div>
           <Footer />
           <ScrollToTop />
         </MotionProvider>

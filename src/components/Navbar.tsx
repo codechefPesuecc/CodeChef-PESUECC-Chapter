@@ -132,7 +132,7 @@ export default function Navbar() {
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${
+      className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 print:hidden ${
         scrolled
           ? "border-b border-hairline bg-cream/80 backdrop-blur-md dark:bg-[#140f0a]/85"
           : "border-b border-transparent"

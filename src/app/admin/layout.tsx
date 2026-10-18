@@ -14,7 +14,7 @@ import AdminNav from "@/components/admin/AdminNav";
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <div className="mx-auto max-w-4xl px-6 pt-6">
+      <div className="mx-auto max-w-4xl px-6 pt-6 print:hidden">
         <AdminNav />
       </div>
       {children}

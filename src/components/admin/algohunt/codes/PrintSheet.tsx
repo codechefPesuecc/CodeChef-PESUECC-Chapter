@@ -190,22 +190,22 @@ export default function PrintSheet({ batchId }: { batchId: string }) {
                     <div className="my-auto py-1 flex items-center justify-center">
                       <QRCodeSVG
                         value={item.code}
-                        size={135}
+                        size={124}
                         level="M"
-                        marginSize={0}
+                        marginSize={3}
                       />
                     </div>
 
                     {/* Code Text Under QR */}
                     {showCodeText && (
-                      <div className="font-mono text-xs font-bold tracking-wider text-black my-0.5">
+                      <div className="font-mono text-sm font-bold tracking-wider text-black">
                         {formatCodeForDisplay(item.code)}
                       </div>
                     )}
 
                     {/* Footer */}
                     <div className="text-[7.5px] leading-tight text-neutral-600 print:text-black font-sans">
-                      Scan · enter the code in the Arena · first team wins it
+                      Scan · type the code on your team laptop · first team wins it
                     </div>
                   </div>
                 ))}
@@ -229,6 +229,8 @@ export default function PrintSheet({ batchId }: { batchId: string }) {
           .print-page {
             page-break-after: always;
             break-after: page;
+            /* The on-screen 270mm sheet plus padding is taller than A4's printable area. */
+            min-height: 0 !important;
           }
           .print-page:last-child {
             page-break-after: auto;

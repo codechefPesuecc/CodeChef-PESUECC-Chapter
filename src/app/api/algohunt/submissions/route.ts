@@ -31,28 +31,34 @@ export async function POST(req: Request): Promise<NextResponse> {
   // Rate limits (contract §15)
   const rateLimited = await enforceRateLimits([
     [`ah:submit:team:${team.id}`, 10, 60_000],
-    [`ah:submit:ip:${ip}`, 60, 60_000],
+    // Every laptop in the hall may share one public IP: the IP cap is a backstop, the team cap is the limit.
+    [`ah:submit:ip:${ip}`, 600, 60_000],
   ]);
-  if (rateLimited) return rateLimited;
+  if (rateLimited) {
+    return fail("RATE_LIMITED", undefined, { retryAfterSeconds: Number(rateLimited.headers.get("Retry-After") ?? "1") });
+  }
 
   // Parse body
   const parsed = await parseBody(req, submitSchema);
   if (!parsed.ok) return parsed.response;
   const { language, code, clientRequestId } = parsed.data;
 
-  const result = await createAndJudgeSubmission({
-    ctx,
-    language,
-    code,
-    clientRequestId,
-    ip,
-  });
-
-  if (!result.ok) {
-    return fail(result.code, result.message);
+  try {
+    const result = await createAndJudgeSubmission({
+      ctx,
+      language,
+      code,
+      clientRequestId,
+      ip,
+    });
+    if (!result.ok) {
+      return fail(result.code, result.message);
+    }
+    return ok(result.result);
+  } catch (error) {
+    console.error("[algohunt:submit]", error);
+    return fail("INTERNAL");
   }
-
-  return ok(result.result);
 }
 
 export async function GET(_req: Request): Promise<NextResponse> {

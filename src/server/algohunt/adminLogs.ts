@@ -1,4 +1,4 @@
-import { and, desc, eq, like, lt } from "drizzle-orm";
+import { and, desc, eq, like, lt, type SQL } from "drizzle-orm";
 import type { AhVerdict, SubmissionStatus } from "@/lib/algohunt/types";
 import { getDb } from "@/server/db";
 import {
@@ -189,23 +189,43 @@ export async function listAudit(p: {
     conditions.push(lt(ahAuditLogs.createdAt, p.before));
   }
 
-  const rows = await db
-    .select({
-      log: ahAuditLogs,
-      teamName: ahTeams.teamName,
-      userName: users.name,
-      userUsername: users.username,
-    })
-    .from(ahAuditLogs)
-    .leftJoin(ahTeams, eq(ahAuditLogs.teamId, ahTeams.id))
-    .leftJoin(users, eq(ahAuditLogs.actorId, users.id))
-    .where(and(...conditions))
-    .orderBy(desc(ahAuditLogs.createdAt))
-    .limit(limit + 1);
+  const query = (extra: SQL[], max?: number) => {
+    const q = db
+      .select({
+        log: ahAuditLogs,
+        teamName: ahTeams.teamName,
+        userName: users.name,
+        userUsername: users.username,
+      })
+      .from(ahAuditLogs)
+      .leftJoin(ahTeams, eq(ahAuditLogs.teamId, ahTeams.id))
+      .leftJoin(users, eq(ahAuditLogs.actorId, users.id))
+      .where(and(...conditions, ...extra))
+      .orderBy(desc(ahAuditLogs.createdAt));
+    return max === undefined ? q : q.limit(max);
+  };
+  const rows = await query([], limit + 1);
 
-  const hasMore = rows.length > limit;
-  const sliced = hasMore ? rows.slice(0, limit) : rows;
-  const nextCursor = hasMore ? sliced[sliced.length - 1].log.createdAt : null;
+  // The cursor is "older than this millisecond", so a page must never end partway through one
+  // millisecond (bulk check-in writes every row at the same time): those rows would be skipped.
+  let sliced = rows.slice(0, limit);
+  let nextCursor: number | null = null;
+  if (rows.length > limit) {
+    const boundary = rows[limit].log.createdAt;
+    if (sliced[sliced.length - 1].log.createdAt !== boundary) {
+      nextCursor = sliced[sliced.length - 1].log.createdAt;
+    } else {
+      const before = sliced.filter((r) => r.log.createdAt !== boundary);
+      if (before.length > 0) {
+        sliced = before;
+        nextCursor = boundary + 1;
+      } else {
+        // The whole page is one millisecond: show all of it.
+        sliced = await query([eq(ahAuditLogs.createdAt, boundary)]);
+        nextCursor = boundary;
+      }
+    }
+  }
 
   return {
     rows: sliced.map((r) => ({

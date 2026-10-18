@@ -61,6 +61,32 @@ function outputMatches(got: string, expected: string, checker: Checker): boolean
 }
 
 /**
+ * Akiro refuses request bodies over 2 MB (axum's default), so tests are sent in batches well
+ * under that. Each batch is one judge request; the next batch only runs if this one passed.
+ */
+export const MAX_JUDGE_BATCH_BYTES = 1_500_000;
+
+/** Split tests into judge requests of at most MAX_JUDGE_BATCH_BYTES of JSON each (one test can be alone). Pure. */
+export function batchTests(tests: readonly TestCase[], maxBytes = MAX_JUDGE_BATCH_BYTES): TestCase[][] {
+  const batches: TestCase[][] = [];
+  let current: TestCase[] = [];
+  let bytes = 0;
+  for (const test of tests) {
+    // The JSON form is what goes over the wire (newlines become two characters).
+    const size = Buffer.byteLength(JSON.stringify({ input: test.input, expected_output: test.output }));
+    if (current.length > 0 && bytes + size > maxBytes) {
+      batches.push(current);
+      current = [];
+      bytes = 0;
+    }
+    current.push(test);
+    bytes += size;
+  }
+  if (current.length > 0) batches.push(current);
+  return batches;
+}
+
+/**
  * Core judging logic: runs code against test cases in Rust Sandbox and returns verdict.
  */
 export async function judgeTests(params: {
@@ -81,48 +107,49 @@ export async function judgeTests(params: {
   const actualTimeLimit = Math.min(Math.max(timeLimitMs, 500), MAX_RUN_MS);
   const actualMemLimit = Math.min(Math.max(memLimitBytes, MIN_MEM_BYTES), MAX_MEM_BYTES);
 
+  let passed = 0;
   try {
-    const result = await judgeExecute({
-      language: judgeLang,
-      code,
-      testCases: tests.map((t) => ({ input: t.input, expected_output: t.output })),
-      timeLimitMs: actualTimeLimit,
-      memoryLimitBytes: actualMemLimit,
-    });
+    for (const batch of batchTests(tests)) {
+      const offset = passed;
+      const result = await judgeExecute({
+        language: judgeLang,
+        code,
+        testCases: batch.map((t) => ({ input: t.input, expected_output: t.output })),
+        timeLimitMs: actualTimeLimit,
+        memoryLimitBytes: actualMemLimit,
+      });
 
-    if (result.verdict === "CompilationError") {
-      const firstError = result.test_case_results?.[0]?.stderr || "Compilation failed.";
-      return { verdict: "CE", passed: 0, total: tests.length, detail: firstError };
+      if (result.verdict === "CompilationError") {
+        const firstError = result.test_case_results?.[0]?.stderr || "Compilation failed.";
+        return { verdict: "CE", passed: 0, total: tests.length, detail: firstError };
+      }
+
+      for (let i = 0; i < batch.length; i++) {
+        const tc = result.test_case_results?.[i];
+        const failedOn = offset + i + 1;
+        if (!tc) {
+          // Akiro stops at the failing test and reports why only in the overall verdict.
+          const verdict = result.verdict === "TimeLimitExceeded" ? "TLE"
+            : result.verdict === "MemoryLimitExceeded" ? "MLE"
+              : result.verdict === "RuntimeError" ? "RE" : "WA";
+          return { verdict, passed, total: tests.length, failedOn };
+        }
+        if (tc.verdict === "TimeLimitExceeded") {
+          return { verdict: "TLE", passed, total: tests.length, failedOn };
+        }
+        if (tc.verdict === "MemoryLimitExceeded") {
+          return { verdict: "MLE", passed, total: tests.length, failedOn, detail: tc.stderr };
+        }
+        if (tc.verdict === "RuntimeError") {
+          return { verdict: "RE", passed, total: tests.length, failedOn, detail: tc.stderr };
+        }
+        if (!outputMatches(tc.stdout, batch[i].output, checker)) {
+          return { verdict: "WA", passed, total: tests.length, failedOn };
+        }
+        passed++;
+      }
     }
-
-    let passed = 0;
-    for (let i = 0; i < (result.test_case_results?.length ?? 0); i++) {
-      const tc = result.test_case_results[i];
-      const expected = tests[i]?.output ?? "";
-
-      if (tc.verdict === "TimeLimitExceeded") {
-        return { verdict: "TLE", passed, total: tests.length, failedOn: i + 1 };
-      }
-      if (tc.verdict === "MemoryLimitExceeded") {
-        return { verdict: "MLE", passed, total: tests.length, failedOn: i + 1, detail: tc.stderr };
-      }
-      if (tc.verdict === "RuntimeError") {
-        return { verdict: "RE", passed, total: tests.length, failedOn: i + 1, detail: tc.stderr };
-      }
-
-      // Validate output with custom checker if output is provided
-      if (!outputMatches(tc.stdout, expected, checker)) {
-        return { verdict: "WA", passed, total: tests.length, failedOn: i + 1 };
-      }
-
-      passed++;
-    }
-
-    if (passed === tests.length) {
-      return { verdict: "AC", passed, total: tests.length };
-    } else {
-      return { verdict: "WA", passed, total: tests.length, failedOn: passed + 1 };
-    }
+    return { verdict: "AC", passed, total: tests.length };
   } catch (error) {
     return { verdict: "ERR", passed: 0, total: tests.length, message: String(error) };
   }

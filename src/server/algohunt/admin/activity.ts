@@ -32,6 +32,8 @@ const DESCRIBERS: { [A in AuditAction]: (c: Ctx) => string } = {
   "team.login": (c) => `${c.team} logged in`,
   "team.login_failed": (c) => `Failed login attempt for ${c.team}`,
   "team.logout": (c) => `${c.team} logged out`,
+  "team.session_takeover": (c) =>
+    `⚠ ${c.team} logged in on another ${deviceWord(c.meta.toKind)}; the ${deviceWord(c.meta.fromKind)} they were using was signed out`,
   "team.checked_in": (c) => (c.meta.bulk ? `${c.team} checked in (bulk check-in)` : `${c.team} checked in`),
   "team.password_reset": (c) => `${c.actor} reset the password for ${c.team}`,
   "submission.judged": (c) => `${c.team} got ${str(c.meta.verdict) ?? "a verdict"}`,
@@ -58,7 +60,9 @@ const DESCRIBERS: { [A in AuditAction]: (c: Ctx) => string } = {
     `${c.actor} disabled batch ${quoted(c.meta.batchName)} (${num(c.meta.count) ?? "?"} active codes)${because(c.meta.reason)}`,
   "code.note_updated": (c) => `${c.actor} updated the note on code ${serial(c.meta.serial)}`,
   "override.complete_stage": (c) =>
-    `${c.actor} unlocked ${nextQuestion(c.meta.stageNumber)} for ${c.team} without a code${because(c.meta.reason)}`,
+    c.meta.isFinal === true
+      ? `${c.actor} completed the final question (${question(c.meta.stageNumber)}) for ${c.team} by override${because(c.meta.reason)}`
+      : `${c.actor} unlocked ${nextQuestion(c.meta.stageNumber)} for ${c.team} without a code${because(c.meta.reason)}`,
   "override.revert_stage": (c) => `${c.actor} reverted ${question(c.meta.stageNumber)} for ${c.team}${because(c.meta.reason)}`,
   "team.disqualified": (c) => `${c.actor} disqualified ${c.team}${because(c.meta.reason)}`,
   "team.reinstated": (c) => `${c.actor} reinstated ${c.team}${because(c.meta.reason)}`,
@@ -92,7 +96,7 @@ const DESCRIBERS: { [A in AuditAction]: (c: Ctx) => string } = {
 };
 
 const KINDS: { [A in AuditAction]: ActivityKind } = {
-  "team.login": "system", "team.login_failed": "system", "team.logout": "system",
+  "team.login": "system", "team.login_failed": "system", "team.logout": "system", "team.session_takeover": "system",
   "team.checked_in": "admin", "team.password_reset": "admin",
   "submission.judged": "submission",
   "stage.solved": "progress", "stage.completed": "progress", "team.finished": "progress",
@@ -186,6 +190,10 @@ function num(value: unknown): number | null {
 
 function str(value: unknown): string | null {
   return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
+}
+
+function deviceWord(kind: unknown): string {
+  return kind === "MOBILE" ? "phone" : kind === "DESKTOP" ? "laptop" : "device";
 }
 
 function question(stageNumber: unknown): string {

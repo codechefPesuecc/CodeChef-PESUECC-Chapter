@@ -23,7 +23,8 @@ interface TeamLookupData {
   members: string[];
 }
 
-export default function CheckinDesk() {
+export default function CheckinDesk({ eventSlug }: { eventSlug: string }) {
+  const eventParam = `event=${encodeURIComponent(eventSlug)}`;
   const [teamCodeQuery, setTeamCodeQuery] = useState("");
   const [lookingUp, setLookingUp] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
@@ -47,7 +48,7 @@ export default function CheckinDesk() {
     setTeamData(null);
 
     try {
-      const res = await fetch(`/api/algohunt/volunteer/team?code=${encodeURIComponent(query)}`);
+      const res = await fetch(`/api/algohunt/volunteer/team?code=${encodeURIComponent(query)}&${eventParam}`);
       const json = await res.json() as { ok: boolean; team?: TeamLookupData; error?: string };
       if (!res.ok || !json.ok || !json.team) {
         setLookupError(json.error ?? "Team not found.");
@@ -69,7 +70,7 @@ export default function CheckinDesk() {
     setCheckinError(null);
 
     try {
-      const res = await fetch("/api/algohunt/volunteer/checkin", {
+      const res = await fetch(`/api/algohunt/volunteer/checkin?${eventParam}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ teamCode: teamData.code }),

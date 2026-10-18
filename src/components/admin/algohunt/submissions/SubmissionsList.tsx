@@ -37,8 +37,8 @@ const VERDICT_CHIPS: Record<string, string> = {
   FAILED: "bg-red-600/15 text-red-800 dark:text-red-200 border-red-500/40",
 };
 
-export default function SubmissionsList({ eventSlug }: { eventSlug: string }) {
-  const [teamFilter, setTeamFilter] = useState("");
+export default function SubmissionsList({ eventSlug, initialTeam = "" }: { eventSlug: string; initialTeam?: string }) {
+  const [teamFilter, setTeamFilter] = useState(initialTeam);
   const [stageFilter, setStageFilter] = useState<string>("ALL");
   const [verdictFilter, setVerdictFilter] = useState<string>("ALL");
 

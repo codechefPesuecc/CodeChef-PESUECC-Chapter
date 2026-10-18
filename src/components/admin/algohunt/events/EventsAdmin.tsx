@@ -6,6 +6,16 @@ import { Plus, RefreshCw, Sparkles, AlertCircle, CheckCircle2 } from "lucide-rea
 import AppLink from "@/components/AppLink";
 import type { AhEvent } from "@/server/db/schema";
 import type { EventStatus } from "@/lib/algohunt/types";
+import ConfirmAction from "@/components/admin/algohunt/ConfirmAction";
+import { adminFetch } from "@/components/admin/algohunt/control/adminFetch";
+
+interface SeededTeam {
+  teamName: string;
+  teamCode: string;
+  password: string;
+}
+
+const SEED_SLUG = "test-event-2026";
 
 export default function EventsAdmin({ initialEvents, currentSlug }: { initialEvents: AhEvent[]; currentSlug?: string }) {
   const router = useRouter();
@@ -17,6 +27,8 @@ export default function EventsAdmin({ initialEvents, currentSlug }: { initialEve
   const [maxTeamSize, setMaxTeamSize] = useState(4);
   const [loading, setLoading] = useState(false);
   const [seeding, setSeeding] = useState(false);
+  const [seedConfirmOpen, setSeedConfirmOpen] = useState(false);
+  const [seeded, setSeeded] = useState<{ slug: string; teams: SeededTeam[]; codes: { serial: number; code: string }[] } | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Auto-slug generator from name
@@ -64,40 +76,34 @@ export default function EventsAdmin({ initialEvents, currentSlug }: { initialEve
     }
   }
 
-  async function handleSeed() {
-    if (!confirm("Seed or reset the test event (test-event-2026) with 3 challenges, 5 teams, and code batches?")) {
-      return;
-    }
-
+  async function handleSeed({ confirm }: { confirm: string }) {
     setSeeding(true);
     setMessage(null);
-
     try {
-      const res = await fetch("/api/admin/algohunt/events/seed", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reset: true }),
-      });
-
-      const json = await res.json() as { ok: boolean; event?: AhEvent; error?: string };
-      if (res.ok && json.ok && json.event) {
-        setMessage({
-          type: "success",
-          text: `Test event seeded successfully! Slug: ${json.event.slug}. You can now view and test it.`,
-        });
-        // Reload list
-        const listRes = await fetch("/api/admin/algohunt/events");
-        const listJson = await listRes.json() as { ok: boolean; events?: AhEvent[] };
-        if (listJson.events) setEvents(listJson.events);
-        router.refresh();
-      } else {
-        setMessage({ type: "error", text: json.error ?? "Failed to seed test event." });
-      }
-    } catch {
-      setMessage({ type: "error", text: "Network error seeding test event." });
+      const json = await adminFetch<{ event: AhEvent; teams: SeededTeam[]; codes: { serial: number; code: string }[] }>(
+        "POST", "/api/admin/algohunt/events/seed", { reset: true, confirm },
+      );
+      setSeedConfirmOpen(false);
+      setSeeded({ slug: json.event.slug, teams: json.teams, codes: json.codes });
+      setMessage({ type: "success", text: `Test event ${json.event.slug} seeded. Its logins and codes are below, shown once.` });
+      const listRes = await fetch("/api/admin/algohunt/events");
+      const listJson = await listRes.json() as { ok: boolean; events?: AhEvent[] };
+      if (listJson.events) setEvents(listJson.events);
+      router.refresh();
     } finally {
       setSeeding(false);
     }
+  }
+
+  function downloadSeedJson() {
+    if (!seeded) return;
+    // The load-test creds format (M2): { eventSlug, teams: [{ teamName, teamCode, password }] }.
+    const blob = new Blob([JSON.stringify({ eventSlug: seeded.slug, teams: seeded.teams }, null, 2)], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `${seeded.slug}-creds.json`;
+    link.click();
+    URL.revokeObjectURL(link.href);
   }
 
   const statusColors: Record<EventStatus, string> = {
@@ -126,7 +132,7 @@ export default function EventsAdmin({ initialEvents, currentSlug }: { initialEve
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={handleSeed}
+            onClick={() => setSeedConfirmOpen(true)}
             disabled={seeding}
             className="mecha-btn inline-flex items-center gap-2 text-xs px-3 py-2 border border-bronze text-bronze hover:bg-bronze/10 disabled:opacity-50"
             title="Sets up test-event-2026 with 3 problems, 5 teams and codes for local/QA testing"
@@ -292,10 +298,10 @@ export default function EventsAdmin({ initialEvents, currentSlug }: { initialEve
                     </AppLink>
                     <span className="text-charcoal/30">·</span>
                     <AppLink
-                      href={`/admin/algohunt/import/credentials?event=${encodeURIComponent(ev.slug)}`}
+                      href={`/admin/algohunt/import?event=${encodeURIComponent(ev.slug)}`}
                       className="text-xs text-charcoal hover:underline"
                     >
-                      Credentials
+                      Import
                     </AppLink>
                   </td>
                 </tr>
@@ -304,6 +310,45 @@ export default function EventsAdmin({ initialEvents, currentSlug }: { initialEve
           </tbody>
         </table>
       </div>
+
+      {seeded && (
+        <section aria-label="Seeded test logins" className="rounded-xl border border-yellow-500/50 bg-yellow-400/10 p-4 text-sm">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-chocolate">
+              {seeded.slug}: test logins and codes (shown once)
+            </h3>
+            <button type="button" onClick={downloadSeedJson} className="mecha-btn px-3 py-1 text-xs">
+              Download creds JSON
+            </button>
+          </div>
+          <div className="mt-3 grid gap-4 sm:grid-cols-2">
+            <table className="w-full font-mono text-xs">
+              <thead><tr className="text-left text-charcoal/60"><th>Team</th><th>Code</th><th>Password</th></tr></thead>
+              <tbody>
+                {seeded.teams.map((team) => (
+                  <tr key={team.teamCode}><td className="pr-2">{team.teamName}</td><td className="pr-2">{team.teamCode}</td><td>{team.password}</td></tr>
+                ))}
+              </tbody>
+            </table>
+            <ul className="grid grid-cols-3 gap-1 font-mono text-xs">
+              {seeded.codes.map((code) => (
+                <li key={code.serial}>#{String(code.serial).padStart(3, "0")} {code.code}</li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+
+      <ConfirmAction
+        open={seedConfirmOpen}
+        title="Seed the test event"
+        consequences={`Wipes ${SEED_SLUG} (a test event) and re-creates it with 3 test questions, 5 checked-in teams and 15 codes. Real events are never touched.`}
+        confirmPhrase={SEED_SLUG}
+        confirmLabel={seeding ? "Seeding…" : "Seed test event"}
+        danger
+        onConfirm={handleSeed}
+        onClose={() => setSeedConfirmOpen(false)}
+      />
     </div>
   );
 }

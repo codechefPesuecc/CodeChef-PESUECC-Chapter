@@ -30,7 +30,7 @@ export default async function AlgoHuntControlPage({
   let body: React.ReactNode;
   if (event) {
     const db = getDb();
-    const [stageRows, teamRows, pool] = await Promise.all([
+    const [stageRows, teamRows, registeredRows, pool] = await Promise.all([
       db.select({
         id: ahStages.id,
         stageNumber: ahStages.stageNumber,
@@ -46,6 +46,9 @@ export default async function AlgoHuntControlPage({
       db.select({ count: sql<number>`count(*)` })
         .from(ahTeams)
         .where(and(eq(ahTeams.eventId, event.id), inArray(ahTeams.status, ["CHECKED_IN", "FINISHED"]))),
+      db.select({ count: sql<number>`count(*)` })
+        .from(ahTeams)
+        .where(and(eq(ahTeams.eventId, event.id), eq(ahTeams.status, "REGISTERED"))),
       getCodePoolStats(event.id),
     ]);
     const stages: ControlStage[] = stageRows.map((row) => ({
@@ -66,7 +69,7 @@ export default async function AlgoHuntControlPage({
           leaderboardVisible: event.leaderboardVisible,
         }}
         stages={stages}
-        readiness={deriveReadiness(stages, pool.active, teamRows[0]?.count ?? 0)}
+        readiness={deriveReadiness(stages, pool.active, Number(teamRows[0]?.count ?? 0), Number(registeredRows[0]?.count ?? 0))}
       />
     );
   } else if (slug) {

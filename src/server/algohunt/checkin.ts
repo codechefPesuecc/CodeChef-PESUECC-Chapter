@@ -1,5 +1,4 @@
-import crypto from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { COPY } from "@/lib/algohunt/copy";
 import type { ErrorCode, TeamStatus } from "@/lib/algohunt/types";
 import { getDb } from "@/server/db";
@@ -140,37 +139,19 @@ export async function checkInAllTeams(p: {
   const db = getDb();
   const now = Date.now();
 
-  const updatedTeams = await db
-    .update(ahTeams)
-    .set({
-      status: "CHECKED_IN",
-      checkedInAt: now,
-      updatedAt: now,
-    })
-    .where(and(eq(ahTeams.eventId, p.eventId), eq(ahTeams.status, "REGISTERED")))
-    .returning({ id: ahTeams.id, eventId: ahTeams.eventId });
-
-  if (updatedTeams.length === 0) {
-    return { count: 0 };
-  }
-
-  const auditRows = updatedTeams.map((t) => ({
-    id: crypto.randomUUID(),
-    eventId: t.eventId,
-    teamId: t.id,
-    actorType: "ADMIN" as const,
-    actorId: p.actorId,
-    action: "team.checked_in",
-    targetType: "team",
-    targetId: t.id,
-    metadata: JSON.stringify({ bulk: true }),
-    createdAt: now,
-  }));
-
-  const CHUNK_SIZE = 14;
-  for (let i = 0; i < auditRows.length; i += CHUNK_SIZE) {
-    await db.insert(ahAuditLogs).values(auditRows.slice(i, i + CHUNK_SIZE));
-  }
+  // One batch: an audit row per still-REGISTERED team (INSERT … SELECT, so the bound-parameter
+  // count stays fixed however many teams there are; D1 allows 100), then the check-in itself.
+  const [, updatedTeams] = await db.batch([
+    db.insert(ahAuditLogs).select(sql`
+      SELECT lower(hex(randomblob(16))), ${p.eventId}, id, 'ADMIN', ${p.actorId}, 'team.checked_in',
+        'team', id, ${JSON.stringify({ bulk: true })}, NULL, NULL, ${now}
+      FROM ah_teams WHERE event_id = ${p.eventId} AND status = 'REGISTERED'
+    `),
+    db.update(ahTeams)
+      .set({ status: "CHECKED_IN", checkedInAt: now, updatedAt: now })
+      .where(and(eq(ahTeams.eventId, p.eventId), eq(ahTeams.status, "REGISTERED")))
+      .returning({ id: ahTeams.id }),
+  ]);
 
   return { count: updatedTeams.length };
 }

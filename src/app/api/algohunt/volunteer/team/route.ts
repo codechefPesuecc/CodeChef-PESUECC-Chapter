@@ -13,7 +13,8 @@ export async function GET(req: Request): Promise<NextResponse> {
     const user = await getCurrentUser();
     if (!user) return fail("UNAUTHENTICATED");
 
-    const ctx = await getVolunteerContext();
+    // ?event=<slug> picks the event (the dry run and the real event can both be open).
+    const ctx = await getVolunteerContext({ eventSlug: new URL(req.url).searchParams.get("event") ?? undefined });
     if (!ctx) {
       return fail("FORBIDDEN", "You're not assigned as an AlgoHunt volunteer.");
     }

@@ -15,7 +15,7 @@ import { getHealth, type AdminHealth } from "./health";
 export interface AdminOverview {
   event: {
     id: string; slug: string; name: string; status: EventStatus; isTest: boolean; startedAt: number | null;
-    pausedAt: number | null; endedAt: number | null; submissionsEnabled: boolean; codesEnabled: boolean;
+    pausedAt: number | null; endedAt: number | null; endsAt: number | null; submissionsEnabled: boolean; codesEnabled: boolean;
     leaderboardVisible: boolean;
   };
   counts: {
@@ -27,7 +27,14 @@ export interface AdminOverview {
   stuck: { teamId: string; teamCode: string; teamName: string; stageNumber: number; waitingSinceMs: number }[];
   /** Teams with FREQUENT_AWAY_COUNT+ integrity flags, most first, top 10: someone should go and look. */
   integrityAlerts: { teamId: string; teamCode: string; teamName: string; flags: number }[];
-  readiness: { stages: number; challengesUnverified: number; finalStageOk: boolean; activeCodes: number; checkedInTeams: number };
+  /** Logins in the last 30 minutes that signed out the laptop a team was using, newest first, top 10. */
+  takeoverAlerts: {
+    teamId: string; teamCode: string; teamName: string; at: number; fromKind: string | null; toKind: string | null;
+  }[];
+  readiness: {
+    stages: number; challengesUnverified: number; finalStageOk: boolean; activeCodes: number; checkedInTeams: number;
+    registeredTeams: number;
+  };
   topTeams: { rank: number; teamName: string; teamCode: string; questionsSolved: number; finishedAt: number | null }[];
   recentActivity: { at: number; text: string; kind: ActivityKind; teamId?: string }[];
   health: AdminHealth;
@@ -37,8 +44,9 @@ export interface AdminOverview {
 const TEN_MINUTES = 10 * 60_000;
 const SUSPICIOUS_INVALID_ATTEMPTS = 5;
 const LOW_POOL_ACTIVE = 5;
+const TAKEOVER_WINDOW = 30 * 60_000;
 
-/** Command center snapshot for one event. 14 DB queries: GROUP BY counts, never one query per number. */
+/** Command center snapshot for one event. 15 DB queries: GROUP BY counts, never one query per number. */
 export async function getOverview(event: AhEvent): Promise<AdminOverview> {
   const db = getDb();
   const now = Date.now();
@@ -47,7 +55,7 @@ export async function getOverview(event: AhEvent): Promise<AdminOverview> {
 
   const [
     teamRows, submissionRows, [judgeErrorRow], suspiciousRows, pool, stuckRows, stageRows,
-    leaderboard, auditRows, judgedRows, health,
+    leaderboard, auditRows, judgedRows, takeoverRows, health,
   ] = await Promise.all([
     db.select({
       status: ahTeams.status,
@@ -102,6 +110,17 @@ export async function getOverview(event: AhEvent): Promise<AdminOverview> {
       .where(and(eq(ahSubmissions.eventId, event.id), inArray(ahSubmissions.status, ["DONE", "FAILED"])))
       .orderBy(desc(judgedAt))
       .limit(25),
+    db.select({
+      teamId: ahTeams.id, teamCode: ahTeams.teamCode, teamName: ahTeams.teamName,
+      at: ahAuditLogs.createdAt, metadata: ahAuditLogs.metadata,
+    }).from(ahAuditLogs)
+      .innerJoin(ahTeams, eq(ahAuditLogs.teamId, ahTeams.id))
+      .where(and(
+        eq(ahAuditLogs.eventId, event.id), eq(ahAuditLogs.action, "team.session_takeover"),
+        gt(ahAuditLogs.createdAt, now - TAKEOVER_WINDOW),
+      ))
+      .orderBy(desc(ahAuditLogs.createdAt))
+      .limit(10),
     getHealth(),
   ]);
 
@@ -141,7 +160,7 @@ export async function getOverview(event: AhEvent): Promise<AdminOverview> {
   return {
     event: {
       id: event.id, slug: event.slug, name: event.name, status: event.status as EventStatus, isTest: event.isTest,
-      startedAt: event.startedAt, pausedAt: event.pausedAt, endedAt: event.endedAt,
+      startedAt: event.startedAt, pausedAt: event.pausedAt, endedAt: event.endedAt, endsAt: event.endsAt,
       submissionsEnabled: event.submissionsEnabled, codesEnabled: event.codesEnabled,
       leaderboardVisible: event.leaderboardVisible,
     },
@@ -171,12 +190,21 @@ export async function getOverview(event: AhEvent): Promise<AdminOverview> {
       .sort((a, b) => b.flags - a.flags)
       .slice(0, 10)
       .map((row) => ({ teamId: row.teamId, teamCode: row.teamCode, teamName: row.teamName, flags: row.flags })),
+    takeoverAlerts: takeoverRows.map((row) => {
+      const meta = parseAuditMetadata(row.metadata);
+      return {
+        teamId: row.teamId, teamCode: row.teamCode, teamName: row.teamName, at: row.at,
+        fromKind: typeof meta.fromKind === "string" ? meta.fromKind : null,
+        toKind: typeof meta.toKind === "string" ? meta.toKind : null,
+      };
+    }),
     readiness: {
       stages: stageRows.length,
       challengesUnverified: stageRows.filter((row) => row.verifiedAt === null).length,
       finalStageOk: finals.length === 1 && finals[0].stageNumber === highest,
       activeCodes: pool.active,
       checkedInTeams: checkedIn,
+      registeredTeams: teamCount("REGISTERED"),
     },
     topTeams: leaderboard.rows.filter((row) => !row.disqualified).slice(0, 5).map((row) => ({
       rank: row.rank, teamName: row.teamName, teamCode: row.teamCode,
