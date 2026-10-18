@@ -1,7 +1,7 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { getDb } from "@/server/db";
 import { submissions, users, challenges } from "@/server/db/schema";
-import { getDailyChallenge, istYearMonth } from "@/lib/challenges";
+import { getDailyChallenge, getDailyChallenges, istYearMonth } from "@/lib/challenges";
 import { scoreChallenge, type ScoreInput } from "@/lib/scoring";
 
 /**
@@ -30,12 +30,12 @@ export interface LeaderRow {
 // the queries INNER JOIN users, so every scored id has one.
 const UNKNOWN_SOLVER = { display: "unknown", name: null, identity: "—" };
 
-/** Today's problem: solve-time standings with the speed-bounty points (fastest arena
- * timer ranks first). Only live (ranked) accepted solves count — a past-problem
- * practice solve of the same slug never appears here. */
-export async function todayLeaderboard(): Promise<LeaderRow[]> {
-  const daily = await getDailyChallenge();
-  if (!daily) return [];
+/** Today's problem(s): solve-time standings with the speed-bounty points (fastest arena
+ * timer ranks first). Accepts an optional challengeSlug to query standings for a specific
+ * POTD of the day; defaults to the primary daily challenge if omitted. */
+export async function todayLeaderboard(challengeSlug?: string): Promise<LeaderRow[]> {
+  const targetSlug = challengeSlug ?? (await getDailyChallenge())?.slug;
+  if (!targetSlug) return [];
 
   const db = getDb();
   const rows = await db
@@ -54,7 +54,7 @@ export async function todayLeaderboard(): Promise<LeaderRow[]> {
     .innerJoin(users, eq(submissions.userId, users.id))
     .where(
       and(
-        eq(submissions.challengeSlug, daily.slug),
+        eq(submissions.challengeSlug, targetSlug),
         eq(submissions.status, "AC"),
         eq(submissions.ranked, true),
       ),
@@ -105,6 +105,97 @@ export async function todayLeaderboard(): Promise<LeaderRow[]> {
     // Deterministic tiebreaker for equal / unranked / flagged rows
     return a.display.localeCompare(b.display);
   });
+  return out;
+}
+
+/** Common / combined leaderboard for today across all active POTDs.
+ * Aggregates points and total solved count for each user across all today's problems. */
+export async function todayCommonLeaderboard(): Promise<LeaderRow[]> {
+  const dailies = await getDailyChallenges();
+  if (dailies.length === 0) return [];
+  if (dailies.length === 1) return todayLeaderboard(dailies[0].slug);
+
+  const slugs = dailies.map((d) => d.slug);
+  const db = getDb();
+  const rows = await db
+    .select({
+      userId: submissions.userId,
+      challengeSlug: submissions.challengeSlug,
+      createdAt: submissions.createdAt,
+      flags: submissions.flags,
+      elapsedSeconds: submissions.elapsedSeconds,
+      language: submissions.language,
+      username: users.username,
+      name: users.name,
+      srn: users.srn,
+      prn: users.prn,
+    })
+    .from(submissions)
+    .innerJoin(users, eq(submissions.userId, users.id))
+    .where(
+      and(
+        inArray(submissions.challengeSlug, slugs),
+        eq(submissions.status, "AC"),
+        eq(submissions.ranked, true),
+      ),
+    );
+
+  const byUser = new Map(
+    rows.map((r) => [
+      r.userId,
+      { display: r.username, name: r.name, identity: r.srn ?? r.prn },
+    ]),
+  );
+
+  // Group by challenge slug to score each challenge independently
+  const bySlug = new Map<string, ScoreInput[]>();
+  for (const r of rows) {
+    const list = bySlug.get(r.challengeSlug) ?? [];
+    list.push({
+      userId: r.userId,
+      createdAt: r.createdAt,
+      elapsedSeconds: r.elapsedSeconds,
+      flags: r.flags,
+      ranked: true,
+    });
+    bySlug.set(r.challengeSlug, list);
+  }
+
+  // Aggregate points, solved count, and latest AC timestamp for tiebreaking
+  const totals = new Map<string, { points: number; solved: number; lastCreatedAt: number }>();
+  for (const [, acs] of bySlug) {
+    const scored = scoreChallenge(acs);
+    for (const [userId, s] of scored) {
+      const cur = totals.get(userId) ?? { points: 0, solved: 0, lastCreatedAt: 0 };
+      cur.points += s.points;
+      cur.solved += 1;
+      cur.lastCreatedAt = Math.max(cur.lastCreatedAt, s.createdAt);
+      totals.set(userId, cur);
+    }
+  }
+
+  const out: (LeaderRow & { userId: string })[] = [...totals.entries()].map(([userId, t]) => ({
+    rank: 0,
+    userId,
+    ...(byUser.get(userId) ?? UNKNOWN_SOLVER),
+    points: t.points,
+    solved: t.solved,
+    flagged: false,
+  }));
+
+  // Sort: highest points first, then most problems solved, then earliest finish time, then username
+  out.sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    if ((b.solved ?? 0) !== (a.solved ?? 0)) return (b.solved ?? 0) - (a.solved ?? 0);
+    const userA = totals.get(a.userId);
+    const userB = totals.get(b.userId);
+    if (userA && userB && userA.lastCreatedAt !== userB.lastCreatedAt) {
+      return userA.lastCreatedAt - userB.lastCreatedAt;
+    }
+    return a.display.localeCompare(b.display);
+  });
+
+  out.forEach((r, i) => (r.rank = i + 1));
   return out;
 }
 
