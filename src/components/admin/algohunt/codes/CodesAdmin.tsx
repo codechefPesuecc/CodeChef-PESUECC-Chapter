@@ -23,6 +23,7 @@ import type {
 } from "@/lib/algohunt/types";
 import { usePoll } from "@/components/algohunt/usePoll";
 import ConfirmAction from "@/components/admin/algohunt/ConfirmAction";
+import CodeImport from "./CodeImport";
 
 export interface BatchItem {
   id: string;
@@ -568,6 +569,20 @@ export default function CodesAdmin({ eventSlug }: { eventSlug: string }) {
               </button>
             </div>
           </div>
+
+          <CodeImport
+            eventSlug={eventSlug}
+            onImported={(batch, serials) => {
+              setCreatedBatchAlert({
+                id: batch.id,
+                name: batch.name,
+                minSerial: Math.min(...serials),
+                maxSerial: Math.max(...serials),
+              });
+              refreshCodes();
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+          />
 
           {/* Batches Table */}
           <div className="lc-panel overflow-hidden space-y-3 p-5">

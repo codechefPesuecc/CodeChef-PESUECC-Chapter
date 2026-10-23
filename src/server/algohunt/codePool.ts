@@ -51,83 +51,185 @@ export async function createCodeBatch(p: {
     return { ok: false, code: "EVENT_ENDED", message: COPY.errors.EVENT_ENDED };
   }
 
-  let attempt = 0;
-  while (attempt < 2) {
-    attempt++;
-    const [maxRow] = await db
-      .select({ maxSerial: sql<number>`COALESCE(MAX(${ahCodes.serial}), 0)` })
-      .from(ahCodes)
-      .where(eq(ahCodes.eventId, p.eventId));
-
-    const startSerial = (maxRow?.maxSerial ?? 0) + 1;
-    const batchId = crypto.randomUUID();
-    const now = Date.now();
-
+  for (let attempt = 1; attempt <= 2; attempt++) {
     const codeSet = new Set<string>();
     while (codeSet.size < p.size) {
       codeSet.add(generateCode());
     }
-    const generatedList = Array.from(codeSet);
-
-    const codeRows = generatedList.map((code, idx) => ({
-      id: crypto.randomUUID(),
-      eventId: p.eventId,
-      batchId,
-      serial: startSerial + idx,
-      code,
-      status: "ACTIVE" as const,
-      createdAt: now,
-    }));
-
-    const CHUNK_SIZE = 14;
-    const chunks: typeof codeRows[] = [];
-    for (let i = 0; i < codeRows.length; i += CHUNK_SIZE) {
-      chunks.push(codeRows.slice(i, i + CHUNK_SIZE));
-    }
-
-    const batchRow: AhCodeBatch = {
-      id: batchId,
-      eventId: p.eventId,
-      name,
-      size: p.size,
-      createdBy: p.adminId,
-      createdAt: now,
-    };
-
     try {
-      await db.batch([
-        db.insert(ahCodeBatches).values(batchRow),
-        ...chunks.map((chunk) => db.insert(ahCodes).values(chunk)),
-        auditInsert(db, {
-          eventId: p.eventId,
-          teamId: null,
-          actorType: "ADMIN",
-          actorId: p.adminId,
-          action: "code.batch_created",
-          targetType: "batch",
-          targetId: batchId,
-          metadata: {
-            name,
-            size: p.size,
-            serialFrom: startSerial,
-            serialTo: startSerial + p.size - 1,
-          },
-        }),
-      ]);
-
       return {
         ok: true,
-        batch: batchRow,
-        codes: codeRows.map((c) => ({ serial: c.serial, code: c.code })),
+        ...(await writeCodeBatch({
+          eventId: p.eventId,
+          name,
+          adminId: p.adminId,
+          entries: Array.from(codeSet, (code) => ({ code, placementNote: null })),
+          imported: false,
+        })),
       };
     } catch {
-      if (attempt === 2) {
-        return { ok: false, code: "CONFLICT", message: "Please try again." };
-      }
+      // A generated code clashed with an existing one (or a concurrent batch took the serials): retry once.
     }
   }
 
   return { ok: false, code: "CONFLICT", message: "Please try again." };
+}
+
+/** Inserts a batch and its codes, numbered after the event's highest serial, in one D1 batch. Throws on a clash. */
+async function writeCodeBatch(p: {
+  eventId: string;
+  name: string;
+  adminId: string;
+  entries: { code: string; placementNote: string | null }[];
+  imported: boolean;
+}): Promise<{ batch: AhCodeBatch; codes: { serial: number; code: string }[] }> {
+  const db = getDb();
+  const [maxRow] = await db
+    .select({ maxSerial: sql<number>`COALESCE(MAX(${ahCodes.serial}), 0)` })
+    .from(ahCodes)
+    .where(eq(ahCodes.eventId, p.eventId));
+
+  const startSerial = (maxRow?.maxSerial ?? 0) + 1;
+  const batchId = crypto.randomUUID();
+  const now = Date.now();
+
+  const codeRows = p.entries.map((entry, idx) => ({
+    id: crypto.randomUUID(),
+    eventId: p.eventId,
+    batchId,
+    serial: startSerial + idx,
+    code: entry.code,
+    status: "ACTIVE" as const,
+    placementNote: entry.placementNote,
+    createdAt: now,
+  }));
+
+  // D1 binds at most 100 parameters per statement: 8 per row.
+  const CHUNK_SIZE = 12;
+  const chunks: typeof codeRows[] = [];
+  for (let i = 0; i < codeRows.length; i += CHUNK_SIZE) {
+    chunks.push(codeRows.slice(i, i + CHUNK_SIZE));
+  }
+
+  const batchRow: AhCodeBatch = {
+    id: batchId,
+    eventId: p.eventId,
+    name: p.name,
+    size: codeRows.length,
+    createdBy: p.adminId,
+    createdAt: now,
+  };
+
+  await db.batch([
+    db.insert(ahCodeBatches).values(batchRow),
+    ...chunks.map((chunk) => db.insert(ahCodes).values(chunk)),
+    auditInsert(db, {
+      eventId: p.eventId,
+      teamId: null,
+      actorType: "ADMIN",
+      actorId: p.adminId,
+      action: "code.batch_created",
+      targetType: "batch",
+      targetId: batchId,
+      metadata: {
+        name: p.name,
+        size: codeRows.length,
+        serialFrom: startSerial,
+        serialTo: startSerial + codeRows.length - 1,
+        ...(p.imported ? { imported: true } : {}),
+      },
+    }),
+  ]);
+
+  return { batch: batchRow, codes: codeRows.map((c) => ({ serial: c.serial, code: c.code })) };
+}
+
+export const MAX_CODES_PER_IMPORT = 200;
+export const MAX_PLACEMENT_NOTE = 200;
+
+export interface CodeImportProblem {
+  row: number; // 1-based position in the submitted list
+  code: string;
+  message: string;
+  duplicateOf?: number; // the earlier row with the same code
+}
+
+/** Checks organizers' own codes: well-formed, no repeats in the list, none already taken in any event. */
+export function validateCodeImport(
+  entries: { code: string; note?: string | null }[],
+  existing: ReadonlySet<string>,
+): { problems: CodeImportProblem[]; rows: { code: string; placementNote: string | null }[] } {
+  const problems: CodeImportProblem[] = [];
+  const firstRow = new Map<string, number>();
+  const rows = entries.map((entry, idx) => {
+    const row = idx + 1;
+    const code = normalizeCode(entry.code);
+    const note = entry.note?.trim() || null;
+    if (!isWellFormedCode(code)) {
+      problems.push({ row, code: entry.code, message: "Not a code: it must be 8 letters and digits." });
+    } else if (firstRow.has(code)) {
+      problems.push({ row, code: entry.code, message: `Same code as row ${firstRow.get(code)}.`, duplicateOf: firstRow.get(code) });
+    } else if (existing.has(code)) {
+      problems.push({ row, code: entry.code, message: "Already exists. A code can belong to only one event." });
+    }
+    if (!firstRow.has(code)) firstRow.set(code, row);
+    if (note && note.length > MAX_PLACEMENT_NOTE) {
+      problems.push({ row, code: entry.code, message: `The note is over ${MAX_PLACEMENT_NOTE} characters.` });
+    }
+    return { code, placementNote: note };
+  });
+  return { problems, rows };
+}
+
+/**
+ * Imports codes the organizers chose themselves (QR stickers printed before the event), each with
+ * an optional placement note. Nothing is written unless every row passes; `dryRun` only checks.
+ */
+export async function importCodeBatch(p: {
+  eventId: string;
+  name: string;
+  entries: { code: string; note?: string | null }[];
+  adminId: string;
+  dryRun: boolean;
+}): Promise<
+  | { ok: true; problems: CodeImportProblem[]; batch: AhCodeBatch | null; codes: { serial: number; code: string }[] }
+  | { ok: false; code: ErrorCode; message: string }
+> {
+  const db = getDb();
+  const name = p.name.trim();
+  if (name.length < 1 || name.length > 60 || p.entries.length < 1 || p.entries.length > MAX_CODES_PER_IMPORT) {
+    return { ok: false, code: "VALIDATION", message: COPY.errors.VALIDATION };
+  }
+
+  const [event] = await db.select().from(ahEvents).where(eq(ahEvents.id, p.eventId)).limit(1);
+  if (!event) {
+    return { ok: false, code: "NOT_FOUND", message: COPY.errors.NOT_FOUND };
+  }
+  if (event.status === "ENDED" || event.status === "ARCHIVED") {
+    return { ok: false, code: "EVENT_ENDED", message: COPY.errors.EVENT_ENDED };
+  }
+
+  const candidates = [...new Set(p.entries.map((e) => normalizeCode(e.code)).filter(isWellFormedCode))];
+  const existing = new Set<string>();
+  // Codes are unique across events; D1 binds at most 100 parameters per statement.
+  for (let i = 0; i < candidates.length; i += 90) {
+    const taken = await db
+      .select({ code: ahCodes.code })
+      .from(ahCodes)
+      .where(inArray(ahCodes.code, candidates.slice(i, i + 90)));
+    for (const row of taken) existing.add(row.code);
+  }
+
+  const { problems, rows } = validateCodeImport(p.entries, existing);
+  if (problems.length > 0 || p.dryRun) {
+    return { ok: true, problems, batch: null, codes: [] };
+  }
+
+  try {
+    return { ok: true, problems, ...(await writeCodeBatch({ eventId: p.eventId, name, adminId: p.adminId, entries: rows, imported: true })) };
+  } catch {
+    return { ok: false, code: "CONFLICT", message: "Another change landed at the same time. Check again, then import." };
+  }
 }
 
 export async function redeemCodeForTeam(p: {
