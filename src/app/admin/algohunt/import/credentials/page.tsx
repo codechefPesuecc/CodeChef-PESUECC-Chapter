@@ -171,7 +171,7 @@ function CredentialsPrintContent() {
                         <div className="font-mono text-[10px] font-bold tracking-widest">CODECHEF PESU ECC</div>
                         <div className="font-mono text-base font-extrabold">ALGOHUNT 2.0</div>
                       </div>
-                      <div className="text-right font-mono text-[10px]">24 Oct 2026<br />Seminar Hall 1</div>
+                      <div className="text-right font-mono text-[10px]">24 Oct 2026<br />Seminar Hall 2</div>
                     </div>
                     <div className="my-3 space-y-2">
                       <div>

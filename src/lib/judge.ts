@@ -16,31 +16,14 @@ function getHeaders(): Record<string, string> {
   return headers;
 }
 
-// Workers run in isolated contexts — no shared state across requests.
-// This limiter only helps during local/Node.js dev; on Workers it's effectively a no-op.
-const MAX_CONCURRENT_JOBS = Math.max(
-  1,
-  Number(process.env.JUDGE_CONCURRENCY) || 4,
-);
+// No in-process queue. A Worker instance serves many requests at once, and a request parked on a
+// promise that another request resolves is cancelled by the runtime as hung, which also leaked its
+// slot: after a burst, every judge call failed with a 500. Akiro queues jobs itself and answers 503
+// when it is busy, which judgeExecute retries below.
 let activeJobs = 0;
-const jobQueue: (() => void)[] = [];
-
-function acquireSlot(): Promise<void> {
-  if (activeJobs < MAX_CONCURRENT_JOBS) {
-    activeJobs++;
-    return Promise.resolve();
-  }
-  return new Promise((resolve) => jobQueue.push(resolve));
-}
-
-function releaseSlot(): void {
-  const next = jobQueue.shift();
-  if (next) next();
-  else activeJobs--;
-}
 
 export function judgeQueueStats() {
-  return { active: activeJobs, queued: jobQueue.length, max: MAX_CONCURRENT_JOBS };
+  return { active: activeJobs, queued: 0 };
 }
 
 /** Maps problem language identifiers to Judge Sandbox language names. */
@@ -153,7 +136,7 @@ export async function judgeExecute(params: {
     ? params.testCases
     : [{ input: params.stdin ?? "", expected_output: undefined }];
 
-  await acquireSlot();
+  activeJobs++;
   try {
     const jobId = `sub-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     const payload = {
@@ -248,6 +231,6 @@ export async function judgeExecute(params: {
       test_case_results: formattedTestCases,
     };
   } finally {
-    releaseSlot();
+    activeJobs--;
   }
 }
