@@ -2458,12 +2458,12 @@
         }
       },
       "indexes": {
-        "challenges_date_unique": {
-          "name": "challenges_date_unique",
+        "challenges_date_idx": {
+          "name": "challenges_date_idx",
           "columns": [
             "date"
           ],
-          "isUnique": true
+          "isUnique": false
         }
       },
       "foreignKeys": {},

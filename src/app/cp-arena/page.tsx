@@ -48,7 +48,7 @@ export default async function CpArenaPage() {
   // Today's problem is the one scheduled for exactly today (IST); if none is
   // scheduled, there's simply no live problem. Everything else is past practice.
   const today = todayStr();
-  const daily = released.find((c) => c.date === today) ?? null;
+  const dailies = released.filter((c) => c.date === today);
   const pastChallenges = released.filter((c) => c.date !== today);
 
   return (
@@ -80,76 +80,87 @@ export default async function CpArenaPage() {
           </Link>
         </div>
 
-        {/* ━━━━━━━━━━━━━━━━━━ Problem of the Day ━━━━━━━━━━━━━━━━━━ */}
-        <h2 className="mt-10 font-display text-lg font-bold tracking-tight text-chocolate sm:text-xl">
-          Problem of the Day
-        </h2>
+        {/* ━━━━━━━━━━━━━━━━━━ Problem(s) of the Day ━━━━━━━━━━━━━━━━━━ */}
+        <div className="mt-10 flex items-center justify-between">
+          <h2 className="font-display text-lg font-bold tracking-tight text-chocolate sm:text-xl">
+            {dailies.length > 1 ? "Problems of the Day" : "Problem of the Day"}
+          </h2>
+          {dailies.length > 1 && (
+            <span className="font-mono text-xs font-medium text-bronze">
+              {dailies.length} Live Today
+            </span>
+          )}
+        </div>
 
-        {daily ? (
-          <Link href={`/cp-arena/consent/${daily.slug}`} className="group mt-4 block">
-            <MechaPanel
-              ticks
-              bodyClassName="relative overflow-hidden px-6 py-6 sm:px-8 sm:py-7"
-            >
-              {/* Decorative accent bar */}
-              <span
-                aria-hidden
-                className="absolute inset-y-0 left-0 w-1 bg-bronze"
-              />
+        {dailies.length > 0 ? (
+          <div className="mt-4 grid gap-4">
+            {dailies.map((daily) => (
+              <Link key={daily.slug} href={`/cp-arena/consent/${daily.slug}`} className="group block">
+                <MechaPanel
+                  ticks
+                  bodyClassName="relative overflow-hidden px-6 py-6 sm:px-8 sm:py-7"
+                >
+                  {/* Decorative accent bar */}
+                  <span
+                    aria-hidden
+                    className="absolute inset-y-0 left-0 w-1 bg-bronze"
+                  />
 
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  {/* Meta line: date + live badge */}
-                  <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
-                    <span className="text-charcoal/50">
-                      {formatDateLong(daily.date)}
-                    </span>
-                    <span className="mecha-chip bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
-                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-                      Live today
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      {/* Meta line: date + live badge */}
+                      <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+                        <span className="text-charcoal/50">
+                          {formatDateLong(daily.date)}
+                        </span>
+                        <span className="mecha-chip bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
+                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+                          Live today
+                        </span>
+                      </div>
+
+                      {/* Title */}
+                      <h3 className="mt-2 text-balance font-display text-2xl font-bold tracking-tight text-chocolate transition-colors group-hover:text-bronze sm:text-3xl">
+                        {daily.title}
+                      </h3>
+
+                      {/* Difficulty + tags */}
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <span
+                          className={`mecha-chip ${DIFFICULTY_STYLES[daily.difficulty] ?? "bg-bronze/15 text-bronze"}`}
+                        >
+                          {daily.difficulty}
+                        </span>
+                        {daily.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="mecha-chip bg-bronze/10 text-brown"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* Author */}
+                      {daily.author && (
+                        <p className="mt-3 text-sm text-charcoal/60">
+                          Set by{" "}
+                          <span className="font-semibold text-brown">
+                            {daily.author}
+                          </span>
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Solve CTA */}
+                    <span className="mecha-btn mecha-btn--solid mt-1 shrink-0 transition-transform group-hover:translate-x-0.5">
+                      Solve 
                     </span>
                   </div>
-
-                  {/* Title */}
-                  <h3 className="mt-2 text-balance font-display text-2xl font-bold tracking-tight text-chocolate transition-colors group-hover:text-bronze sm:text-3xl">
-                    {daily.title}
-                  </h3>
-
-                  {/* Difficulty + tags */}
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <span
-                      className={`mecha-chip ${DIFFICULTY_STYLES[daily.difficulty] ?? "bg-bronze/15 text-bronze"}`}
-                    >
-                      {daily.difficulty}
-                    </span>
-                    {daily.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="mecha-chip bg-bronze/10 text-brown"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Author */}
-                  {daily.author && (
-                    <p className="mt-3 text-sm text-charcoal/60">
-                      Set by{" "}
-                      <span className="font-semibold text-brown">
-                        {daily.author}
-                      </span>
-                    </p>
-                  )}
-                </div>
-
-                {/* Solve CTA */}
-                <span className="mecha-btn mecha-btn--solid mt-1 shrink-0 transition-transform group-hover:translate-x-0.5">
-                  Solve 
-                </span>
-              </div>
-            </MechaPanel>
-          </Link>
+                </MechaPanel>
+              </Link>
+            ))}
+          </div>
         ) : (
           <MechaPanel bodyClassName="px-6 py-6" className="mt-4">
             <p className="text-charcoal/60">
