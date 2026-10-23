@@ -253,6 +253,8 @@ describe("AlgoHunt Code Pool & Redemption Engine (Module 3)", () => {
     if (cooldownRes.ok) return;
     expect(cooldownRes.code).toBe("COOLDOWN");
     expect(cooldownRes.retryAfterSeconds).toBeGreaterThan(0);
+    // Minutes and seconds, not "Please wait 598s".
+    expect(cooldownRes.message).toMatch(/^Too many invalid codes\. Code entry is locked: please wait \d+ min( \d+ s)? before trying again\.$/);
 
     // Advance 10 minutes (600,001 ms) using fake timers
     vi.useFakeTimers();

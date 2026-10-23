@@ -1,3 +1,5 @@
+import type { EventStatus } from "./types";
+
 /** Generated codes avoid look-alikes (no 0/O/1/I/L/U). Imported codes may use any letter or digit. */
 export const CODE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTVWXYZ"; // 30 chars
 export const CODE_LENGTH = 8;
@@ -34,4 +36,14 @@ export function formatCodeForDisplay(code: string): string {
     return code;
   }
   return `${code.slice(0, 4)}-${code.slice(4)}`;
+}
+
+/**
+ * Codes are scarce on purpose (fewer than teams need), so a short pool is normal. Admins only get a
+ * calm heads-up while teams can play and almost no codes are left. Shared by the command center and Codes page.
+ */
+export const LOW_POOL_ACTIVE = 3;
+
+export function isPoolLow(eventStatus: EventStatus, active: number): boolean {
+  return (eventStatus === "LIVE" || eventStatus === "PAUSED") && active <= LOW_POOL_ACTIVE;
 }

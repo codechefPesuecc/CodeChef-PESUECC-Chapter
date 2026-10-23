@@ -117,11 +117,13 @@ describe("AlgoHunt Admin Code Management APIs (Module 3 PR 2)", () => {
     expect(res.status).toBe(200);
     const json = await res.json() as {
       ok: boolean;
+      eventStatus: string;
       stats: { total: number; active: number };
       batches: { name: string }[];
       codes: { id: string; code: string; serial: number }[];
     };
     expect(json.ok).toBe(true);
+    expect(json.eventStatus).toBe("LIVE");
     expect(json.stats.total).toBe(5);
     expect(json.stats.active).toBe(5);
     expect(json.batches).toHaveLength(1);

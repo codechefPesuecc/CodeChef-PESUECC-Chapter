@@ -127,7 +127,7 @@ export default function CheckinDesk({ eventSlug }: { eventSlug: string }) {
             ref={inputRef}
             type="text"
             className="mecha-input text-base sm:text-lg font-mono uppercase tracking-wider flex-1"
-            placeholder="e.g. AH2-T001"
+            placeholder="e.g. AH2-001"
             value={teamCodeQuery}
             onChange={(e) => setTeamCodeQuery(e.target.value.toUpperCase())}
             autoFocus

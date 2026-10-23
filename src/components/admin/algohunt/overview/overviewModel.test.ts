@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { AdminOverview } from "@/server/algohunt/admin/overview";
 import {
-  STUCK_WARN_MS, formatRunning, formatWaiting, lowPoolMessage, poolTone, stuckTone, systemTone,
+  STUCK_WARN_MS, formatRunning, formatWaiting, longWait, lowPoolMessage, poolTone, stuckTone, systemTone,
 } from "./overviewModel";
 
 const pool = (over: Partial<AdminOverview["codePool"]> = {}): AdminOverview["codePool"] => ({
@@ -24,10 +24,19 @@ describe("tones", () => {
     expect(stuckTone(STUCK_WARN_MS + 1)).toBe("warn");
   });
 
-  it("makes the code pool red when low and amber when teams wait", () => {
+  it("keeps the code pool calm: amber only when low, never red, and waiting teams alone are normal", () => {
     expect(poolTone(pool())).toBe("ok");
-    expect(poolTone(pool({ teamsWaitingForCode: 2 }))).toBe("warn");
-    expect(poolTone(pool({ lowPool: true, active: 3, teamsWaitingForCode: 9 }))).toBe("bad");
+    expect(poolTone(pool({ teamsWaitingForCode: 2 }))).toBe("ok");
+    expect(poolTone(pool({ lowPool: true, active: 3, teamsWaitingForCode: 9 }))).toBe("warn");
+  });
+
+  it("flags a long wait only once some team has waited past 15 minutes", () => {
+    const team = (waitingSinceMs: number) => ({
+      teamId: "t", teamCode: "AH2-001", teamName: "Alpha", stageNumber: 1, waitingSinceMs,
+    });
+    expect(longWait([])).toBe(false);
+    expect(longWait([team(STUCK_WARN_MS), team(60_000)])).toBe(false);
+    expect(longWait([team(60_000), team(STUCK_WARN_MS + 1)])).toBe(true);
   });
 
   it("makes the system card red when the judge or DB is down, amber on judge errors", () => {
@@ -46,12 +55,12 @@ describe("tones", () => {
 });
 
 describe("lowPoolMessage", () => {
-  it("is null for a healthy pool and names the numbers otherwise", () => {
+  it("is null for a healthy pool and otherwise says scarcity is by design", () => {
     expect(lowPoolMessage(pool())).toBeNull();
-    expect(lowPoolMessage(pool({ lowPool: true, active: 12, teamsWaitingForCode: 9 })))
-      .toBe("LOW POOL: 12 active codes, 9 teams waiting. Generate & print a new batch.");
+    expect(lowPoolMessage(pool({ lowPool: true, active: 3, teamsWaitingForCode: 9 })))
+      .toBe("Only 3 active codes left. Codes are scarce by design — add more only if teams are stuck for a long time.");
     expect(lowPoolMessage(pool({ lowPool: true, active: 1, teamsWaitingForCode: 1 })))
-      .toBe("LOW POOL: 1 active code, 1 team waiting. Generate & print a new batch.");
+      .toBe("Only 1 active code left. Codes are scarce by design — add more only if teams are stuck for a long time.");
   });
 });
 

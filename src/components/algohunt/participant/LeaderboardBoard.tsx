@@ -6,6 +6,7 @@ import { formatIST } from "@/lib/algohunt/format";
 import type { LeaderboardRow, RankingMode } from "@/lib/algohunt/types";
 import { usePoll } from "../usePoll";
 import { useParticipantState } from "./ParticipantStateProvider";
+import { useEventClock } from "./useEventClock";
 
 interface LeaderboardResponse {
   visible: boolean;
@@ -22,6 +23,9 @@ const RANKED_BY: Record<RankingMode, string> = {
 /** Server-ranked leaderboard. Its own slow poll; the team state still comes from the shared provider. */
 export default function LeaderboardBoard() {
   const { state } = useParticipantState();
+  const { timeUp } = useEventClock();
+  // Once play is over nobody is still "in progress": unfinished teams simply did not finish.
+  const playOver = timeUp || state.event.status === "ENDED" || state.event.status === "ARCHIVED";
   const { data, error } = usePoll<LeaderboardResponse>("/api/algohunt/leaderboard", { intervalMs: 20000, jitterMs: 3000 });
 
   return (
@@ -85,7 +89,7 @@ export default function LeaderboardBoard() {
                     </span>
                   </td>
                   <td className="px-3 py-2 text-xs">
-                    {row.finished && row.finishedAt !== null ? `Finished ${formatIST(row.finishedAt)}` : "In progress"}
+                    {row.finished && row.finishedAt !== null ? `Finished ${formatIST(row.finishedAt)}` : playOver ? "Not finished" : "In progress"}
                   </td>
                 </tr>
               ))}

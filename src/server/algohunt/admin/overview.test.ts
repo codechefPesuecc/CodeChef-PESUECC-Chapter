@@ -85,6 +85,7 @@ describe("getOverview", () => {
       teamId: fixture.teams[2].team.id, teamCode: "AH2-T003", stageNumber: 1,
     })]);
     expect(overview.stuck[0].waitingSinceMs).toBeGreaterThanOrEqual(0);
+    expect(overview.stuckMore).toBe(0);
     expect(overview.readiness).toEqual({
       stages: 3, challengesUnverified: 3, finalStageOk: true, activeCodes: 7, checkedInTeams: 3, registeredTeams: 0,
     });
@@ -113,16 +114,33 @@ describe("getOverview", () => {
     expect(json).not.toContain(SOURCE_MARKER);
   });
 
-  it("flags a low pool when few codes are left or more teams wait than codes exist", async () => {
+  it("flags a low pool only when almost no codes are left during play: scarcity is by design", async () => {
     const { fixture } = await seedEventDay();
     await getDb().update(ahCodes).set({ status: "DISABLED" })
       .where(inArray(ahCodes.id, fixture.codes.slice(1, 4).map((c) => c.id)));
+    const short = await getOverview(fixture.event);
+    expect(short.codePool).toMatchObject({ active: 4, lowPool: false });
+
+    await getDb().update(ahCodes).set({ status: "DISABLED" }).where(eq(ahCodes.id, fixture.codes[4].id));
     const low = await getOverview(fixture.event);
-    expect(low.codePool).toMatchObject({ active: 4, lowPool: true });
+    expect(low.codePool).toMatchObject({ active: 3, lowPool: true });
 
     await getDb().update(ahCodes).set({ status: "DISABLED" }).where(eq(ahCodes.eventId, fixture.event.id));
     const empty = await getOverview(fixture.event);
     expect(empty.codePool).toMatchObject({ active: 0, teamsWaitingForCode: 1, lowPool: true });
+    expect((await getOverview({ ...fixture.event, status: "PAUSED" })).codePool.lowPool).toBe(true);
+    for (const status of ["DRAFT", "CHECK_IN", "READY", "ENDED"] as const) {
+      expect((await getOverview({ ...fixture.event, status })).codePool.lowPool).toBe(false);
+    }
+  });
+
+  it("counts the waiting teams that did not fit in the top-10 list", async () => {
+    const fixture = await seedFixture({ teams: 12, stages: 2, codes: 1 });
+    for (let i = 0; i < 12; i += 1) await solveCurrent(fixture, i);
+    const overview = await getOverview(fixture.event);
+    expect(overview.codePool.teamsWaitingForCode).toBe(12);
+    expect(overview.stuck).toHaveLength(10);
+    expect(overview.stuckMore).toBe(2);
   });
 
   it("asks for a volunteer check on teams with many integrity flags, most first, never disqualified ones", async () => {

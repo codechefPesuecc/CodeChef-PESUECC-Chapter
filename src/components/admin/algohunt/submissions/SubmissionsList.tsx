@@ -31,7 +31,7 @@ const VERDICT_CHIPS: Record<string, string> = {
   WA: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30",
   TLE: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
   MLE: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
-  RTE: "bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30",
+  RE: "bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30",
   CE: "bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30",
   RUNNING: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30 animate-pulse",
   FAILED: "bg-red-600/15 text-red-800 dark:text-red-200 border-red-500/40",
@@ -102,12 +102,13 @@ export default function SubmissionsList({ eventSlug, initialTeam = "" }: { event
       {/* Filters */}
       <div className="lc-panel p-4 grid gap-3 sm:grid-cols-4 items-end">
         <div>
-          <label className="block text-[11px] font-mono uppercase text-charcoal/70 mb-1">
+          <label htmlFor="submissions-team" className="block text-[11px] font-mono uppercase text-charcoal/70 mb-1">
             Team Code
           </label>
           <div className="relative">
             <Search className="w-3.5 h-3.5 text-charcoal/50 absolute left-2.5 top-2.5" />
             <input
+              id="submissions-team"
               type="text"
               placeholder="Filter team..."
               className="mecha-input text-xs pl-8 w-full font-mono uppercase"
@@ -121,10 +122,11 @@ export default function SubmissionsList({ eventSlug, initialTeam = "" }: { event
         </div>
 
         <div>
-          <label className="block text-[11px] font-mono uppercase text-charcoal/70 mb-1">
+          <label htmlFor="submissions-question" className="block text-[11px] font-mono uppercase text-charcoal/70 mb-1">
             Question
           </label>
           <select
+            id="submissions-question"
             className="mecha-input text-xs w-full"
             value={stageFilter}
             onChange={(e) => {
@@ -142,10 +144,11 @@ export default function SubmissionsList({ eventSlug, initialTeam = "" }: { event
         </div>
 
         <div>
-          <label className="block text-[11px] font-mono uppercase text-charcoal/70 mb-1">
+          <label htmlFor="submissions-verdict" className="block text-[11px] font-mono uppercase text-charcoal/70 mb-1">
             Verdict
           </label>
           <select
+            id="submissions-verdict"
             className="mecha-input text-xs w-full"
             value={verdictFilter}
             onChange={(e) => {
@@ -158,7 +161,7 @@ export default function SubmissionsList({ eventSlug, initialTeam = "" }: { event
             <option value="WA">Wrong Answer (WA)</option>
             <option value="TLE">Time Limit (TLE)</option>
             <option value="MLE">Memory Limit (MLE)</option>
-            <option value="RTE">Runtime Error (RTE)</option>
+            <option value="RE">Runtime Error (RE)</option>
             <option value="CE">Compile Error (CE)</option>
           </select>
         </div>
