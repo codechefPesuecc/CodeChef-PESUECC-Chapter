@@ -1,4 +1,5 @@
-export const CODE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTVWXYZ"; // 30 chars, no 0/O/1/I/L
+/** Generated codes avoid look-alikes (no 0/O/1/I/L/U). Imported codes may use any letter or digit. */
+export const CODE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTVWXYZ"; // 30 chars
 export const CODE_LENGTH = 8;
 
 /** trim → uppercase → remove spaces, '-', '_' → slice(0, 32). */
@@ -6,17 +7,9 @@ export function normalizeCode(raw: string): string {
   return raw.trim().toUpperCase().replace(/[\s\-_]/g, "").slice(0, 32);
 }
 
-/** exactly CODE_LENGTH chars, all in CODE_ALPHABET. */
+/** exactly CODE_LENGTH chars, each A–Z or 0–9 (organizers can import their own codes). */
 export function isWellFormedCode(normalized: string): boolean {
-  if (normalized.length !== CODE_LENGTH) {
-    return false;
-  }
-  for (let i = 0; i < normalized.length; i++) {
-    if (!CODE_ALPHABET.includes(normalized[i])) {
-      return false;
-    }
-  }
-  return true;
+  return /^[A-Z0-9]+$/.test(normalized) && normalized.length === CODE_LENGTH;
 }
 
 /** crypto.getRandomValues + rejection sampling (accept b < 240). No Node imports: this file is shared with client components. */

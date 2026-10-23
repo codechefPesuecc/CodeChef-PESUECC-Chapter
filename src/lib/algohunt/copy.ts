@@ -7,7 +7,7 @@ export const COPY = {
   alreadyUnlocked: "Question {n} is already unlocked for your team. If you typed a second code, it wasn't used: keep it for a later question.",
   alreadyUsed: "This code has already been used. Keep searching for another QR!",
   invalidCode: "That code isn't valid. Check it and try again.",
-  malformedCode: "Codes are 8 letters and digits, and never contain 0, O, 1, I, L or U. Check what you typed.",
+  malformedCode: "Codes are 8 letters and digits. Check what you typed.",
   notSolved: "Solve your current question first. Then you can use a code to unlock the next one.",
   cooldown: "Too many invalid codes. Please wait {s}s before trying again.",
   finished: "You've completed AlgoHunt 2.0! Your finish has been recorded. Please report to the organizers for final verification.",

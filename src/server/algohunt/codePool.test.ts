@@ -19,8 +19,10 @@ import {
   createCodeBatch,
   disableBatch,
   getCodePoolStats,
+  importCodeBatch,
   redeemCodeForTeam,
   setCodeAvailability,
+  validateCodeImport,
 } from "./codePool";
 import { resetAlgoHuntTables, setupTestDb } from "./testing/db";
 import { ctxFor, seedFixture, solveCurrent } from "./testing/fixtures";
@@ -220,8 +222,8 @@ describe("AlgoHunt Code Pool & Redemption Engine (Module 3)", () => {
       .set({ status: "DISABLED" })
       .where(eq(ahCodes.id, fixture.codes[0].id));
 
-    // Malformed (7 chars, or a letter that never appears in a code) -> VALIDATION, and no strike.
-    for (const typo of ["7FQ2M8K", "7FQ2M8KO"]) {
+    // Malformed (7 chars, or a character that never appears in a code) -> VALIDATION, and no strike.
+    for (const typo of ["7FQ2M8K", "7FQ2M8K!"]) {
       const res = await redeemCodeForTeam({ ctx, rawCode: typo, ip: "127.0.0.1" });
       expect(res.ok).toBe(false);
       if (res.ok) return;
@@ -591,5 +593,70 @@ describe("AlgoHunt Code Pool & Redemption Engine (Module 3)", () => {
     const disabledInBatch = codesInBatch.filter((c) => c.status === "DISABLED");
     expect(usedInBatch).toHaveLength(1);
     expect(disabledInBatch).toHaveLength(3);
+  });
+
+  it("12. validateCodeImport: any letters and digits; flags malformed codes, repeats in the list, taken codes and long notes", () => {
+    const { problems, rows } = validateCodeImport(
+      [
+        { code: " zl0u-i1ox ", note: "  CL-001 · Ground floor, east wing " },
+        { code: "ZL0UI1OX" },
+        { code: "SHORT" },
+        { code: "TAKEN234" },
+        { code: "Q2W3E4R5", note: "x".repeat(201) },
+        { code: "H7GJ3TWZ", note: "" },
+      ],
+      new Set(["TAKEN234"]),
+    );
+    expect(rows[0]).toEqual({ code: "ZL0UI1OX", placementNote: "CL-001 · Ground floor, east wing" });
+    expect(rows[5]).toEqual({ code: "H7GJ3TWZ", placementNote: null });
+    expect(problems[0].duplicateOf).toBe(1);
+    expect(problems.map((p) => [p.row, p.message])).toEqual([
+      [2, "Same code as row 1."],
+      [3, "Not a code: it must be 8 letters and digits."],
+      [4, "Already exists. A code can belong to only one event."],
+      [5, "The note is over 200 characters."],
+    ]);
+  });
+
+  it("13. importCodeBatch: a dry run writes nothing; the import stores normalized codes with notes after the last serial; a team unlocks with one that has L, I, U, 0, O and 1", async () => {
+    const fixture = await seedFixture({ codes: 2 });
+    const db = getDb();
+    const entries = [
+      { code: "zl0u-i1ox", note: "CL-001 · Ground floor, east wing" },
+      { code: "Q2W3-E4R5" },
+    ];
+
+    const dry = await importCodeBatch({ eventId: fixture.event.id, name: "Own codes", entries, adminId: "admin-1", dryRun: true });
+    expect(dry).toMatchObject({ ok: true, problems: [], batch: null });
+    expect(await db.select().from(ahCodes).where(eq(ahCodes.eventId, fixture.event.id))).toHaveLength(2);
+
+    const res = await importCodeBatch({ eventId: fixture.event.id, name: "Own codes", entries, adminId: "admin-1", dryRun: false });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.batch).toMatchObject({ name: "Own codes", size: 2 });
+    expect(res.codes).toEqual([{ serial: 3, code: "ZL0UI1OX" }, { serial: 4, code: "Q2W3E4R5" }]);
+    const [stored] = await db.select().from(ahCodes).where(eq(ahCodes.code, "ZL0UI1OX"));
+    expect(stored).toMatchObject({ status: "ACTIVE", placementNote: "CL-001 · Ground floor, east wing", serial: 3 });
+    const [audit] = await db
+      .select()
+      .from(ahAuditLogs)
+      .where(and(eq(ahAuditLogs.eventId, fixture.event.id), eq(ahAuditLogs.targetId, res.batch!.id)));
+    expect(audit.metadata).toContain('"imported":true');
+    expect(audit.metadata).not.toContain("ZL0UI1OX");
+
+    // The same codes again: nothing is written, every row is reported as taken.
+    const again = await importCodeBatch({ eventId: fixture.event.id, name: "Again", entries, adminId: "admin-1", dryRun: false });
+    expect(again.ok && again.problems.map((p) => p.row)).toEqual([1, 2]);
+    expect(again.ok && again.batch).toBeNull();
+
+    await solveCurrent(fixture);
+    const redeem = await redeemCodeForTeam({ ctx: ctxFor(fixture), rawCode: "zl0u-i1ox", ip: "127.0.0.1" });
+    expect(redeem.ok && redeem.result.result).toBe("UNLOCKED");
+
+    await db.update(ahEvents).set({ status: "ENDED" }).where(eq(ahEvents.id, fixture.event.id));
+    const ended = await importCodeBatch({ eventId: fixture.event.id, name: "Late", entries: [{ code: "Y8ZE2HJT" }], adminId: "admin-1", dryRun: false });
+    expect(ended).toMatchObject({ ok: false, code: "EVENT_ENDED" });
+    const empty = await importCodeBatch({ eventId: fixture.event.id, name: "Empty", entries: [], adminId: "admin-1", dryRun: true });
+    expect(empty).toMatchObject({ ok: false, code: "VALIDATION" });
   });
 });
