@@ -4,14 +4,24 @@ import { useState } from "react";
 import { ChevronDown, ChevronRight, Laptop, ShieldAlert, ShieldCheck, Smartphone } from "lucide-react";
 import { usePoll } from "@/components/algohunt/usePoll";
 import { formatIST } from "@/lib/algohunt/format";
-import type { AwayReason } from "@/lib/algohunt/types";
+import { AWAY_REASONS, type IntegrityReason } from "@/lib/algohunt/types";
 import type { IntegrityOverview, TeamIntegrityView } from "@/server/algohunt/admin/integrity";
 
-const REASON_LABEL: Record<AwayReason, string> = {
+const REASON_LABEL: Record<IntegrityReason, string> = {
   FULLSCREEN: "Left full screen",
   HIDDEN: "Switched tab or app",
   BLUR: "Another window in focus",
+  RIGHT_CLICK: "Right-clicked",
+  COPY: "Tried to copy",
+  PASTE: "Pasted code from outside",
+  SCREENSHOT: "Screenshot key",
+  SHORTCUT: "Developer tools, print or view-source key",
+  AUTOMATION: "Automated typing",
 };
+
+/** A blocked action is flagged on the spot: it has no time away to show. */
+const isInstant = (reasons: readonly IntegrityReason[]) =>
+  !reasons.some((reason) => (AWAY_REASONS as readonly string[]).includes(reason));
 
 const SEVERITY_CLASS = {
   high: "border-red-500/40 bg-red-500/10 text-red-800 dark:text-red-200",
@@ -56,7 +66,7 @@ export default function IntegrityAdmin({ eventSlug, initial }: { eventSlug: stri
           ["Serious alerts", data.totals.highAlerts],
           ["Phones logged in", data.totals.phones],
           ["Browsers shared by teams", data.totals.sharedDevices],
-          ["Times away", data.totals.awayEpisodes],
+          ["Flags", data.totals.awayEpisodes],
         ].map(([label, value]) => (
           <div key={label} className="rounded-xl border border-hairline bg-panel p-3">
             <dt className="text-[11px] uppercase tracking-wider text-charcoal/60">{label}</dt>
@@ -89,9 +99,10 @@ export default function IntegrityAdmin({ eventSlug, initial }: { eventSlug: stri
       )}
 
       <p className="text-xs text-charcoal/60">
-        Away time is recorded on laptops only, while the event is live and the team can play. A stretch with no
-        return usually means the page was closed or the laptop slept while away. Signals come from the browser, so
-        treat them as a reason to talk to the team, not as proof.
+        Flags are recorded on laptops only, while the event is live and the team can play: time away (full screen,
+        tabs, other apps) and blocked actions (right-click, copy, pasting outside code, screenshot or developer-tool
+        keys, automated typing). A stretch with no return usually means the page was closed or the laptop slept while
+        away. Signals come from the browser, so treat them as a reason to talk to the team, not as proof.
       </p>
     </div>
   );
@@ -181,7 +192,7 @@ function TeamRow({ team, open, onToggle }: { team: TeamIntegrityView; open: bool
 
           <div>
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-charcoal/60">
-              Time away {team.away.count > team.away.episodes.length && `(latest ${team.away.episodes.length} of ${team.away.count})`}
+              Flags {team.away.count > team.away.episodes.length && `(latest ${team.away.episodes.length} of ${team.away.count})`}
             </h3>
             {team.away.episodes.length === 0 ? (
               <p className="text-sm text-charcoal/60">Never left the page while playing.</p>
@@ -192,7 +203,7 @@ function TeamRow({ team, open, onToggle }: { team: TeamIntegrityView; open: bool
                     <span>{formatIST(episode.leftAt)}</span>
                     <span className="text-charcoal/60">{episode.questionNumber ? `Q${episode.questionNumber}` : "—"}</span>
                     <span className={episode.awayMs === null ? "text-red-600 dark:text-red-400" : ""}>
-                      {episode.awayMs === null ? "no return recorded" : duration(episode.awayMs)}
+                      {isInstant(episode.reasons) ? "blocked" : episode.awayMs === null ? "no return recorded" : duration(episode.awayMs)}
                     </span>
                     <span className="font-sans text-charcoal/70">{episode.reasons.map((reason) => REASON_LABEL[reason]).join(" · ")}</span>
                     <span className="text-charcoal/50">…{shortId(episode.deviceId)}</span>

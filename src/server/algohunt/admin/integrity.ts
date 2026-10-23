@@ -1,6 +1,6 @@
 import { asc, desc, eq } from "drizzle-orm";
 import {
-  AWAY_REASONS, type AwayReason, type DeviceKind, type EventStatus, type TeamStatus,
+  INTEGRITY_REASONS, type IntegrityReason, type DeviceKind, type EventStatus, type TeamStatus,
 } from "@/lib/algohunt/types";
 import { FREQUENT_AWAY_COUNT } from "@/lib/algohunt/integrity-rules";
 import { getDb } from "@/server/db";
@@ -51,7 +51,7 @@ export interface DeviceView {
 export interface AwayEpisodeView {
   id: string;
   deviceId: string;
-  reasons: AwayReason[];
+  reasons: IntegrityReason[];
   leftAt: number;
   returnedAt: number | null;
   /** Null while still away or when the page closed before coming back. */
@@ -209,7 +209,7 @@ export async function getIntegrityOverview(event: AhEvent, now = Date.now()): Pr
       episodes: teamEpisodes.slice(0, MAX_EPISODES_PER_TEAM).map((episode, i) => ({
         id: episode.id,
         deviceId: episode.deviceId,
-        reasons: AWAY_REASONS.filter((reason) => episode.reasons.split(",").includes(reason)),
+        reasons: INTEGRITY_REASONS.filter((reason) => episode.reasons.split(",").includes(reason)),
         leftAt: episode.leftAt,
         returnedAt: episode.returnedAt,
         awayMs: durations[i],

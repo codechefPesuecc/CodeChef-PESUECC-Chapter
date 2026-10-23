@@ -127,4 +127,38 @@ describe("POST /api/algohunt/integrity", () => {
     for (let i = 0; i < 60; i += 1) expect((await post({ action: "leave", reasons: ["BLUR"] })).status).toBe(200);
     expect((await post({ action: "leave", reasons: ["BLUR"] })).status).toBe(429);
   });
+
+  it("records a blocked action as one flag with no time away, counted with away episodes", async () => {
+    const fixture = await seedFixture();
+    await playAs(fixture);
+    await post({ action: "leave", reasons: ["HIDDEN"] });
+    const flagged = await (await post({ action: "flag", reason: "PASTE" })).json();
+    expect(flagged).toEqual({ ok: true, recorded: true, teamCount: 2 });
+
+    const row = (await episodes(fixture.teams[0].team.id)).find((e) => e.reasons === "PASTE");
+    expect(row).toMatchObject({ deviceId: LAPTOP_A });
+    expect(row!.returnedAt).toBe(row!.leftAt);
+  });
+
+  it("ignores blocked actions when the team can't play, and rejects unknown flags", async () => {
+    const paused = await seedFixture({ eventStatus: "PAUSED" });
+    await playAs(paused);
+    expect(await (await post({ action: "flag", reason: "RIGHT_CLICK" })).json()).toEqual({ ok: true, recorded: false });
+
+    await resetAlgoHuntTables();
+    const fixture = await seedFixture();
+    await playAs(fixture);
+    expect((await post({ action: "flag", reason: "BLUR" })).status).toBe(400);
+    expect((await post({ action: "flag", reason: "COPY", teamId: "x" })).status).toBe(400);
+    expect((await post({ action: "flag", reasons: ["COPY"] })).status).toBe(400);
+    expect(await episodes(fixture.teams[0].team.id)).toHaveLength(0);
+  });
+
+  it("limits flags separately, so a burst of them never blocks away reports", async () => {
+    const fixture = await seedFixture();
+    await playAs(fixture);
+    for (let i = 0; i < 30; i += 1) expect((await post({ action: "flag", reason: "COPY" })).status).toBe(200);
+    expect((await post({ action: "flag", reason: "COPY" })).status).toBe(429);
+    expect((await post({ action: "leave", reasons: ["BLUR"] })).status).toBe(200);
+  });
 });

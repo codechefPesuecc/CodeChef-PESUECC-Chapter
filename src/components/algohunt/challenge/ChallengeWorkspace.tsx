@@ -10,9 +10,11 @@ import {
 } from "react";
 import CodeEditor from "@/components/cp-arena/CodeEditor";
 import MechaPanel from "@/components/cp-arena/MechaPanel";
+import Watermark from "@/components/cp-arena/Watermark";
 import { ARENA_LANGUAGES, STARTER_CODE, type LanguageId } from "@/components/cp-arena/mockData";
 import { playBlockReason } from "@/lib/algohunt/play";
 import type { ChallengeView, SubmitResult } from "@/lib/algohunt/types";
+import { requestInstantFlag } from "../participant/instantFlag";
 import { useParticipantState } from "../participant/ParticipantStateProvider";
 import { useEventClock } from "../participant/useEventClock";
 import LanguagePicker from "./LanguagePicker";
@@ -303,12 +305,16 @@ export default function ChallengeWorkspace({
 
             <div className="relative min-h-0 flex-1 overflow-hidden">
               {/* Problem tab */}
+              {/* Team-name watermark: a photo or screenshot of the question shows whose screen it was. */}
               {tab === "problem" && (
-                <div
-                  data-lenis-prevent
-                  className="h-full overflow-y-auto px-6 py-6 arena-prose"
-                >
-                  {statement}
+                <div className="relative h-full">
+                  <div
+                    data-lenis-prevent
+                    className="arena-no-print h-full overflow-y-auto px-6 py-6 arena-prose"
+                  >
+                    {statement}
+                  </div>
+                  <Watermark tag={`${participantState.team.name} · ${participantState.team.code}`} />
                 </div>
               )}
 
@@ -399,7 +405,8 @@ export default function ChallengeWorkspace({
                   value={code}
                   onChange={setCode}
                   language={language}
-                  lockClipboard={false}
+                  lockClipboard
+                  onBlocked={(event) => requestInstantFlag(event === "simulated-typing" ? "AUTOMATION" : "PASTE")}
                   fullscreen
                 />
               </div>

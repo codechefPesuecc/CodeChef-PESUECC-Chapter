@@ -5,8 +5,8 @@ import { FREQUENT_AWAY_COUNT } from "@/lib/algohunt/integrity-rules";
 import { useParticipantState } from "./ParticipantStateProvider";
 
 /**
- * The team's integrity flags: how many times its laptops were recorded away from AlgoHunt while
- * playing. Shown on every page so the record is never a surprise; every team's count is also public
+ * The team's integrity flags: how many times its laptops were recorded away from AlgoHunt, or tried a
+ * blocked action (right-click, copy, outside paste, screenshot or developer-tool keys), while playing. Shown on every page so the record is never a surprise; every team's count is also public
  * on the leaderboard.
  */
 export default function IntegrityFlags() {
@@ -21,8 +21,8 @@ export default function IntegrityFlags() {
       : "border-amber-500/50 bg-amber-500/10 text-amber-800 dark:text-amber-200";
   const Icon = flags === 0 ? ShieldCheck : ShieldAlert;
   const explanation = flags === 0
-    ? "No integrity flags. Leaving full screen or switching tabs or apps adds one. Every team's count shows on the leaderboard."
-    : `Your team has ${flags} integrity flag${flags === 1 ? "" : "s"}: times a laptop left AlgoHunt while playing. Every team's count shows on the leaderboard.`;
+    ? "No integrity flags. Leaving full screen, switching tabs or apps, right-clicking, copying, pasting code from outside, and screenshot or developer-tool keys each add one. Every team's count shows on the leaderboard."
+    : `Your team has ${flags} integrity flag${flags === 1 ? "" : "s"}: times a laptop left AlgoHunt or tried a blocked action while playing. Every team's count shows on the leaderboard.`;
 
   return (
     <span

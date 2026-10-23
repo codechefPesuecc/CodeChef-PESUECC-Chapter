@@ -32,7 +32,8 @@ export default function TeamShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-3 px-4 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-2 sm:px-6 sm:pb-12">
+    // Page text can't be selected (IntegrityGuard also blocks copying it); the code editor and form fields can.
+    <main className="mx-auto flex w-full max-w-3xl flex-1 select-none flex-col gap-3 px-4 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-2 sm:px-6 sm:pb-12 [&_.cm-editor]:select-text [&_input]:select-text [&_textarea]:select-text">
       <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
           <Link href="/algohunt" className="font-display text-lg font-bold tracking-tight">

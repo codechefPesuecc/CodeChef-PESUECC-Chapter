@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { and, count, eq, isNull } from "drizzle-orm";
 import { isTimeUp } from "@/lib/algohunt/clock";
-import { AWAY_REASONS, type AwayReason } from "@/lib/algohunt/types";
+import { AWAY_REASONS, type AwayReason, type InstantFlag } from "@/lib/algohunt/types";
 import { getDb } from "@/server/db";
 import { ahIntegrityEvents } from "@/server/db/schema";
 import type { TeamContext } from "./teamSession";
@@ -33,9 +33,37 @@ export async function startAwayEpisode(p: {
     reasons: AWAY_REASONS.filter((reason) => p.reasons.includes(reason)).join(","),
     leftAt: now,
   });
-  const [{ total }] = await db.select({ total: count() }).from(ahIntegrityEvents)
-    .where(eq(ahIntegrityEvents.teamId, p.ctx.team.id));
-  return { recorded: true, id, teamCount: total };
+  return { recorded: true, id, teamCount: await teamFlagCount(p.ctx.team.id) };
+}
+
+/**
+ * A blocked action (right-click, copy, outside paste, a screenshot or developer-tools key, automated
+ * typing): one flag on the spot. It leaves and returns at the same moment, so it adds no time away.
+ */
+export async function recordInstantFlag(p: {
+  ctx: TeamContext;
+  deviceId: string;
+  reason: InstantFlag;
+  now?: number;
+}): Promise<{ recorded: false } | { recorded: true; teamCount: number }> {
+  const now = p.now ?? Date.now();
+  if (!isWatching(p.ctx, now)) return { recorded: false };
+  await getDb().insert(ahIntegrityEvents).values({
+    id: crypto.randomUUID(),
+    eventId: p.ctx.event.id,
+    teamId: p.ctx.team.id,
+    deviceId: p.deviceId,
+    reasons: p.reason,
+    leftAt: now,
+    returnedAt: now,
+  });
+  return { recorded: true, teamCount: await teamFlagCount(p.ctx.team.id) };
+}
+
+async function teamFlagCount(teamId: string): Promise<number> {
+  const [{ total }] = await getDb().select({ total: count() }).from(ahIntegrityEvents)
+    .where(eq(ahIntegrityEvents.teamId, teamId));
+  return total;
 }
 
 /**

@@ -133,6 +133,14 @@ export type DeviceKind = "DESKTOP" | "MOBILE";
 export const AWAY_REASONS = ["FULLSCREEN", "HIDDEN", "BLUR"] as const;
 export type AwayReason = (typeof AWAY_REASONS)[number];
 
+/** A blocked action, flagged on the spot: there is no time away to measure. */
+export const INSTANT_FLAGS = ["RIGHT_CLICK", "COPY", "PASTE", "SCREENSHOT", "SHORTCUT", "AUTOMATION"] as const;
+export type InstantFlag = (typeof INSTANT_FLAGS)[number];
+
+/** Everything one integrity record can carry (stored comma-separated in ah_integrity_events.reasons). */
+export const INTEGRITY_REASONS = [...AWAY_REASONS, ...INSTANT_FLAGS] as const;
+export type IntegrityReason = (typeof INTEGRITY_REASONS)[number];
+
 export interface LanguageOption {
   id: string;
   label: string;

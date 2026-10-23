@@ -56,7 +56,7 @@ export const RULES: RuleItem[] = [
   },
   {
     title: "Stay in full screen",
-    body: "AlgoHunt runs in full screen on laptops. Leaving full screen, switching tabs or opening other apps adds an integrity flag, recorded with how long you were away. Every team's flag count is shown on the leaderboard. If a team collects too many flags, the core team and volunteers decide what happens to it. Use Chrome or Edge.",
+    body: "AlgoHunt runs in full screen on laptops. Leaving full screen, switching tabs or opening other apps adds an integrity flag, recorded with how long you were away. Right-click, copying, pasting code from outside your editor, screenshots and developer tools are blocked, and every attempt adds a flag too. The question page carries your team's name as a watermark. Every team's flag count is shown on the leaderboard. If a team collects too many flags, the core team and volunteers decide what happens to it. Use Chrome or Edge.",
   },
   {
     title: "Time limit",
@@ -124,6 +124,10 @@ export const FAQ: FaqItem[] = [
   {
     q: "What happens if we leave full screen or switch tabs?",
     a: "Your team gets an integrity flag, recorded with how long you were away. Your flag count shows next to the timer and on the leaderboard for every team to see. Click Enter full screen to carry on.",
+  },
+  {
+    q: "Can we copy the question or paste code into the editor?",
+    a: "No. Selecting and copying the question, right-click, screenshots and developer tools are blocked, and so is pasting code that wasn't copied from your own editor. Each attempt adds an integrity flag. Copying and pasting inside your own editor works normally.",
   },
   {
     q: "What happens at 2:00 PM?",

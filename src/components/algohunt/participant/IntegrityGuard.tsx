@@ -2,14 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Maximize, ShieldAlert } from "lucide-react";
-import type { AwayReason } from "@/lib/algohunt/types";
+import type { AwayReason, InstantFlag } from "@/lib/algohunt/types";
+import { INSTANT_FLAG_EVENT } from "./instantFlag";
 import { useParticipantState } from "./ParticipantStateProvider";
 import { useEventClock } from "./useEventClock";
 
 // Laptops only, while the team can play: keeps AlgoHunt in full screen and records time spent away
 // (left full screen, switched tab or app, focused another window) for the organizers. Phones are
-// never asked, since teams solve and enter codes on laptops. Nothing here blocks play or
-// disqualifies anyone; it is a visible deterrent plus a record admins review.
+// never asked, since teams solve and enter codes on laptops. It also blocks right-click, copying
+// and selecting page text, and developer-tool, print and screenshot keys on every team page, and
+// flags each attempt the same way. Nothing here disqualifies anyone; it is a visible deterrent
+// plus a record admins review.
 
 /** Ignore flickers shorter than this (a permission prompt, a fast Alt-Tab back). */
 const LEAVE_DELAY_MS = 1500;
@@ -17,6 +20,17 @@ const LEAVE_DELAY_MS = 1500;
 const ENTRY_GRACE_MS = 20_000;
 /** An episode still open when the page reloads or unmounts is closed by the next page. */
 const OPEN_EPISODE_KEY = "ah:away-episode";
+/** A held key or a burst of clicks counts once: at most one flag of each kind in this window. */
+const FLAG_REPEAT_MS = 3000;
+
+const FLAG_NOTICE: Record<InstantFlag, string> = {
+  RIGHT_CLICK: "Right-click is disabled in AlgoHunt.",
+  COPY: "Copying is disabled in AlgoHunt.",
+  PASTE: "Only code copied from your own editor can be pasted.",
+  SCREENSHOT: "Screenshots are not allowed during AlgoHunt.",
+  SHORTCUT: "Developer tools, printing and page source are disabled in AlgoHunt.",
+  AUTOMATION: "Automated typing was detected.",
+};
 
 interface Episode {
   reasons: Set<AwayReason>;
@@ -54,6 +68,30 @@ function awayReasons(needsFullscreen: boolean): AwayReason[] {
   return reasons;
 }
 
+/** The team's own text: the code editor (which guards its own clipboard) and form fields. */
+function isEditable(target: EventTarget | null): boolean {
+  // selectstart can target a text node, so climb to its element first.
+  const el = target instanceof Element ? target : target instanceof Node ? target.parentElement : null;
+  return el?.closest(".cm-editor, input, textarea") != null;
+}
+
+/**
+ * Keys that open developer tools, print, show the page source or take a screenshot. Ctrl+S is blocked
+ * without a flag: coders press it out of habit. Some of these (F12, the OS screenshot keys) the
+ * browser or OS acts on before the page can stop them; the flag is still recorded.
+ */
+function blockedKey(e: KeyboardEvent): InstantFlag | "SILENT" | null {
+  const mod = e.ctrlKey || e.metaKey;
+  const devtools = (e.ctrlKey && e.shiftKey) || (e.metaKey && (e.shiftKey || e.altKey));
+  if (e.code === "F12" || (devtools && ["KeyI", "KeyJ", "KeyC"].includes(e.code))) return "SHORTCUT";
+  if (mod && (e.code === "KeyU" || e.code === "KeyP")) return "SHORTCUT";
+  if (e.code === "PrintScreen" || (e.metaKey && e.shiftKey && ["Digit3", "Digit4", "Digit5", "KeyS"].includes(e.code))) {
+    return "SCREENSHOT";
+  }
+  if (mod && e.code === "KeyS") return "SILENT";
+  return null;
+}
+
 async function enterFullscreen(): Promise<void> {
   const el = document.documentElement as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> | void };
   try {
@@ -68,7 +106,9 @@ async function enterFullscreen(): Promise<void> {
   }
 }
 
-async function report(body: { action: "leave"; reasons: AwayReason[] } | { action: "return"; id: string }) {
+async function report(
+  body: { action: "leave"; reasons: AwayReason[] } | { action: "return"; id: string } | { action: "flag"; reason: InstantFlag },
+) {
   try {
     const response = await fetch("/api/algohunt/integrity", {
       method: "POST",
@@ -209,6 +249,65 @@ export default function IntegrityGuard() {
     };
   }, [active, evaluate, closeEpisode]);
 
+  // Right-click, copying and selecting page text, and developer-tool, print and screenshot keys are
+  // blocked on every team page. While the team plays on a laptop, each attempt also adds a flag.
+  useEffect(() => {
+    const lastFlag = new Map<InstantFlag, number>();
+    const flag = (reason: InstantFlag) => {
+      if (!active) return;
+      const now = Date.now();
+      if (now - (lastFlag.get(reason) ?? 0) < FLAG_REPEAT_MS) return;
+      lastFlag.set(reason, now);
+      setNotice(`${FLAG_NOTICE[reason]} That adds an integrity flag for your team.`);
+      void report({ action: "flag", reason }).then((res) => {
+        if (res?.recorded) refresh();
+      });
+    };
+    const onContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      flag("RIGHT_CLICK");
+    };
+    const onCopy = (e: ClipboardEvent) => {
+      if (isEditable(e.target)) return;
+      e.preventDefault();
+      flag("COPY");
+    };
+    const onSelectStart = (e: Event) => {
+      if (!isEditable(e.target)) e.preventDefault();
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      const blocked = blockedKey(e);
+      if (!blocked) return;
+      e.preventDefault();
+      if (blocked !== "SILENT") flag(blocked);
+    };
+    // PrintScreen copies without a keydown on Windows; it only surfaces on keyup.
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.code === "PrintScreen") flag("SCREENSHOT");
+    };
+    const onBeforePrint = () => flag("SHORTCUT");
+    const onRequested = (e: Event) => flag((e as CustomEvent<InstantFlag>).detail);
+
+    document.addEventListener("contextmenu", onContextMenu);
+    document.addEventListener("copy", onCopy);
+    document.addEventListener("cut", onCopy);
+    document.addEventListener("selectstart", onSelectStart);
+    window.addEventListener("keydown", onKeyDown, true);
+    window.addEventListener("keyup", onKeyUp, true);
+    window.addEventListener("beforeprint", onBeforePrint);
+    window.addEventListener(INSTANT_FLAG_EVENT, onRequested);
+    return () => {
+      document.removeEventListener("contextmenu", onContextMenu);
+      document.removeEventListener("copy", onCopy);
+      document.removeEventListener("cut", onCopy);
+      document.removeEventListener("selectstart", onSelectStart);
+      window.removeEventListener("keydown", onKeyDown, true);
+      window.removeEventListener("keyup", onKeyUp, true);
+      window.removeEventListener("beforeprint", onBeforePrint);
+      window.removeEventListener(INSTANT_FLAG_EVENT, onRequested);
+    };
+  }, [active, refresh]);
+
   // Leaving the team pages (a soft navigation) drops a not-yet-reported episode instead of letting
   // its timer fire later on another page. An already reported one stays open until a page closes it.
   useEffect(() => () => {
@@ -239,8 +338,9 @@ export default function IntegrityGuard() {
               AlgoHunt runs in full screen
             </h2>
             <p className="text-sm text-charcoal/80">
-              Leaving full screen, switching tabs or opening other apps on this laptop adds an integrity flag. Every
-              team&apos;s flags show on the leaderboard.
+              Leaving full screen, switching tabs or opening other apps on this laptop adds an integrity flag. So do
+              right-clicking, copying, pasting code from outside your editor, and screenshot or developer-tool keys.
+              Every team&apos;s flags show on the leaderboard.
             </p>
             <button
               type="button"
