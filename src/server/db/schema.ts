@@ -596,6 +596,21 @@ export const ahIntegrityEvents = sqliteTable("ah_integrity_events", {
   index("ah_integrity_events_team_left_idx").on(t.teamId, t.leftAt),
 ]);
 
+// The clue book teammates follow around campus. A clue is linked to the codes whose placement note
+// starts with its label ("CL-012 · Outside the library"), so the codes never need a clue column.
+export const ahClues = sqliteTable("ah_clues", {
+  id: text("id").primaryKey(),
+  eventId: text("event_id").notNull().references(() => ahEvents.id),
+  label: text("label").notNull(), // "CL-012"
+  text: text("text").notNull(),
+  position: integer("position").notNull(),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, (t) => [
+  unique("ah_clues_event_label_unique").on(t.eventId, t.label),
+  index("ah_clues_event_idx").on(t.eventId),
+]);
+
 export type AhEvent = typeof ahEvents.$inferSelect;
 export type NewAhEvent = typeof ahEvents.$inferInsert;
 export type AhTeam = typeof ahTeams.$inferSelect;
@@ -630,3 +645,5 @@ export type AhTeamDevice = typeof ahTeamDevices.$inferSelect;
 export type NewAhTeamDevice = typeof ahTeamDevices.$inferInsert;
 export type AhIntegrityEvent = typeof ahIntegrityEvents.$inferSelect;
 export type NewAhIntegrityEvent = typeof ahIntegrityEvents.$inferInsert;
+export type AhClue = typeof ahClues.$inferSelect;
+export type NewAhClue = typeof ahClues.$inferInsert;
