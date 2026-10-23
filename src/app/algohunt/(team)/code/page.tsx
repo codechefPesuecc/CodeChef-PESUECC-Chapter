@@ -40,7 +40,7 @@ export default async function AlgoHuntCodePage() {
     return (
       <MechaPanel label="DISQUALIFIED" index="AH 2.0">
         <div className="p-6 text-center space-y-2">
-          <p className="text-sm text-rose-700 font-semibold">{COPY.disqualified}</p>
+          <p className="text-sm text-rose-700 dark:text-rose-300 font-semibold">{COPY.disqualified}</p>
         </div>
       </MechaPanel>
     );
@@ -50,7 +50,7 @@ export default async function AlgoHuntCodePage() {
     return (
       <MechaPanel label="FINISHED" index="AH 2.0">
         <div className="p-6 text-center space-y-2">
-          <p className="text-sm text-emerald-800 font-semibold">{COPY.finished}</p>
+          <p className="text-sm text-emerald-800 dark:text-emerald-300 font-semibold">{COPY.finished}</p>
         </div>
       </MechaPanel>
     );

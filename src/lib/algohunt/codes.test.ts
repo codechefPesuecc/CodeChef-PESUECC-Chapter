@@ -3,7 +3,9 @@ import {
   CODE_ALPHABET,
   CODE_LENGTH,
   formatCodeForDisplay,
+  LOW_POOL_ACTIVE,
   generateCode,
+  isPoolLow,
   isWellFormedCode,
   normalizeCode,
 } from "./codes";
@@ -21,13 +23,16 @@ describe("algohunt codes helpers", () => {
     // 7 or 9 characters
     expect(isWellFormedCode("7FQ2M8K")).toBe(false);
     expect(isWellFormedCode("7FQ2M8K3A")).toBe(false);
-    // Disallowed chars (0, O, 1, I, L)
-    expect(isWellFormedCode("0FQ2M8K3")).toBe(false);
-    expect(isWellFormedCode("OFQ2M8K3")).toBe(false);
-    expect(isWellFormedCode("1FQ2M8K3")).toBe(false);
-    expect(isWellFormedCode("IFQ2M8K3")).toBe(false);
-    expect(isWellFormedCode("LFQ2M8K3")).toBe(false);
+    // Imported codes may use any letter or digit, look-alikes included
+    expect(isWellFormedCode("0FQ2M8K3")).toBe(true);
+    expect(isWellFormedCode("OFQ2M8K3")).toBe(true);
+    expect(isWellFormedCode("B1LI0OUZ")).toBe(true);
+    expect(isWellFormedCode("U5BNI9KR")).toBe(true);
+    // Anything else is a typo
     expect(isWellFormedCode("7FQ2-8K3")).toBe(false);
+    expect(isWellFormedCode("7FQ2M8K!")).toBe(false);
+    expect(isWellFormedCode("7fq2m8k3")).toBe(false);
+    expect(isWellFormedCode("")).toBe(false);
   });
 
   it("generateCode produces 10,000 valid unique codes covering every alphabet char", () => {
@@ -44,6 +49,7 @@ describe("algohunt codes helpers", () => {
       expect(isWellFormedCode(code)).toBe(true);
       samples.add(code);
       for (const ch of code) {
+        expect(CODE_ALPHABET).toContain(ch);
         charCounts[ch] = (charCounts[ch] || 0) + 1;
       }
     }
@@ -61,5 +67,15 @@ describe("algohunt codes helpers", () => {
     expect(formatCodeForDisplay("7FQ2M8K3")).toBe("7FQ2-M8K3");
     expect(formatCodeForDisplay("7FQ2")).toBe("7FQ2");
     expect(formatCodeForDisplay("7F")).toBe("7F");
+  });
+
+  it("calls the pool low only while teams can play and almost no codes are left (scarcity is by design)", () => {
+    expect(LOW_POOL_ACTIVE).toBe(3);
+    expect(isPoolLow("LIVE", 3)).toBe(true);
+    expect(isPoolLow("PAUSED", 0)).toBe(true);
+    expect(isPoolLow("LIVE", 4)).toBe(false);
+    for (const status of ["DRAFT", "CHECK_IN", "READY", "ENDED", "ARCHIVED"] as const) {
+      expect(isPoolLow(status, 0)).toBe(false);
+    }
   });
 });

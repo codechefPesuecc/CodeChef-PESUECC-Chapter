@@ -7,9 +7,9 @@ export const COPY = {
   alreadyUnlocked: "Question {n} is already unlocked for your team. If you typed a second code, it wasn't used: keep it for a later question.",
   alreadyUsed: "This code has already been used. Keep searching for another QR!",
   invalidCode: "That code isn't valid. Check it and try again.",
-  malformedCode: "Codes are 8 letters and digits, and never contain 0, O, 1, I, L or U. Check what you typed.",
+  malformedCode: "Codes are 8 letters and digits. Check what you typed.",
   notSolved: "Solve your current question first. Then you can use a code to unlock the next one.",
-  cooldown: "Too many invalid codes. Please wait {s}s before trying again.",
+  cooldown: "Too many invalid codes. Code entry is locked: please wait {t} before trying again.",
   finished: "You've completed AlgoHunt 2.0! Your finish has been recorded. Please report to the organizers for final verification.",
   locked: "This question is locked. Solve your current question and enter a QR code to unlock the next one.",
   noGoingBack: "You've moved past this question. Questions can't be reopened.",
@@ -38,7 +38,7 @@ export const COPY = {
     CHALLENGE_NOT_SOLVED: "Solve your current question first. Then you can use a code to unlock the next one.",
     SUBMISSIONS_DISABLED: "Submissions are temporarily unavailable. Please wait for the organizers.",
     CODES_DISABLED: "Code entry is temporarily unavailable. Please wait for the organizers.",
-    COOLDOWN: "Too many invalid codes. Please wait before trying again.",
+    COOLDOWN: "Too many invalid codes. Code entry is locked for up to 10 minutes. Please wait before trying again.",
     UNSUPPORTED_LANGUAGE: "This language is not available for this question.",
     PAYLOAD_TOO_LARGE: "Your request is too large. Please shorten it and try again.",
     JUDGE_UNAVAILABLE: "The judge is busy or unreachable. Your progress has not been changed. Please submit again in a moment.",
@@ -54,6 +54,21 @@ export function alreadyUnlockedMessage(n: number): string {
   return COPY.alreadyUnlocked.replace("{n}", String(n));
 }
 
+/** 520 → "8 min 40 s", 600 → "10 min", 45 → "45 s". */
+export function formatCooldown(seconds: number): string {
+  const total = Math.max(0, Math.ceil(seconds));
+  const minutes = Math.floor(total / 60);
+  const rest = total % 60;
+  if (minutes === 0) return `${rest} s`;
+  return rest === 0 ? `${minutes} min` : `${minutes} min ${rest} s`;
+}
+
+/** 520 → "8:40": the short form for the locked Unlock button. */
+export function formatCooldownClock(seconds: number): string {
+  const total = Math.max(0, Math.ceil(seconds));
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+}
+
 export function cooldownMessage(s: number): string {
-  return COPY.cooldown.replace("{s}", String(s));
+  return COPY.cooldown.replace("{t}", formatCooldown(s));
 }

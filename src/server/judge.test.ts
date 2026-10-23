@@ -27,3 +27,45 @@ describe("withJobMarker", () => {
     expect(withJobMarker("java", "class Main{}", "a")).not.toBe(withJobMarker("java", "class Main{}", "b"));
   });
 });
+
+describe("judge requests", () => {
+  function akiroReply(body: unknown, delayMs = 0): Promise<Response> {
+    return new Promise((resolve) => setTimeout(() => resolve(new Response(JSON.stringify(body), { status: 200 })), delayMs));
+  }
+
+  it("never parks a request behind another: a burst of judge calls all run at once", async () => {
+    const { judgeExecute, judgeQueueStats } = await import("@/lib/judge");
+    let inFlight = 0;
+    let peak = 0;
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async () => {
+      inFlight += 1;
+      peak = Math.max(peak, inFlight);
+      const res = await akiroReply({ job_id: "j", verdict: "Accepted", total_cpu_time_ms: 1, peak_memory_kb: 1, test_results: [] }, 20);
+      inFlight -= 1;
+      return res;
+    }) as typeof fetch;
+    try {
+      const results = await Promise.all(Array.from({ length: 12 }, () => judgeExecute({ language: "cpp", code: "int main(){}", stdin: "" })));
+      expect(results.every((r) => r.verdict === "Accepted")).toBe(true);
+      expect(peak).toBe(12);
+      expect(judgeQueueStats()).toEqual({ active: 0, queued: 0 });
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+  });
+
+  it("shows the compiler's message for a compile error when Akiro returns it as compile_output", async () => {
+    const { judgeTests } = await import("./judge");
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async () =>
+      akiroReply({ job_id: "j", verdict: "CompilationError", total_cpu_time_ms: 0, peak_memory_kb: 0, compile_output: "main.cpp:2:5: error: expected ';'", test_results: [] })) as typeof fetch;
+    try {
+      const res = await judgeTests({ tests: [{ input: "1\n", output: "1\n" }], checker: { type: "token" }, language: "cpp", code: "int main(){ oops }", timeLimitMs: 1000, memLimitBytes: 64 << 20 });
+      expect(res.verdict).toBe("CE");
+      expect(res.detail).toContain("expected ';'");
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+  });
+});

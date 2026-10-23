@@ -49,7 +49,8 @@ export type AuditAction =
   | "event.created" | "event.transition" | "event.flags_changed" | "event.end_time_changed" | "stage.toggled"
   | "announcement.created" | "announcement.deactivated"
   | "volunteer.assigned" | "volunteer.removed"
-  | "import.challenge" | "import.stages" | "import.teams" | "challenge.verified" | "export.downloaded";
+  | "import.challenge" | "import.stages" | "import.teams" | "challenge.verified" | "export.downloaded"
+  | "clues.replaced";
 
 export type ErrorCode =
   | "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "VALIDATION" | "CONFLICT" | "RATE_LIMITED"

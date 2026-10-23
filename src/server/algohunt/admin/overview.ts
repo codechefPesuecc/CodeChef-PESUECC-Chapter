@@ -1,4 +1,5 @@
 import { and, asc, desc, eq, gt, inArray, sql } from "drizzle-orm";
+import { isPoolLow } from "@/lib/algohunt/codes";
 import { FREQUENT_AWAY_COUNT } from "@/lib/algohunt/integrity-rules";
 import type { CodePoolStats, EventStatus } from "@/lib/algohunt/types";
 import { getDb } from "@/server/db";
@@ -25,6 +26,8 @@ export interface AdminOverview {
   codePool: CodePoolStats & { lowPool: boolean };
   /** CODE_PENDING teams, longest wait first, top 10. teamId is extra so the quick action can call the override route. */
   stuck: { teamId: string; teamCode: string; teamName: string; stageNumber: number; waitingSinceMs: number }[];
+  /** Teams waiting for a code that did not fit in `stuck` (shown as "+N more"). */
+  stuckMore: number;
   /** Teams with FREQUENT_AWAY_COUNT+ integrity flags, most first, top 10: someone should go and look. */
   integrityAlerts: { teamId: string; teamCode: string; teamName: string; flags: number }[];
   /** Logins in the last 30 minutes that signed out the laptop a team was using, newest first, top 10. */
@@ -43,7 +46,6 @@ export interface AdminOverview {
 
 const TEN_MINUTES = 10 * 60_000;
 const SUSPICIOUS_INVALID_ATTEMPTS = 5;
-const LOW_POOL_ACTIVE = 5;
 const TAKEOVER_WINDOW = 30 * 60_000;
 
 /** Command center snapshot for one event. 15 DB queries: GROUP BY counts, never one query per number. */
@@ -178,12 +180,15 @@ export async function getOverview(event: AhEvent): Promise<AdminOverview> {
     },
     codePool: {
       ...pool,
-      lowPool: pool.active <= LOW_POOL_ACTIVE || pool.active < pool.teamsWaitingForCode,
+      // Codes are scarce by design: only flag a nearly empty pool, and only while teams can play.
+      lowPool: isPoolLow(event.status as EventStatus, pool.active),
     },
     stuck: stuckRows.map((row) => ({
       teamId: row.teamId, teamCode: row.teamCode, teamName: row.teamName, stageNumber: row.stageNumber,
       waitingSinceMs: row.solvedAt === null ? 0 : Math.max(0, now - row.solvedAt),
     })),
+    // Same filter as teamsWaitingForCode (one waiting question per team), so the difference is what the top 10 left out.
+    stuckMore: Math.max(0, pool.teamsWaitingForCode - stuckRows.length),
     // The leaderboard already carries each team's flag count, so this costs no extra query.
     integrityAlerts: leaderboard.rows
       .filter((row) => !row.disqualified && row.flags >= FREQUENT_AWAY_COUNT)

@@ -152,6 +152,8 @@ function formatAuditActivity(action: string, teamName: string | null, metadataSt
       return `Re-enabled code #${meta.serial}: ${meta.reason ?? ""}`;
     case "code.note_updated":
       return `Updated note for code #${meta.serial}`;
+    case "clues.replaced":
+      return `Saved the clue book (${meta.count ?? ""} clues)`;
     case "volunteer.assigned":
       return `Assigned volunteer @${meta.username ?? ""}`;
     case "volunteer.removed":
@@ -194,6 +196,7 @@ export async function listAudit(p: {
       .select({
         log: ahAuditLogs,
         teamName: ahTeams.teamName,
+        teamCode: ahTeams.teamCode,
         userName: users.name,
         userUsername: users.username,
       })
@@ -231,7 +234,10 @@ export async function listAudit(p: {
     rows: sliced.map((r) => ({
       ...r.log,
       teamName: r.teamName ?? null,
-      actorName: r.userName ?? r.userUsername ?? r.log.actorId ?? null,
+      // A team acting on its own row (login, submissions) reads as "Team Alpha (AH2-001)", not its UUID.
+      actorName: r.log.actorType === "TEAM" && r.teamName
+        ? `${r.teamName} (${r.teamCode})`
+        : r.userName ?? r.userUsername ?? r.log.actorId ?? null,
       text: formatAuditActivity(r.log.action, r.teamName, r.log.metadata),
     })),
     nextCursor,

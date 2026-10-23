@@ -3,6 +3,7 @@ process.env.DATABASE_URL = ":memory:";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { GET as getCodesRoute } from "./route";
 import { POST as postBatchRoute } from "./batches/route";
+import { POST as postImportRoute } from "./import/route";
 import { GET as getPrintRoute } from "./batches/[batchId]/print/route";
 import { POST as postDisableBatchRoute } from "./batches/[batchId]/disable/route";
 import { PATCH as patchCodeRoute } from "./[codeId]/route";
@@ -116,11 +117,13 @@ describe("AlgoHunt Admin Code Management APIs (Module 3 PR 2)", () => {
     expect(res.status).toBe(200);
     const json = await res.json() as {
       ok: boolean;
+      eventStatus: string;
       stats: { total: number; active: number };
       batches: { name: string }[];
       codes: { id: string; code: string; serial: number }[];
     };
     expect(json.ok).toBe(true);
+    expect(json.eventStatus).toBe("LIVE");
     expect(json.stats.total).toBe(5);
     expect(json.stats.active).toBe(5);
     expect(json.batches).toHaveLength(1);
@@ -206,5 +209,40 @@ describe("AlgoHunt Admin Code Management APIs (Module 3 PR 2)", () => {
     const json = await res.json() as { ok: boolean; attempts: unknown[] };
     expect(json.ok).toBe(true);
     expect(Array.isArray(json.attempts)).toBe(true);
+  });
+
+  it("POST /api/admin/algohunt/codes/import: admins only; dry run lists problems; the import needs the slug and every row to pass", async () => {
+    const fixture = await seedFixture({ codes: 2 });
+    const post = (body: unknown, dryRun = false) =>
+      postImportRoute(
+        new Request(`http://localhost/api/admin/algohunt/codes/import?event=${fixture.event.slug}${dryRun ? "&dryRun=1" : ""}`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(body),
+        }),
+      );
+    const codes = [{ code: "ZL0U-I1OX", note: "CL-001 · Ground floor, east wing" }, { code: "Q2W3-E4R5" }];
+
+    mockAdmin = null;
+    expect((await post({ name: "Own", codes, confirm: fixture.event.slug })).status).toBe(403);
+    mockAdmin = adminUser;
+
+    const dry = await post({ name: "Own", codes: [...codes, { code: "zl0ui1ox" }, { code: fixture.codes[0].code }] }, true);
+    expect(dry.status).toBe(200);
+    const dryJson = (await dry.json()) as { problems: { row: number }[] };
+    expect(dryJson.problems.map((p) => p.row)).toEqual([3, 4]);
+
+    const withProblems = await post({ name: "Own", codes: [...codes, { code: "BAD!CODE" }], confirm: fixture.event.slug });
+    expect(withProblems.status).toBe(400);
+    expect(((await withProblems.json()) as { problems: unknown[] }).problems).toHaveLength(1);
+
+    expect((await post({ name: "Own", codes, confirm: "wrong-slug" })).status).toBe(400);
+    expect((await post({ name: "Own", codes, confirm: fixture.event.slug, extra: 1 })).status).toBe(400);
+
+    const good = await post({ name: "Own", codes, confirm: fixture.event.slug });
+    expect(good.status).toBe(200);
+    const json = (await good.json()) as { batch: { size: number }; codes: { serial: number; code: string }[] };
+    expect(json.batch.size).toBe(2);
+    expect(json.codes.map((c) => c.code)).toEqual(["ZL0UI1OX", "Q2W3E4R5"]);
   });
 });

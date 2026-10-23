@@ -120,7 +120,7 @@ export async function judgeTests(params: {
       });
 
       if (result.verdict === "CompilationError") {
-        const firstError = result.test_case_results?.[0]?.stderr || "Compilation failed.";
+        const firstError = result.test_case_results?.[0]?.stderr || result.compile_output || "Compilation failed.";
         return { verdict: "CE", passed: 0, total: tests.length, detail: firstError };
       }
 

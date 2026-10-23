@@ -16,7 +16,7 @@ export async function setupTestDb(): Promise<void> {
 export async function resetAlgoHuntTables(): Promise<void> {
   const db = getDb();
   for (const table of [
-    "ah_integrity_events", "ah_team_devices", "ah_code_attempts", "ah_audit_logs", "ah_disqualifications", "ah_announcements",
+    "ah_clues", "ah_integrity_events", "ah_team_devices", "ah_code_attempts", "ah_audit_logs", "ah_disqualifications", "ah_announcements",
     "ah_volunteers", "ah_stage_progress", "ah_submissions", "ah_codes",
     "ah_code_batches", "ah_team_members", "ah_stages", "ah_test_cases",
     "ah_teams", "ah_challenges", "ah_events", "rate_limits",

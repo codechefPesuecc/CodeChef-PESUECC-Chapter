@@ -14,15 +14,17 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import AppLink from "@/components/AppLink";
-import { formatCodeForDisplay } from "@/lib/algohunt/codes";
+import { formatCodeForDisplay, isPoolLow } from "@/lib/algohunt/codes";
 import { formatIST } from "@/lib/algohunt/format";
 import type {
   CodeAttemptResult,
   CodePoolStats,
   CodeStatus,
+  EventStatus,
 } from "@/lib/algohunt/types";
 import { usePoll } from "@/components/algohunt/usePoll";
 import ConfirmAction from "@/components/admin/algohunt/ConfirmAction";
+import CodeImport from "./CodeImport";
 
 export interface BatchItem {
   id: string;
@@ -60,6 +62,7 @@ export interface AttemptItem {
 
 interface CodesResponse {
   ok: boolean;
+  eventStatus: EventStatus;
   stats: CodePoolStats;
   batches: BatchItem[];
   codes: CodeItem[];
@@ -369,8 +372,8 @@ export default function CodesAdmin({ eventSlug }: { eventSlug: string }) {
     }
   }
 
-  // Low pool warning condition: active <= 5 or active < teamsWaitingForCode
-  const isPoolLow = stats && (stats.active <= 5 || stats.active < stats.teamsWaitingForCode);
+  // Codes are scarce by design: a calm note only while teams can play and almost none are left.
+  const poolLow = stats && pollData ? isPoolLow(pollData.eventStatus, stats.active) : false;
 
   return (
     <div className="space-y-6">
@@ -398,21 +401,19 @@ export default function CodesAdmin({ eventSlug }: { eventSlug: string }) {
 
       {activeTab === "codes" ? (
         <>
-          {/* Low Pool Warning Banner */}
-          {isPoolLow && (
+          {/* Low Pool Note: scarcity is by design, so this is a heads-up, not an alarm */}
+          {poolLow && stats && (
             <div
-              role="alert"
-              className="rounded-2xl border-2 border-red-500/50 bg-red-500/15 p-4 flex items-start sm:items-center justify-between gap-4 text-red-800 dark:text-red-200"
+              role="status"
+              className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 flex items-start sm:items-center justify-between gap-4 text-amber-900 dark:text-amber-100"
             >
               <div className="flex items-center gap-3">
-                <AlertTriangle className="w-6 h-6 shrink-0 text-red-600 dark:text-red-400" />
-                <div>
-                  <h3 className="font-bold text-sm">Pool Running Low!</h3>
-                  <p className="text-xs mt-0.5">
-                    Only <span className="font-mono font-bold">{stats.active}</span> active codes remaining, but{" "}
-                    <span className="font-mono font-bold">{stats.teamsWaitingForCode}</span> teams are waiting for a code. Generate a new batch and send volunteers to hide it.
-                  </p>
-                </div>
+                <AlertTriangle className="w-5 h-5 shrink-0 text-amber-600 dark:text-amber-400" />
+                <p className="text-xs">
+                  Only <span className="font-mono font-bold">{stats.active}</span> active{" "}
+                  {stats.active === 1 ? "code" : "codes"} left. Codes are scarce by design — add more only if teams are
+                  stuck for a long time.
+                </p>
               </div>
               <button
                 type="button"
@@ -420,9 +421,9 @@ export default function CodesAdmin({ eventSlug }: { eventSlug: string }) {
                   const genCard = document.getElementById("generate-batch-section");
                   genCard?.scrollIntoView({ behavior: "smooth" });
                 }}
-                className="mecha-btn mecha-btn--sm bg-red-600 text-white hover:bg-red-700 shrink-0 border-red-700 text-xs"
+                className="mecha-btn mecha-btn--ghost mecha-btn--sm shrink-0 text-xs"
               >
-                Generate Now
+                Generate batch
               </button>
             </div>
           )}
@@ -569,6 +570,20 @@ export default function CodesAdmin({ eventSlug }: { eventSlug: string }) {
             </div>
           </div>
 
+          <CodeImport
+            eventSlug={eventSlug}
+            onImported={(batch, serials) => {
+              setCreatedBatchAlert({
+                id: batch.id,
+                name: batch.name,
+                minSerial: Math.min(...serials),
+                maxSerial: Math.max(...serials),
+              });
+              refreshCodes();
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+          />
+
           {/* Batches Table */}
           <div className="lc-panel overflow-hidden space-y-3 p-5">
             <h2 className="font-display text-lg font-bold text-chocolate">Batches</h2>
@@ -670,6 +685,7 @@ export default function CodesAdmin({ eventSlug }: { eventSlug: string }) {
               {/* Batch Filter Select */}
               <div>
                 <select
+                  aria-label="Filter codes by batch"
                   className="mecha-input text-xs w-full"
                   value={batchFilter}
                   onChange={(e) => handleBatchChange(e.target.value)}
@@ -689,6 +705,7 @@ export default function CodesAdmin({ eventSlug }: { eventSlug: string }) {
                 <input
                   type="text"
                   placeholder="Search serial, code, or team..."
+                  aria-label="Search codes by serial, code, or team"
                   className="mecha-input text-xs pl-8 w-full"
                   value={searchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
@@ -760,7 +777,10 @@ export default function CodesAdmin({ eventSlug }: { eventSlug: string }) {
                           </td>
                           <td className="py-2.5 font-mono">
                             {code.usedByTeam ? (
-                              <span title={code.usedByTeam.name} className="truncate max-w-[130px] block">
+                              <span
+                                title={`${code.usedByTeam.name} (${code.usedByTeam.code})`}
+                                className="block min-w-[8rem] max-w-[14rem] break-words"
+                              >
                                 {code.usedByTeam.name} ({code.usedByTeam.code})
                               </span>
                             ) : (
@@ -778,6 +798,8 @@ export default function CodesAdmin({ eventSlug }: { eventSlug: string }) {
                               type="text"
                               className="mecha-input text-xs py-1 px-2 w-36 max-w-full"
                               placeholder="Add note..."
+                              aria-label={`Placement note for code #${String(code.serial).padStart(3, "0")}`}
+                              title={(editingNotes[code.id] ?? code.placementNote) || undefined}
                               maxLength={200}
                               value={
                                 editingNotes[code.id] !== undefined
@@ -870,10 +892,11 @@ export default function CodesAdmin({ eventSlug }: { eventSlug: string }) {
           {/* Attempts Filters */}
           <div className="grid gap-3 sm:grid-cols-4 items-center">
             <div>
-              <label className="block text-[11px] font-mono uppercase text-charcoal/70 mb-1">
+              <label htmlFor="attempts-team" className="block text-[11px] font-mono uppercase text-charcoal/70 mb-1">
                 Filter by Team Code
               </label>
               <input
+                id="attempts-team"
                 type="text"
                 placeholder="Team code..."
                 className="mecha-input text-xs w-full"
@@ -883,10 +906,11 @@ export default function CodesAdmin({ eventSlug }: { eventSlug: string }) {
             </div>
 
             <div>
-              <label className="block text-[11px] font-mono uppercase text-charcoal/70 mb-1">
+              <label htmlFor="attempts-result" className="block text-[11px] font-mono uppercase text-charcoal/70 mb-1">
                 Result Type
               </label>
               <select
+                id="attempts-result"
                 className="mecha-input text-xs w-full"
                 value={attemptResult}
                 onChange={(e) => setAttemptResult(e.target.value)}

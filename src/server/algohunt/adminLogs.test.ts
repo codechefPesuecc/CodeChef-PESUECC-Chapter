@@ -200,6 +200,25 @@ describe("AlgoHunt Admin Logs & Submissions (Module 3)", () => {
     expect(codeLogs.rows).toHaveLength(2);
     expect(codeLogs.rows.map((r) => r.id)).toEqual(["audit-3", "audit-1"]);
   });
+
+  it("names a team actor by team name and code instead of its id", async () => {
+    const fixture = await seedFixture({ teams: 1 });
+    const team = fixture.teams[0].team;
+    await getDb().insert(ahAuditLogs).values([
+      {
+        id: "audit-team", eventId: fixture.event.id, teamId: team.id, actorType: "TEAM", actorId: team.id,
+        action: "team.login", metadata: "{}", createdAt: 1700000000000,
+      },
+      {
+        id: "audit-logout", eventId: fixture.event.id, teamId: team.id, actorType: "TEAM", actorId: null,
+        action: "team.logout", metadata: "{}", createdAt: 1700000001000,
+      },
+    ]);
+    const { rows } = await listAudit({ eventId: fixture.event.id });
+    expect(rows.map((r) => r.actorName)).toEqual([
+      `${team.teamName} (${team.teamCode})`, `${team.teamName} (${team.teamCode})`,
+    ]);
+  });
 });
 
 describe("listAudit paging", () => {

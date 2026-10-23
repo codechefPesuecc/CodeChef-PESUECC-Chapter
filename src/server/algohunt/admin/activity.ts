@@ -93,6 +93,10 @@ const DESCRIBERS: { [A in AuditAction]: (c: Ctx) => string } = {
       ? `Challenge ${quoted(c.meta.slug)} failed verification (run by ${c.actor})`
       : `${c.actor} verified challenge ${quoted(c.meta.slug)}`,
   "export.downloaded": (c) => `${c.actor} downloaded ${str(c.meta.type) ? `the ${str(c.meta.type)} export` : "an export"}`,
+  "clues.replaced": (c) => {
+    const n = num(c.meta.count);
+    return `${c.actor} saved the clue book${n === null ? "" : ` (${n} ${n === 1 ? "clue" : "clues"})`}`;
+  },
 };
 
 const KINDS: { [A in AuditAction]: ActivityKind } = {
@@ -110,7 +114,7 @@ const KINDS: { [A in AuditAction]: ActivityKind } = {
   "announcement.created": "admin", "announcement.deactivated": "admin",
   "volunteer.assigned": "admin", "volunteer.removed": "admin",
   "import.challenge": "admin", "import.stages": "admin", "import.teams": "admin",
-  "challenge.verified": "admin", "export.downloaded": "admin",
+  "challenge.verified": "admin", "export.downloaded": "admin", "clues.replaced": "admin",
 };
 
 /** One human sentence for an audit row (contract §11). Pure. Unknown actions → "<action> (<targetType>)". */

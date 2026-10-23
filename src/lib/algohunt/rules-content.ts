@@ -12,8 +12,8 @@ export interface FaqItem {
 
 export const EVENT_FACTS = {
   date: "24 Oct 2026",
-  time: "10:30 AM – 2:30 PM",
-  venue: "Seminar Hall 1, PES University (ECC)",
+  time: "11:00 AM – 2:00 PM",
+  venue: "Seminar Hall 2, PES University (ECC)",
   eligibility: "Open to all colleges",
   contacts: [
     { name: "Aniket Barun", phone: "9431515754" },
@@ -28,11 +28,11 @@ export const RULES: RuleItem[] = [
   },
   {
     title: "How progression works",
-    body: "Solve your current question. When it is accepted, find a QR hidden on campus and enter its code to unlock the next question. Solving the final question finishes the hunt; no code is needed after it.",
+    body: "There are 10 questions, each harder than the last. Question 1 is open to every team. Solve your current question, then follow the clue book to any QR hidden on campus, scan it on a phone and enter its code on your laptop to unlock the next question. Solving the final question finishes the hunt; no code is needed after it.",
   },
   {
-    title: "Codes are single-use",
-    body: "The first team to enter a code wins it, and a used code won't work for anyone else. You may collect codes early and keep them for later questions: a code is used up only when your team enters it after solving its current question. Codes are scarce, so keep searching if yours is taken.",
+    title: "QR codes are scarce and single-use",
+    body: "There are fewer QR codes than teams need, so search fast. Any QR unlocks whichever question you are on, but once a team uses its code, it's invalid for everyone. Scanning a code doesn't reserve it: another team can still use it first. You may collect codes early and keep them: a code is used up only when your team enters it after solving your current question.",
   },
   {
     title: "No going back",
@@ -52,23 +52,23 @@ export const RULES: RuleItem[] = [
   },
   {
     title: "One laptop per team",
-    body: "Your team plays on one laptop: solve questions and enter codes there. Only one device can be logged in to your team at a time. Logging in on another device signs the first one out, and the organizers are alerted. Phones are only for scanning QR codes.",
+    body: "Your team plays on one laptop, kept in Seminar Hall 2 with at least one member always with it: solve questions and enter codes there. Only one device can be logged in to your team at a time. Logging in on another device signs the first one out, and the organizers are alerted. Phones are only for scanning QR codes and reading the clue book.",
   },
   {
     title: "Stay in full screen",
-    body: "AlgoHunt runs in full screen on laptops. Leaving full screen, switching tabs or opening other apps adds an integrity flag, recorded with how long you were away. Every team's flag count is shown on the leaderboard, organizers review them, and a team with many flags gets a visit from a volunteer. Use Chrome or Edge.",
+    body: "AlgoHunt runs in full screen on laptops. Leaving full screen, switching tabs or opening other apps adds an integrity flag, recorded with how long you were away. Every team's flag count is shown on the leaderboard. If a team collects too many flags, the core team and volunteers decide what happens to it. Use Chrome or Edge.",
   },
   {
     title: "Time limit",
-    body: "Play stops automatically at 2:30 PM. From then on, runs, submissions and code entry are closed for every team, so submit before the clock reaches zero.",
+    body: "Play stops automatically at 2:00 PM. From then on, runs, submissions and code entry are closed for every team, so submit before the clock reaches zero.",
   },
   {
     title: "No exploiting the platform",
     body: "Don't try to exploit or bypass the Arena or the hunt platform. If something looks broken, tell a volunteer.",
   },
   {
-    title: "External resources",
-    body: "Announced at the briefing.",
+    title: "No AI tools",
+    body: "AI tools such as ChatGPT are not allowed during the hunt.",
   },
   {
     title: "Verification and penalties",
@@ -79,7 +79,7 @@ export const RULES: RuleItem[] = [
 export const FAQ: FaqItem[] = [
   {
     q: "How does AlgoHunt work?",
-    a: "Solve your current question, then find a QR hidden on campus and enter its code to unlock the next question. Repeat until you solve the final question, which finishes the hunt.",
+    a: "Solve your current question, then follow the clue book to any QR hidden on campus and enter its code to unlock the next question. Repeat until you solve the final question, which finishes the hunt.",
   },
   {
     q: "Does solving a question unlock the next one?",
@@ -88,6 +88,14 @@ export const FAQ: FaqItem[] = [
   {
     q: "What if another team already used the code I found?",
     a: "Keep searching. Codes are single-use, so the first team to enter one wins it.",
+  },
+  {
+    q: "Is each QR for a specific question?",
+    a: "No. Any QR unlocks whichever question you are on, but each one works only once.",
+  },
+  {
+    q: "Are there enough QR codes for every team?",
+    a: "No. There are fewer QR codes than teams need, so search fast.",
   },
   {
     q: "Do I need a code after the last question?",
@@ -103,7 +111,11 @@ export const FAQ: FaqItem[] = [
   },
   {
     q: "Can we use our phones?",
-    a: "Only to scan QR codes. Log in, solve and enter codes on your team's laptop. Logging in on a phone signs your laptop out and alerts the organizers.",
+    a: "Only to scan QR codes and read the clue book. Log in, solve and enter codes on your team's laptop. Logging in on a phone signs your laptop out and alerts the organizers.",
+  },
+  {
+    q: "Can we use AI tools?",
+    a: "No. AI tools such as ChatGPT are not allowed.",
   },
   {
     q: "Can we use two laptops?",
@@ -114,7 +126,7 @@ export const FAQ: FaqItem[] = [
     a: "Your team gets an integrity flag, recorded with how long you were away. Your flag count shows next to the timer and on the leaderboard for every team to see. Click Enter full screen to carry on.",
   },
   {
-    q: "What happens at 2:30 PM?",
+    q: "What happens at 2:00 PM?",
     a: "Play stops automatically: runs, submissions and code entry close. A submission that was already being judged still counts if it's accepted.",
   },
   {
