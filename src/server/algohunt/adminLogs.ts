@@ -152,6 +152,8 @@ function formatAuditActivity(action: string, teamName: string | null, metadataSt
       return `Re-enabled code #${meta.serial}: ${meta.reason ?? ""}`;
     case "code.note_updated":
       return `Updated note for code #${meta.serial}`;
+    case "clues.replaced":
+      return `Saved the clue book (${meta.count ?? ""} clues)`;
     case "volunteer.assigned":
       return `Assigned volunteer @${meta.username ?? ""}`;
     case "volunteer.removed":

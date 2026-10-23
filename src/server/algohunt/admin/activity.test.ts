@@ -47,6 +47,7 @@ const EVERY_ACTION: Record<AuditAction, Record<string, unknown>> = {
   "import.teams": { count: 40 },
   "challenge.verified": { slug: "two-sum", verified: true, wallMs: 812 },
   "export.downloaded": { type: "results" },
+  "clues.replaced": { count: 24, previousCount: 0 },
 };
 
 describe("describeActivity", () => {
