@@ -49,6 +49,8 @@ export async function GET(req: Request): Promise<NextResponse> {
     ]);
 
     return ok({
+      // The page shows the low-pool note only while teams can play.
+      eventStatus: event.status,
       stats,
       batches,
       codes: codesResult.codes,

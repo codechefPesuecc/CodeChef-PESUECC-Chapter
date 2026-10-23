@@ -107,13 +107,13 @@ export default function EventsAdmin({ initialEvents, currentSlug }: { initialEve
   }
 
   const statusColors: Record<EventStatus, string> = {
-    DRAFT: "bg-neutral-100 text-neutral-700 border-neutral-300",
-    CHECK_IN: "bg-blue-50 text-blue-700 border-blue-200",
-    READY: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    LIVE: "bg-green-100 text-green-800 border-green-300 font-bold animate-pulse",
-    PAUSED: "bg-amber-50 text-amber-700 border-amber-200",
-    ENDED: "bg-purple-50 text-purple-700 border-purple-200",
-    ARCHIVED: "bg-neutral-100 text-neutral-500 border-neutral-200",
+    DRAFT: "bg-neutral-100 text-neutral-700 border-neutral-300 dark:bg-neutral-500/15 dark:text-neutral-300 dark:border-neutral-500/30",
+    CHECK_IN: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30",
+    READY: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30",
+    LIVE: "bg-green-100 text-green-800 border-green-300 font-bold animate-pulse dark:bg-green-500/15 dark:text-green-300 dark:border-green-500/30",
+    PAUSED: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30",
+    ENDED: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/15 dark:text-purple-300 dark:border-purple-500/30",
+    ARCHIVED: "bg-neutral-100 text-neutral-500 border-neutral-200 dark:bg-neutral-500/15 dark:text-neutral-400 dark:border-neutral-500/30",
   };
 
   return (
@@ -168,7 +168,7 @@ export default function EventsAdmin({ initialEvents, currentSlug }: { initialEve
 
       {/* Create Event Form */}
       {showCreate && (
-        <form onSubmit={handleCreate} className="p-5 bg-white border border-hairline rounded-xl shadow-sm space-y-4">
+        <form onSubmit={handleCreate} className="p-5 bg-panel border border-hairline rounded-xl shadow-sm space-y-4">
           <h3 className="text-sm font-bold font-mono text-ink">Create New AlgoHunt Event</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -240,9 +240,9 @@ export default function EventsAdmin({ initialEvents, currentSlug }: { initialEve
       )}
 
       {/* Events Table */}
-      <div className="bg-white border border-hairline rounded-xl overflow-hidden shadow-sm">
-        <table className="w-full text-left text-xs font-mono">
-          <thead className="bg-sand/60 border-b border-hairline text-charcoal/70">
+      <div className="bg-panel border border-hairline rounded-xl overflow-hidden shadow-sm">
+        <table className="w-full text-left text-xs font-mono text-charcoal">
+          <thead className="bg-bronze/5 border-b border-hairline text-charcoal/70">
             <tr>
               <th className="py-2.5 px-4 font-semibold">Event Name</th>
               <th className="py-2.5 px-4 font-semibold">Slug</th>
@@ -256,8 +256,8 @@ export default function EventsAdmin({ initialEvents, currentSlug }: { initialEve
               const isSelected = currentSlug === ev.slug;
               const status = ev.status as EventStatus;
               return (
-                <tr key={ev.id} className={isSelected ? "bg-amber-50/50" : "hover:bg-sand/20"}>
-                  <td className="py-3 px-4 font-bold text-ink">
+                <tr key={ev.id} className={isSelected ? "bg-amber-50/50 dark:bg-amber-500/10" : "hover:bg-hairline/20"}>
+                  <td className="py-3 px-4 font-bold text-chocolate">
                     {ev.name}
                     {isSelected && (
                       <span className="ml-2 text-[10px] bg-black text-white px-1.5 py-0.5 rounded">
@@ -273,11 +273,11 @@ export default function EventsAdmin({ initialEvents, currentSlug }: { initialEve
                   </td>
                   <td className="py-3 px-4 text-charcoal/60">
                     {ev.isTest ? (
-                      <span className="text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded text-[10px]">
+                      <span className="text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded text-[10px] dark:text-amber-300 dark:bg-amber-500/15 dark:border-amber-500/30">
                         TEST
                       </span>
                     ) : (
-                      <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded text-[10px]">
+                      <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded text-[10px] dark:text-emerald-300 dark:bg-emerald-500/15 dark:border-emerald-500/30">
                         LIVE
                       </span>
                     )}

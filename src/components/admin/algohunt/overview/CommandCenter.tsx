@@ -12,7 +12,7 @@ import { usePoll } from "@/components/algohunt/usePoll";
 import { formatIST } from "@/lib/algohunt/format";
 import type { AdminOverview } from "@/server/algohunt/admin/overview";
 import {
-  TONE_CLASS, formatRunning, formatWaiting, lowPoolMessage, poolTone, stuckTone, submissionsTone, systemTone,
+  TONE_CLASS, formatRunning, formatWaiting, longWait, lowPoolMessage, poolTone, stuckTone, submissionsTone, systemTone,
 } from "./overviewModel";
 
 const SETUP_STATUSES = ["DRAFT", "CHECK_IN", "READY"];
@@ -68,12 +68,14 @@ export default function CommandCenter({ eventSlug }: { eventSlug: string }) {
   // The server clock decides "running for", so a wrong laptop clock doesn't skew it.
   const now = tick + (data.serverNow - (lastUpdated ?? data.serverNow));
   const {
-    event, counts, codePool, stuck, integrityAlerts, takeoverAlerts, readiness, topTeams, recentActivity, health,
+    event, counts, codePool, stuck, stuckMore, integrityAlerts, takeoverAlerts, readiness, topTeams, recentActivity, health,
   } = data;
   const tone = statusTone(event.status);
   const running = formatRunning(event.startedAt, now);
   // The pool only matters while teams can play.
   const banner = event.status === "LIVE" || event.status === "PAUSED" ? lowPoolMessage(codePool) : null;
+  // Codes are scarce by design, so waiting is normal; only a long wait (STUCK_WARN_MS) gets the ⚠.
+  const waitedLong = longWait(stuck);
   const timeUp = (event.status === "LIVE" || event.status === "PAUSED") && event.endsAt !== null && now >= event.endsAt;
   const pauseOption = transitionOptions(event.status).find(
     (o) => (event.status === "LIVE" && o.to === "PAUSED") || (event.status === "PAUSED" && o.to === "LIVE"),
@@ -150,8 +152,8 @@ export default function CommandCenter({ eventSlug }: { eventSlug: string }) {
           <Row label="Active codes" value={codePool.active} tone={poolTone(codePool)} />
           <Row
             label="Waiting for code"
-            value={<>{codePool.teamsWaitingForCode}{codePool.teamsWaitingForCode > 0 ? " ⚠" : ""}</>}
-            tone={codePool.teamsWaitingForCode > 0 ? "warn" : "ok"}
+            value={<>{codePool.teamsWaitingForCode}{waitedLong ? " ⚠" : ""}</>}
+            tone={waitedLong ? "warn" : "ok"}
           />
           <Row label="Redeemed (10 m)" value={codePool.redeemedLast10m} />
           <Row
@@ -186,8 +188,8 @@ export default function CommandCenter({ eventSlug }: { eventSlug: string }) {
       </div>
 
       {banner && (
-        <p role="alert" className="rounded-xl border border-red-500/40 bg-red-500/15 px-4 py-3 text-sm font-semibold text-red-700 dark:text-red-300">
-          ⚠ {banner}
+        <p role="status" className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
+          {banner}
         </p>
       )}
 
@@ -254,8 +256,8 @@ export default function CommandCenter({ eventSlug }: { eventSlug: string }) {
       )}
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <section aria-label="Stuck teams">
-          <h2 className="font-display text-lg font-bold text-chocolate">Stuck teams</h2>
+        <section aria-label="Waiting for a code">
+          <h2 className="font-display text-lg font-bold text-chocolate">Waiting for a code</h2>
           <p className="text-xs text-charcoal/60">Solved the question, still waiting for a code.</p>
           {stuck.length === 0 ? (
             <p className="mt-3 text-sm text-charcoal/70">No team is waiting for a code.</p>
@@ -283,6 +285,11 @@ export default function CommandCenter({ eventSlug }: { eventSlug: string }) {
                   </li>
                 );
               })}
+              {stuckMore > 0 && (
+                <li className="p-3 text-sm text-charcoal/70">
+                  +{stuckMore} more {stuckMore === 1 ? "team" : "teams"} waiting (longest waits shown first).
+                </li>
+              )}
             </ul>
           )}
         </section>

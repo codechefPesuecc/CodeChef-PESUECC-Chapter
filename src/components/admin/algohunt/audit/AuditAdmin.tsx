@@ -100,12 +100,13 @@ export default function AuditAdmin({ eventSlug }: { eventSlug: string }) {
       {/* Filters */}
       <div className="lc-panel p-4 grid gap-3 sm:grid-cols-3 items-end">
         <div>
-          <label className="block text-[11px] font-mono uppercase text-charcoal/70 mb-1">
+          <label htmlFor="audit-team" className="block text-[11px] font-mono uppercase text-charcoal/70 mb-1">
             Filter by Team Code
           </label>
           <div className="relative">
             <Search className="w-3.5 h-3.5 text-charcoal/50 absolute left-2.5 top-2.5" />
             <input
+              id="audit-team"
               type="text"
               placeholder="Team code..."
               className="mecha-input text-xs pl-8 w-full font-mono uppercase"
@@ -119,10 +120,11 @@ export default function AuditAdmin({ eventSlug }: { eventSlug: string }) {
         </div>
 
         <div>
-          <label className="block text-[11px] font-mono uppercase text-charcoal/70 mb-1">
+          <label htmlFor="audit-action" className="block text-[11px] font-mono uppercase text-charcoal/70 mb-1">
             Action Category
           </label>
           <select
+            id="audit-action"
             className="mecha-input text-xs w-full"
             value={actionPrefix}
             onChange={(e) => {

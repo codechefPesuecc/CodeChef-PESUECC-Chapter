@@ -13,6 +13,9 @@ const ITEMS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/algohunt/how-to-play", label: "Rules", icon: BookOpen },
 ];
 
+/** Inactive tabs read stronger than the shared .mecha-tab default (58%), so they pass 4.5:1 in light and dark. */
+const INACTIVE_TAB = "text-charcoal/75 hover:text-chocolate";
+
 /** Contract §13 nav: a top tab row on desktop, a fixed bottom tab bar on phones. */
 export default function ParticipantNav() {
   const pathname = usePathname();
@@ -28,7 +31,7 @@ export default function ParticipantNav() {
             key={href}
             href={href}
             aria-current={isActive(href) ? "page" : undefined}
-            className={`mecha-tab relative inline-flex items-center gap-1.5 ${isActive(href) ? "mecha-tab--active" : ""}`}
+            className={`mecha-tab relative inline-flex items-center gap-1.5 ${isActive(href) ? "mecha-tab--active" : INACTIVE_TAB}`}
           >
             <Icon aria-hidden className="h-3.5 w-3.5" />
             {label}
@@ -49,7 +52,7 @@ export default function ParticipantNav() {
                 href={href}
                 aria-current={isActive(href) ? "page" : undefined}
                 className={`relative flex min-h-14 flex-col items-center justify-center gap-1 px-1 text-[10px] font-semibold uppercase tracking-wide ${
-                  isActive(href) ? "text-bronze" : "text-charcoal/60"
+                  isActive(href) ? "text-bronze" : "text-charcoal/75"
                 }`}
               >
                 <span className="relative">

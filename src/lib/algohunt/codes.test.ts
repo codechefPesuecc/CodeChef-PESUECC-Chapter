@@ -3,7 +3,9 @@ import {
   CODE_ALPHABET,
   CODE_LENGTH,
   formatCodeForDisplay,
+  LOW_POOL_ACTIVE,
   generateCode,
+  isPoolLow,
   isWellFormedCode,
   normalizeCode,
 } from "./codes";
@@ -65,5 +67,15 @@ describe("algohunt codes helpers", () => {
     expect(formatCodeForDisplay("7FQ2M8K3")).toBe("7FQ2-M8K3");
     expect(formatCodeForDisplay("7FQ2")).toBe("7FQ2");
     expect(formatCodeForDisplay("7F")).toBe("7F");
+  });
+
+  it("calls the pool low only while teams can play and almost no codes are left (scarcity is by design)", () => {
+    expect(LOW_POOL_ACTIVE).toBe(3);
+    expect(isPoolLow("LIVE", 3)).toBe(true);
+    expect(isPoolLow("PAUSED", 0)).toBe(true);
+    expect(isPoolLow("LIVE", 4)).toBe(false);
+    for (const status of ["DRAFT", "CHECK_IN", "READY", "ENDED", "ARCHIVED"] as const) {
+      expect(isPoolLow(status, 0)).toBe(false);
+    }
   });
 });

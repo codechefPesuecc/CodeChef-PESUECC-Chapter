@@ -141,30 +141,30 @@ export default function TeamsList({ eventSlug }: { eventSlug: string }) {
                 const href = withEvent(`/admin/algohunt/teams/${team.id}`, eventSlug);
                 return (
                   <tr key={team.id} className="hover:bg-hairline/30">
-                    <td className="px-3 py-2 font-mono text-xs">
+                    <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">
                       <Link href={href} className="text-bronze hover:underline">{team.code}</Link>
                     </td>
-                    <td className="px-3 py-2 font-medium text-chocolate">
+                    <td className="min-w-[10rem] px-3 py-2 font-medium text-chocolate">
                       <Link href={href} className="hover:underline">{team.name}</Link>
                     </td>
-                    <td className="px-3 py-2 text-charcoal/70">{team.college ?? "—"}</td>
-                    <td className="px-3 py-2">
-                      <span className={`rounded-full border px-2 py-0.5 text-xs ${TEAM_STATUS_CLASS[team.status]}`}>
+                    <td className="min-w-[8rem] px-3 py-2 text-charcoal/70">{team.college ?? "—"}</td>
+                    <td className="whitespace-nowrap px-3 py-2">
+                      <span className={`whitespace-nowrap rounded-full border px-2 py-0.5 text-xs ${TEAM_STATUS_CLASS[team.status]}`}>
                         {TEAM_STATUS_LABEL[team.status] ?? team.status}
                       </span>
                     </td>
-                    <td className="px-3 py-2 font-mono">{team.currentQuestion === null ? "—" : `Q${team.currentQuestion}`}</td>
-                    <td className="px-3 py-2 font-mono">{team.questionsSolved}/{team.totalStages}</td>
-                    <td className="px-3 py-2">
+                    <td className="whitespace-nowrap px-3 py-2 font-mono">{team.currentQuestion === null ? "—" : `Q${team.currentQuestion}`}</td>
+                    <td className="whitespace-nowrap px-3 py-2 font-mono">{team.questionsSolved}/{team.totalStages}</td>
+                    <td className="whitespace-nowrap px-3 py-2">
                       {team.waitingForCode && team.waitingSince !== null ? (
-                        <span className="rounded-full border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 font-mono text-xs text-amber-700 dark:text-amber-300">
+                        <span className="whitespace-nowrap rounded-full border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 font-mono text-xs text-amber-700 dark:text-amber-300">
                           waiting {formatWaiting(now - team.waitingSince)}
                         </span>
                       ) : "—"}
                     </td>
-                    <td className="px-3 py-2 text-charcoal/70">{team.lastActivityAt === null ? "—" : formatAgo(team.lastActivityAt, now)}</td>
-                    <td className="px-3 py-2 font-mono text-xs text-charcoal/70">{team.checkedInAt === null ? "—" : formatIST(team.checkedInAt)}</td>
-                    <td className="px-3 py-2 font-mono text-xs text-charcoal/70">{team.finishedAt === null ? "—" : formatIST(team.finishedAt)}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-charcoal/70">{team.lastActivityAt === null ? "—" : formatAgo(team.lastActivityAt, now)}</td>
+                    <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-charcoal/70">{team.checkedInAt === null ? "—" : formatIST(team.checkedInAt)}</td>
+                    <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-charcoal/70">{team.finishedAt === null ? "—" : formatIST(team.finishedAt)}</td>
                   </tr>
                 );
               })}

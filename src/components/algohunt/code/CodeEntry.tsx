@@ -15,7 +15,7 @@ import {
 import Link from "@/components/AppLink";
 import MechaPanel from "@/components/cp-arena/MechaPanel";
 import { formatCodeForDisplay, isWellFormedCode, normalizeCode } from "@/lib/algohunt/codes";
-import { COPY } from "@/lib/algohunt/copy";
+import { COPY, cooldownMessage, formatCooldownClock } from "@/lib/algohunt/copy";
 import type { RedeemResult, StageState } from "@/lib/algohunt/types";
 
 export interface CodeEntryProps {
@@ -200,7 +200,7 @@ export default function CodeEntry({
           setCooldownSeconds(seconds);
           setResult({
             kind: "COOLDOWN",
-            message: data.error ?? COPY.cooldown.replace("{s}", String(seconds)),
+            message: data.error ?? cooldownMessage(seconds),
           });
         } else if (data.code === "CHALLENGE_NOT_SOLVED") {
           setResult({
@@ -315,7 +315,7 @@ export default function CodeEntry({
               ) : isCooldown ? (
                 <>
                   <Clock className="h-4 w-4" />
-                  <span>Cooldown active ({cooldownSeconds}s)</span>
+                  <span>Code entry locked ({formatCooldownClock(cooldownSeconds)})</span>
                 </>
               ) : (
                 <>
@@ -386,7 +386,9 @@ export default function CodeEntry({
               </div>
               {result.attemptsLeft !== null && result.attemptsLeft <= 2 && (
                 <p className="text-xs text-rose-700 pl-7">
-                  {result.attemptsLeft} more wrong {result.attemptsLeft === 1 ? "code" : "codes"} before a short pause
+                  {result.attemptsLeft === 0
+                    ? "Code entry is now locked for up to 10 minutes."
+                    : `${result.attemptsLeft} more wrong ${result.attemptsLeft === 1 ? "code" : "codes"} and code entry locks for up to 10 minutes.`}
                 </p>
               )}
             </div>
@@ -397,7 +399,7 @@ export default function CodeEntry({
               <Clock className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
               <div className="text-sm font-medium text-rose-900">
                 {cooldownSeconds !== null
-                  ? COPY.cooldown.replace("{s}", String(cooldownSeconds))
+                  ? cooldownMessage(cooldownSeconds)
                   : result.message}
               </div>
             </div>

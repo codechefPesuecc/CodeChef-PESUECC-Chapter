@@ -17,9 +17,14 @@ export function stuckTone(waitingSinceMs: number): Tone {
   return waitingSinceMs > STUCK_WARN_MS ? "warn" : "ok";
 }
 
+/** Codes are scarce by design, so a short pool is amber at most, never red. */
 export function poolTone(pool: AdminOverview["codePool"]): Tone {
-  if (pool.lowPool) return "bad";
-  return pool.teamsWaitingForCode > 0 ? "warn" : "ok";
+  return pool.lowPool ? "warn" : "ok";
+}
+
+/** Waiting for a code is normal; it only needs a look once some team has waited past STUCK_WARN_MS. */
+export function longWait(stuck: AdminOverview["stuck"]): boolean {
+  return stuck.some((team) => stuckTone(team.waitingSinceMs) === "warn");
 }
 
 export function submissionsTone(counts: AdminOverview["counts"]): Tone {
@@ -34,9 +39,7 @@ export function systemTone(overview: Pick<AdminOverview, "health" | "counts">): 
 /** The banner under the cards. Null when nothing needs attention. */
 export function lowPoolMessage(pool: AdminOverview["codePool"]): string | null {
   if (!pool.lowPool) return null;
-  return `LOW POOL: ${pool.active} active ${pool.active === 1 ? "code" : "codes"}, ${pool.teamsWaitingForCode} ${
-    pool.teamsWaitingForCode === 1 ? "team" : "teams"
-  } waiting. Generate & print a new batch.`;
+  return `Only ${pool.active} active ${pool.active === 1 ? "code" : "codes"} left. Codes are scarce by design — add more only if teams are stuck for a long time.`;
 }
 
 export const TONE_CLASS: Record<Tone, string> = {

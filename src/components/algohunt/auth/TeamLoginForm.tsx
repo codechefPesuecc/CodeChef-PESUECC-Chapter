@@ -45,7 +45,7 @@ export default function TeamLoginForm() {
           className="mecha-input w-full"
           value={teamCode}
           onChange={(event) => setTeamCode(event.target.value)}
-          placeholder="AH2-T014"
+          placeholder="AH2-014"
           autoCapitalize="characters"
           autoComplete="username"
           required
