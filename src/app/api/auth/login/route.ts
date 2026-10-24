@@ -23,17 +23,13 @@ const cookieOptions = {
 // A dummy hash (computed once, then cached) so the "no such user" path still spends
 // the same PBKDF2 time as a real verify. Without it, a missing username returns
 // faster than a wrong password, leaking which usernames exist — defense-in-depth on
-// top of the login rate limit. Caches the promise so the derivation runs only once.
-let dummyHashPromise: Promise<string> | null = null;
-function timingEqualizer(): Promise<string> {
-  // Drop a rejected promise so a transient hash failure doesn't poison every future
-  // missing-user login (a cached rejected promise would 500 forever until isolate recycle).
-  return (dummyHashPromise ??= hashPassword("timing-equalizer-not-a-real-account").catch(
-    (err) => {
-      dummyHashPromise = null;
-      throw err;
-    },
-  ));
+// top of the login rate limit. Caches the finished hash, never the promise: a Worker instance
+// serves many requests at once, and a request awaiting work started by another request is
+// cancelled by the runtime as hung. A failed derivation simply isn't cached.
+let dummyHash: string | null = null;
+async function timingEqualizer(): Promise<string> {
+  dummyHash ??= await hashPassword("timing-equalizer-not-a-real-account");
+  return dummyHash;
 }
 
 export async function POST(req: Request) {

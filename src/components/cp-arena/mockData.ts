@@ -49,181 +49,64 @@ export const ARENA_LANGUAGES: { id: LanguageId; label: string }[] = [
   { id: "typescript", label: "TypeScript (Bun)" },
 ];
 
-// Generic competitive-programming starters: fast I/O wired up, an empty `solve()`
-// to fill in, and a commented multi-test-case loop — usable as-is for any problem.
-export const STARTER_CODE: Record<LanguageId, string> = {
-  cpp: `#include <bits/stdc++.h>
-using namespace std;
+// Every editor starts empty except Java: the judge compiles Java as Solution.java, so its
+// template pins the class name and wires up fast input and output.
+const JAVA_STARTER = `import java.io.*;
+import java.util.*;
 
-void solve() {
-    // your solution here
-
-}
-
-int main() {
-    ios_base::sync_with_stdio(false);
-    cin.tie(nullptr);
-
-    int t = 1;
-    // cin >> t; // uncomment for multiple test cases
-    while (t--) {
-        solve();
-    }
-    return 0;
-}
-`,
-  python: `import sys
-input = sys.stdin.readline
-
-def solve():
-    # your solution here
-    pass
-
-t = 1
-# t = int(input()) # uncomment for multiple test cases
-for _ in range(t):
-    solve()
-`,
-  pypy3: `import sys
-input = sys.stdin.readline
-
-def solve():
-    # your solution here
-    pass
-
-t = 1
-# t = int(input()) # uncomment for multiple test cases
-for _ in range(t):
-    solve()
-`,
-  java: `import java.util.*;
-import java.io.*;
-
+// Keep the class name Solution: the judge compiles your code as Solution.java.
 public class Solution {
-    static BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-    static StringBuilder sb = new StringBuilder();
-
-    static void solve() throws IOException {
-        // your solution here
-
-    }
-
     public static void main(String[] args) throws IOException {
-        int t = 1;
-        // t = Integer.parseInt(br.readLine().trim()); // uncomment for multiple test cases
-        while (t-- > 0) {
-            solve();
+        FastReader in = new FastReader();
+        PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.out)));
+
+        // Read with in.nextInt(), in.nextLong(), in.next() (one word) or in.nextLine() (a whole line).
+        // Print with out.println(...); everything is sent when out.flush() runs below.
+
+        out.flush();
+    }
+
+    static class FastReader {
+        private final BufferedReader br = new BufferedReader(new InputStreamReader(System.in), 1 << 16);
+        private StringTokenizer st;
+
+        String next() throws IOException {
+            while (st == null || !st.hasMoreTokens()) st = new StringTokenizer(br.readLine());
+            return st.nextToken();
         }
-        System.out.print(sb);
+
+        int nextInt() throws IOException { return Integer.parseInt(next()); }
+
+        long nextLong() throws IOException { return Long.parseLong(next()); }
+
+        double nextDouble() throws IOException { return Double.parseDouble(next()); }
+
+        // The rest of the current line, or the next whole line if nothing is left on this one.
+        String nextLine() throws IOException {
+            if (st != null && st.hasMoreTokens()) {
+                StringBuilder rest = new StringBuilder(st.nextToken());
+                while (st.hasMoreTokens()) rest.append(' ').append(st.nextToken());
+                return rest.toString();
+            }
+            return br.readLine();
+        }
     }
 }
-`,
-  c: `#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+`;
 
-void solve(void) {
-    // your solution here
-
-}
-
-int main(void) {
-    int t = 1;
-    // scanf("%d", &t); // uncomment for multiple test cases
-    while (t--) {
-        solve();
-    }
-    return 0;
-}
-`,
-  javascript: `const data = require("fs").readFileSync(0, "utf8").split(/\\s+/).filter(Boolean);
-let pos = 0;
-const next = () => data[pos++];
-const nextInt = () => parseInt(next(), 10);
-const out = [];
-
-function solve() {
-    // read tokens with next() / nextInt(); collect answers in out
-    // your solution here
-
-}
-
-let t = 1;
-// t = nextInt(); // uncomment for multiple test cases
-while (t--) {
-    solve();
-}
-console.log(out.join("\\n"));
-`,
-  typescript: `import * as fs from "fs";
-
-const data: string[] = fs.readFileSync(0, "utf8").split(/\\s+/).filter(Boolean);
-let pos = 0;
-const next = (): string => data[pos++];
-const nextInt = (): number => parseInt(next(), 10);
-const out: string[] = [];
-
-function solve(): void {
-    // read tokens with next() / nextInt(); collect answers in out
-    // your solution here
-
-}
-
-let t = 1;
-// t = nextInt(); // uncomment for multiple test cases
-while (t--) {
-    solve();
-}
-console.log(out.join("\\n"));
-`,
-  sql: `-- Write your SQL query here
-SELECT * FROM table_name;
-`,
-  csharp: `using System;
-using System.Collections.Generic;
-
-class Program {
-    static void Main() {
-        // Write your solution here
-
-    }
-}
-`,
-  go: `package main
-
-import (
-	"bufio"
-	"fmt"
-	"os"
-)
-
-func main() {
-	reader := bufio.NewReader(os.Stdin)
-	_ = reader
-
-	// Write your solution here
-}
-`,
-  rust: `use std::io::{self, Read};
-
-fn main() {
-    let mut input = String::new();
-    io::stdin().read_to_string(&mut input).unwrap();
-    if input.trim().is_empty() {
-        return;
-    }
-
-    // Write your solution here
-}
-`,
-  zig: `const std = @import("std");
-
-pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
-    _ = stdout;
-    // Write your solution here
-}
-`,
+export const STARTER_CODE: Record<LanguageId, string> = {
+  cpp: "",
+  python: "",
+  pypy3: "",
+  java: JAVA_STARTER,
+  c: "",
+  javascript: "",
+  typescript: "",
+  sql: "",
+  csharp: "",
+  go: "",
+  rust: "",
+  zig: "",
 };
 
 /** mm:ss for a duration in seconds. */

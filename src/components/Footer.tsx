@@ -35,7 +35,7 @@ const socials = [
 export default function Footer() {
 
   return (
-    <footer className="relative mt-auto overflow-hidden bg-[#efe9e0] text-charcoal/80 dark:bg-[#0f0b07] dark:text-cream/80">
+    <footer className="relative mt-auto overflow-hidden print:hidden bg-[#efe9e0] text-charcoal/80 dark:bg-[#0f0b07] dark:text-cream/80">
       {/* Depth: vertical gradient + soft bronze glow at the top edge */}
       <div
         aria-hidden

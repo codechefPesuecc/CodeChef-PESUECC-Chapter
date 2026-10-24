@@ -18,31 +18,14 @@ function getHeaders(): Record<string, string> {
   return headers;
 }
 
-// Workers run in isolated contexts — no shared state across requests.
-// This limiter only helps during local/Node.js dev; on Workers it's effectively a no-op.
-const MAX_CONCURRENT_JOBS = Math.max(
-  1,
-  Number(process.env.JUDGE_CONCURRENCY) || 4,
-);
+// No in-process queue. A Worker instance serves many requests at once, and a request parked on a
+// promise that another request resolves is cancelled by the runtime as hung, which also leaked its
+// slot: after a burst, every judge call failed with a 500. Akiro queues jobs itself and answers 503
+// when it is busy, which judgeExecute retries below.
 let activeJobs = 0;
-const jobQueue: (() => void)[] = [];
-
-function acquireSlot(): Promise<void> {
-  if (activeJobs < MAX_CONCURRENT_JOBS) {
-    activeJobs++;
-    return Promise.resolve();
-  }
-  return new Promise((resolve) => jobQueue.push(resolve));
-}
-
-function releaseSlot(): void {
-  const next = jobQueue.shift();
-  if (next) next();
-  else activeJobs--;
-}
 
 export function judgeQueueStats() {
-  return { active: activeJobs, queued: jobQueue.length, max: MAX_CONCURRENT_JOBS };
+  return { active: activeJobs, queued: 0 };
 }
 
 /** Maps problem language identifiers to Judge Sandbox language names. */
@@ -127,6 +110,17 @@ export async function judgeHealth(): Promise<JudgeHealth> {
   return (await res.json()) as JudgeHealth;
 }
 
+/**
+ * Akiro hangs when identical sources are judged at the same moment: 6 parallel copies of one program
+ * left some unanswered past 45 s, while 16 distinct programs at once all finished in under a second
+ * (measured 2026-10-18). Identical sources are normal here (teams running the starter code at the
+ * start, the same AI answer), so each job gets a trailing comment that makes its source unique.
+ */
+export function withJobMarker(judgeLang: string, code: string, jobId: string): string {
+  const comment = judgeLang === "python" || judgeLang === "pypy" ? "#" : judgeLang === "sql" ? "--" : "//";
+  return `${code}\n${comment} ${jobId}\n`;
+}
+
 export async function judgeExecute(params: {
   language: string;
   code: string;
@@ -144,12 +138,13 @@ export async function judgeExecute(params: {
     ? params.testCases
     : [{ input: params.stdin ?? "", expected_output: undefined }];
 
-  await acquireSlot();
+  activeJobs++;
   try {
+    const jobId = `sub-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     const payload = {
-      job_id: `sub-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      job_id: jobId,
       language: judgeLang,
-      source_code: params.code,
+      source_code: withJobMarker(judgeLang, params.code, jobId),
       time_limit_ms: params.timeLimitMs ?? 2000,
       memory_limit_bytes: params.memoryLimitBytes ?? 268435456,
       test_cases: testCases,
@@ -159,17 +154,30 @@ export async function judgeExecute(params: {
     let attempt = 0;
     let res: Response | null = null;
     let lastErrorText = "";
+    let timedOut = false;
 
     while (attempt <= MAX_RETRIES) {
-      res = await fetch(`${getJudgeUrl()}/api/v1/submit`, {
-        method: "POST",
-        headers: getHeaders(),
-        cache: "no-store",
-        // Cap each attempt so a hung/slow judge can't pin the Worker subrequest
-        // indefinitely (a runaway would stall requests and burn the CPU budget).
-        signal: AbortSignal.timeout(30_000),
-        body: JSON.stringify(payload),
-      });
+      try {
+        res = await fetch(`${getJudgeUrl()}/api/v1/submit`, {
+          method: "POST",
+          headers: getHeaders(),
+          cache: "no-store",
+          // Cap each attempt so a hung/slow judge can't pin the Worker subrequest
+          // indefinitely (a runaway would stall requests and burn the CPU budget).
+          signal: AbortSignal.timeout(30_000),
+          body: JSON.stringify(payload),
+        });
+      } catch (error) {
+        // Akiro occasionally leaves a job unanswered (seen on the local build); the next job goes
+        // through. Retry a timeout once, as a new job, before giving up.
+        if (error instanceof Error && error.name === "TimeoutError" && !timedOut) {
+          timedOut = true;
+          payload.job_id = `${jobId}-r`;
+          payload.source_code = withJobMarker(judgeLang, params.code, payload.job_id);
+          continue;
+        }
+        throw error;
+      }
 
       if (res.ok) {
         break;
@@ -225,6 +233,6 @@ export async function judgeExecute(params: {
       test_case_results: formattedTestCases,
     };
   } finally {
-    releaseSlot();
+    activeJobs--;
   }
 }
