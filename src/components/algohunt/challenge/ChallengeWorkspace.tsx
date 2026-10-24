@@ -26,6 +26,7 @@ const SPLIT_KEY = "ah:split-pct";
 const SPLIT_MIN = 25;
 const SPLIT_MAX = 75;
 const clamp = (n: number) => Math.min(SPLIT_MAX, Math.max(SPLIT_MIN, n));
+const EMPTY_CODE = "Write your code first.";
 
 type Tab = "problem" | "code" | "result";
 
@@ -176,6 +177,14 @@ export default function ChallengeWorkspace({
   // ── Run ───────────────────────────────────────────────────────────────
   const run = async () => {
     if (running) return;
+    // Editors start empty (only Java has a template); say so instead of a raw validation error.
+    if (!code.trim()) {
+      setRunResult(null);
+      setVerdict(null);
+      setRunError(EMPTY_CODE);
+      setTab("result");
+      return;
+    }
     setRunning(true);
     setBusyLabel("Running…");
     setRunResult(null);
@@ -204,6 +213,12 @@ export default function ChallengeWorkspace({
   // ── Submit ────────────────────────────────────────────────────────────
   const submit = useCallback(async (retryId?: string) => {
     if (running || solved) return;
+    if (!code.trim()) {
+      setRunResult(null);
+      setVerdict({ ok: false, code: "VALIDATION", message: EMPTY_CODE } as unknown as SubmitResult);
+      setTab("result");
+      return;
+    }
     const id = retryId ?? pendingId ?? crypto.randomUUID();
     setPendingId(id);
     setRunning(true);
